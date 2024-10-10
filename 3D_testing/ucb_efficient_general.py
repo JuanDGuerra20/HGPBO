@@ -39,7 +39,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HierarchicalGPBO/3D_testing/{data_name}/efficient_3D"
+    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/3D_testing/{data_name}/efficient_3D"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -353,11 +353,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         plt.savefig(
             f'{data_name}/efficient_3D{folder_of_the_day}/differentiable_plots/Norm_Efficient_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}')
         plt.close()
-        """
-        vi.model_heatmap(heatmap_data, x_hier, y_hier,
-                         f'/Heatmap_{data_name}_Norm_Efficient_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
-                         "efficient_3D", folder_of_the_day, data_name)"""
-
     # Joint Section
 
     joint_plots(over_exploit, over_explor, k_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)

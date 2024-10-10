@@ -101,7 +101,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                        eps):
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HierarchicalGPBO/model_testing/{data_name}/pretrain_efficient"
+    workspace = f"C:/Users/preda/PycharmProjects/HPGBO/model_testing/{data_name}/pretrain_efficient"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
