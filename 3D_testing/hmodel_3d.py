@@ -164,7 +164,7 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
 
 class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
-    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa):
+    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter):
         super(Efficient_UCB_Hierarchical_GP, self).__init__(train_x, train_y, likelihood)
 
         self.sub_models = sub_models  # This will be useful for creating the training procedure
@@ -173,6 +173,7 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
         self.mean_module.requires_grad = False
         self.covar_module = hierarchical_kernel
         self.kappa = kappa
+        self.query_counter = query_counter
 
     def forward(self, x):
         mean_x = self.mean_module(x)
@@ -298,6 +299,16 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
             sub_loss.backward(retain_graph=True)
             sub_opt.step()
             sub_opt.zero_grad()
+
+    def increment_q_n(self, query_c, query, domain):
+        for x in range(len(domain)):
+            for y in range(len(domain[x])):
+                for z in range(len(domain[x][y])):
+                    if domain[x][y][z][0] == query[0] and domain[x][y][z][1] == query[1] and domain[x][y][z][2] == query[2]:
+                        query_c[x*(len(domain[x]) * len(domain[x][y])) + y*len(domain[x]) + z] += 1
+                        break
+        self.query_counter = query_c
+        return query_c
 
 
 class Changing_Data_UCB_Hierarchical_GP(gpytorch.models.ExactGP):

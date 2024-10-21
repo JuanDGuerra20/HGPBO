@@ -541,7 +541,8 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
         with torch.no_grad():
             f, ax = plt.subplots(1, 1)
 
-            lower, upper = observed_pred.confidence_region()
+            mean = observed_pred.mean.numpy()
+            std = observed_pred.stddev.numpy() / np.sqrt(model.query_counter.numpy())
             train_x = model.train_inputs[0]
             train_y = model.train_targets
 
@@ -549,14 +550,14 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
                 temp_x = list(range(len(test_x)))
                 new_train = map_neural_to_list(train_x.numpy())
                 ax.plot(new_train, train_y.numpy(), 'k*')
-                ax.plot(temp_x, observed_pred.mean.numpy(), 'b')
-                ax.fill_between(temp_x, lower.numpy(), upper.numpy(), alpha=0.5)
+                ax.plot(temp_x, mean, 'b')
+                ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 
                 ax.plot(temp_x, true_y[i].numpy(), 'r')
             else:
                 ax.plot(train_x.numpy(), train_y.numpy(), 'k*')
-                ax.plot(test_x.numpy(), observed_pred.mean.numpy(), 'b')
-                ax.fill_between(test_x.numpy(), lower.numpy(), upper.numpy(), alpha=0.5)
+                ax.plot(test_x.numpy(), mean, 'b')
+                ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5)
                 ax.plot(test_x.numpy(), true_y[i].numpy(), 'r')
 
             ax.legend(['Observed Data', 'Mean', 'Confidence', 'True'])

@@ -17,7 +17,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
     Simple GP classifier from the GPytorch library
     """
 
-    def __init__(self, train_x, train_y, likelihood):
+    def __init__(self, train_x, train_y, likelihood, query_counter):
         """
         Initialize the Exact GP model.
 
@@ -29,6 +29,8 @@ class ExactGPModel(gpytorch.models.ExactGP):
         super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
         self.mean_module = gpytorch.means.ConstantMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=2.5))
+        self.query_counter = query_counter
+
 
     def forward(self, x):
         """
@@ -43,6 +45,15 @@ class ExactGPModel(gpytorch.models.ExactGP):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+
+    def increment_q_n(model, query_c, query, domain):
+        for x in range(len(domain)):
+            if domain[x] == query:
+                query_c[x] += 1
+                break
+
+        model.query_counter = query_c
+        return query_c
 
 
 """
@@ -153,7 +164,7 @@ def optimize(model, likelihood, training_iter, train_x, train_y, verbose=True, h
     return model, likelihood
 
 
-def get_acquisition_map(kappa, observed_pred):
+def get_acquisition_map(kappa, observed_pred, query_count):
     """
     Compute the acquisition map for Bayesian optimization.
     Here UCB function : a(x;k)=μ(x)+kσ(x)
@@ -171,7 +182,7 @@ def get_acquisition_map(kappa, observed_pred):
     y_sigma2 = observed_pred.stddev
 
     # compute acquisition map
-    acquisition_map = y_mu + kappa * torch.nan_to_num(torch.sqrt(y_sigma2))  # here UCB acquisition function
+    acquisition_map = y_mu + kappa * torch.nan_to_num(y_sigma2/torch.sqrt(query_count))  # here UCB acquisition function
     # print(f'Average UCB Ratio mean/({kappa} * std): {torch.mean(y_mu/(kappa * y_sigma2))}')
     return acquisition_map, y_mu
 
