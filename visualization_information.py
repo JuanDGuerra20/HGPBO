@@ -11,6 +11,7 @@ import time
 from dataset_actions import NumpyArrayEncoder
 import torch
 from seaborn import heatmap
+from sklearn.metrics import r2_score
 
 
 def compute_execution_time(executionTime_repetitions, startTime, nbr_repetition, nbr_query, folder_of_the_day,
@@ -527,6 +528,18 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
         plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/differentiable_plots/{file_name}')
     plt.close()
 
+def heatmap_r_score(data, z):
+    data = np.mean(data, axis=0)
+
+    re_output = np.reshape(data, (data.shape[0], z.shape[0], z.shape[1]))
+    r_scores = []
+
+    z = z/torch.max(z)
+
+    for q in range(len(data)):
+        r_scores.append(r2_score(z, re_output[q]/np.max(re_output[q])))
+
+    return r_scores
 
 def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True):
     for i, model in enumerate(sub_models):

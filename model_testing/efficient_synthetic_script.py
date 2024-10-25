@@ -2,6 +2,9 @@ import math
 import torch
 import numpy as np
 import gpytorch
+from seaborn import heatmap
+from sklearn.metrics import r2_score
+
 import synthetic_models as models
 from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
@@ -10,6 +13,8 @@ from dataset_actions import *
 from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm
+
+from visualization_information import heatmap_r_score
 
 
 def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
@@ -63,17 +68,17 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
     ground_truth_max_2 = torch.max(y_sub2)
     ground_truth_max_hier = torch.max(y_hier)
 
-    over_exploit = []
-    over_explor = []
-    heatmap_data = []
     prior_map = torch.zeros(dimension, dimension)
     list_prior_map = []
     list_objective_mean_map = []
 
     for kappa in k_vals:
+        over_exploit = []
+        over_explor = []
         for gamma in g_vals:
             better_exploration_score = []
             better_exploitation_score = []
+            heatmap_data = []
             for repetition in range(nbr_repetition):
                 max_seen_resp_2D = 0
                 max_seen_resp_1_1D = 0
@@ -81,6 +86,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 sub1_qc = torch.ones(x_sub1.shape)
                 sub2_qc = torch.ones(x_sub2.shape)
                 hier_qc = torch.ones(len(x_sub1) * len(x_sub2))
+
+                heatmap_rep = []
                 for q in tqdm(range(nbr_query)):
                     if q == 0:
                         # Need to initialize the model - Will be random in this method
@@ -288,10 +295,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     better_exploration_score.append(exploration_score_2D)
                     better_exploitation_score.append(exploitation_score_2D)
 
-                pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
-                master_like = master.likelihood(pred)
-                heatmap_data.append(master_like.mean)
+                    pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
+                    master_like = master.likelihood(pred)
+                    heatmap_rep.append(master_like.mean)
+
+                heatmap_data.append(heatmap_rep)
                 print(f'\nRepetition {repetition} complete!\n')
+
+            heatmap_data = np.array(heatmap_data)
 
             k = str(kappa).replace('.', ',')
             g = str(gamma).replace('.', ',')
@@ -320,6 +331,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             plt.plot(y, label='Exploitation')
             plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
+            r2 = heatmap_r_score(heatmap_data, y_hier)
+            plt.plot(r2, label="Heatmap R2")
+
             plt.legend()
             plt.ylim(0, 1.1)
 
@@ -328,7 +342,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 f'{data_name}/efficient{folder_of_the_day}/differentiable_plots/Norm_Efficient_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
             plt.close()
 
-            vi.model_heatmap(heatmap_data, x_hier, y_hier,
+            vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
                              f'/Heatmap_{data_name}_Norm_Efficient_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
                              "efficient", folder_of_the_day, data_name)
             print(f'\nModel Kappa {k} Gamma {g} complete!\n')
@@ -341,12 +355,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 if __name__ == '__main__':
 
     dimension = 10
-    nbr_query = 80
+    nbr_query = 120
     training_iter = 5
-    nbr_repetition = 30
+    nbr_repetition = 1
     nbr_rand_init = 5
     k_vals = [2, 3, 4]
-    g_vals = [1, 2, 3, 4]
+    g_vals = [1, 2]
 
     for dataset_num in [2]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)

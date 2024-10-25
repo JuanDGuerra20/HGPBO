@@ -736,13 +736,55 @@ def generate_3d_dataset(dimension, eps):
     for i in range(len(y_sub1)):
         for j in range(len(y_sub2)):
             for k in range(len(y_sub3)):
-                y_hier[i, j] = (y_sub1[i] + y_sub2[j] + y_sub3[k]) / (
+                y_hier[i, j] = (y_sub1[i] + y_sub2[j] + y_sub3[k])**2 / (
                     (((x_sub1[i] - x_sub2[j]) + (x_sub1 - x_sub3) + (x_sub2 - x_sub3)) ** 2 + eps))
 
     y_hier = y_hier.double()
 
     return x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier
 
+
+def generate_3d_2_dataset(dimension, eps):
+    x_sub1 = torch.linspace(0, 4, dimension).double()
+    y_sub1 = torch.zeros(x_sub1.shape)
+
+    for i, x in enumerate(x_sub1):
+        y_sub1[i] = -(x - 2) ** 5
+    y_sub1 = y_sub1.double()
+
+    x_sub2 = torch.linspace(0, 4, dimension).double()
+    y_sub2 = torch.sin(x_sub2)**3
+    #y_sub2 = torch.where(y_sub2 == -torch.inf, 6.283, y_sub2)  # solved the overflow by limits
+
+    y_sub2 = y_sub2.double()
+
+    x_sub3 = torch.linspace(0, 4, dimension).double()
+    y_sub3 = (torch.log(x_sub3 + 1) + 1) / (x_sub3 + 1)
+    y_sub3 = y_sub3.double()
+
+    x_hier = torch.zeros((dimension, dimension, dimension, 3)).double()
+
+    for i in range(len(x_sub1)):
+        for j in range(len(x_sub2)):
+            for k in range(len(x_sub3)):
+                x_hier[i, j, k, 0] = x_sub1[i]
+                x_hier[i, j, k, 1] = x_sub2[j]
+                x_hier[i, j, k, 2] = x_sub3[k]
+
+    y_hier = torch.zeros((dimension, dimension, dimension))
+
+    test_x = make_test_sub(5, x_sub1)
+    # test_x_hier = make_test_hierarchical(10, x_hier)
+    test_x_hier = torch.reshape(x_hier, (-1, 3))
+
+    for i in range(len(y_sub1)):
+        for j in range(len(y_sub2)):
+            for k in range(len(y_sub3)):
+                y_hier[i, j] = (y_sub1[i] + y_sub2[j] + y_sub3[k])**2 + 2
+
+    y_hier = y_hier.double()
+
+    return x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier
 
 def get_dataset_info(dataset_num):
     if dataset_num == 1:
@@ -762,6 +804,10 @@ def get_dataset_info(dataset_num):
         data_name = 'first_3D'
         data_creation_func = generate_3d_dataset
         eps = 10
+    elif dataset_num == 5:
+        data_name = 'second_3D'
+        data_creation_func = generate_3d_2_dataset
+        eps = 2
     else:
         raise AssertionError("Dataset number invalid")
 

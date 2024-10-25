@@ -56,14 +56,15 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     ground_truth_max_hier = torch.max(y_hier)
 
-    over_exploit = []
-    over_explor = []
+
     heatmap_data = []
     prior_map = torch.zeros(dimension, dimension, dimension)
     list_prior_map = []
     list_objective_mean_map = []
 
     for kappa in k_vals:
+        over_exploit = []
+        over_explor = []
         for gamma in g_vals:
             better_exploration_score = []
             better_exploitation_score = []
@@ -380,19 +381,19 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             plt.close()
         # Joint Section
 
-        joint_plots(over_exploit, over_explor, k_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
+        joint_plots(over_exploit, over_explor, kappa, g_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
 
 if __name__ == '__main__':
 
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 10
+    nbr_repetition = 15
     nbr_rand_init = 5
     k_vals = [5, 6, 7]
-    g_vals = [1, 2, 3, 4]
+    g_vals = [1, 2, 3, 4, 5]
 
-    for dataset_num in [4]:
+    for dataset_num in [5]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
