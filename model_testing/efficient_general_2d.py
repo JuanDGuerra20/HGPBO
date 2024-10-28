@@ -45,7 +45,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, d
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, data_name, data_creation_func,
-                           eps):
+                           eps, hierarchical_model):
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -145,7 +145,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                         prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
                         likelihood = gpytorch.likelihoods.GaussianLikelihood()
-                        master = hmodel.Efficient_UCB_Hierarchical_GP(train_x_hier, train_y_hier / max_seen_resp_2D, likelihood,
+                        master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, likelihood,
                                                                       prior_hierarchical_kernel,
                                                                       prior_map / prior_map_max, kernel_op='add_kernel',
                                                                       sub_models=[sub1, sub2],
@@ -362,8 +362,10 @@ if __name__ == '__main__':
     k_vals = [2, 3, 4]
     g_vals = [5, 6, 7]
 
-    for dataset_num in [2]:
-        data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+    h_model = [hmodel.Subless_Efficient_UCB_Hierarchical_GP]
+    for h in h_model:
+        for dataset_num in [2]:
+            data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
-        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, data_name, data_creation_func,
-                           eps)
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, data_name, data_creation_func,
+                               eps, hierarchical_model)
