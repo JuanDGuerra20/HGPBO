@@ -302,7 +302,7 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
         self.query_counter = query_c
         return query_c
 
-class Subless_Efficient_UCB_Hierarchical_GP(Efficient_UCB_Hierarchical_GP):
+class Lossless_Efficient_UCB_Hierarchical_GP(Efficient_UCB_Hierarchical_GP):
     def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
         super().__init__(train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=query_counter)
 

@@ -13,12 +13,13 @@ from dataset_actions import *
 from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm
+import multiprocessing as mp
 
 from visualization_information import heatmap_r_score
 
 
 def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
-                data_name):
+                data_name, model_name):
     for i, gamma in enumerate(g_vals):
         plt.plot(joint_exploit[i], label=f'Gamma {gamma}')
 
@@ -26,9 +27,9 @@ def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, d
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploitation Score')
-    plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploitation')
+    plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'{data_name}/efficient{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}')
     plt.close()
 
     for i, gamma in enumerate(g_vals):
@@ -38,18 +39,24 @@ def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, d
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploration Score')
-    plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploration')
+    plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/efficient{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}')
     plt.close()
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, data_name, data_creation_func,
                            eps, hierarchical_model):
 
+    if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
+        model_name = "Efficient"
+
+    elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+        model_name = "Lossless_Efficient"
+
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/model_testing/{data_name}/efficient"
+    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/model_testing/{data_name}/{model_name}"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -88,7 +95,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 hier_qc = torch.ones(len(x_sub1) * len(x_sub2))
 
                 heatmap_rep = []
-                for q in tqdm(range(nbr_query)):
+                for q in range(nbr_query):
                     if q == 0:
                         # Need to initialize the model - Will be random in this method
                         train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
@@ -300,7 +307,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     heatmap_rep.append(master_like.mean)
 
                 heatmap_data.append(heatmap_rep)
-                print(f'\nRepetition {repetition} complete!\n')
 
             heatmap_data = np.array(heatmap_data)
 
@@ -309,8 +315,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
             # Currently only takes the last model of the repetitions, currently too lazy to fix
             vi.contour_plot_1D(master.sub_models, x_sub1, [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                               f'/contour/Contour_{data_name}_Norm_Efficient_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
-                               'efficient', folder_of_the_day, data_name)
+                               f'/contour/Contour_{data_name}_{model_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
+                               model_name.lower(), folder_of_the_day, data_name)
             exploration_scores = []
             exploitation_scores = []
 
@@ -337,35 +343,40 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             plt.legend()
             plt.ylim(0, 1.1)
 
-            plt.title(f'Norm_Efficient HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g}')
+            plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g}')
             plt.savefig(
-                f'{data_name}/efficient{folder_of_the_day}/differentiable_plots/Norm_Efficient_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
+                f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
             plt.close()
 
             vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                             f'/Heatmap_{data_name}_Norm_Efficient_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
-                             "efficient", folder_of_the_day, data_name)
+                             f'/Heatmap_{data_name}_{model_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
+                             model_name.lower(), folder_of_the_day, data_name)
             print(f'\nModel Kappa {k} Gamma {g} complete!\n')
 
         # Joint Section
 
-        joint_plots(over_exploit, over_explor, kappa, g_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
+        joint_plots(over_exploit, over_explor, kappa, g_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
 
 
 if __name__ == '__main__':
 
     dimension = 10
-    nbr_query = 100
+    nbr_query = 80
     training_iter = 5
-    nbr_repetition = 15
+    nbr_repetition = 10
     nbr_rand_init = 5
     k_vals = [2, 3, 4]
-    g_vals = [5, 6, 7]
+    g_vals = [4, 5, 6]
 
-    h_model = [hmodel.Subless_Efficient_UCB_Hierarchical_GP]
+    h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP, hmodel.Efficient_UCB_Hierarchical_GP]
+    process = []
     for h in h_model:
         for dataset_num in [2]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, data_name, data_creation_func,
-                               eps, hierarchical_model)
+            p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, data_name, data_creation_func,
+                               eps, h, ))
+            process.append(p)
+            p.start()
+            print(f"ID of process: {p.pid}")
+
