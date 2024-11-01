@@ -355,9 +355,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 if __name__ == '__main__':
 
     dimension = 10
-    nbr_query = 100
+    nbr_query = 80
     training_iter = 5
-    nbr_repetition = 15
+    nbr_repetition = 1
     nbr_rand_init = 5
     k_vals = [2, 3, 4]
     g_vals = [5, 6, 7]

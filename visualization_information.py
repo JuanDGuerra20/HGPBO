@@ -11,8 +11,7 @@ import time
 from dataset_actions import NumpyArrayEncoder
 import torch
 from seaborn import heatmap
-from sklearn.metrics import r2_score
-
+from scipy.stats import linregress
 
 def compute_execution_time(executionTime_repetitions, startTime, nbr_repetition, nbr_query, folder_of_the_day,
                            workspace_folder):
@@ -531,13 +530,12 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
 def heatmap_r_score(data, z):
     data = np.mean(data, axis=0)
 
-    re_output = np.reshape(data, (data.shape[0], z.shape[0], z.shape[1]))
     r_scores = []
 
-    z = z/torch.max(z)
+    z = z.reshape(data[0].shape)
 
     for q in range(len(data)):
-        r_scores.append(r2_score(z, re_output[q]/np.max(re_output[q])))
+        r_scores.append(linregress(z, data[q]).rvalue)
 
     return r_scores
 

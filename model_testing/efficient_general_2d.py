@@ -1,5 +1,7 @@
 import os
 import gpytorch
+import numpy as np
+
 import synthetic_models as models
 import hmodel_synthetic as hmodel
 from dataset_actions import *
@@ -7,6 +9,8 @@ from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm
 import multiprocessing as mp
+from threading import Thread
+import pandas as pd
 from visualization_information import heatmap_r_score
 
 
@@ -37,7 +41,6 @@ def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, d
     plt.close()
 
 def run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension,  training_iter, hierarchical_model, data_creation_func, eps, final=False):
-    print(f"ID of sub process: {os.getpid()}")
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     prior_map = torch.zeros(dimension, dimension)
@@ -270,7 +273,6 @@ def run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension,  training_
         master_like = master.likelihood(pred)
         heatmap_rep.append(master_like.mean)
 
-    print("return")
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep
     else:
@@ -299,7 +301,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         print("Contour folder created")
         os.mkdir(workspace + folder_of_the_day + '/differentiable_plots')
         print("Plots folder created")
-        os.mkdir(workspace + folder_of_the_day + '/plots')
+        os.mkdir(workspace + folder_of_the_day + '/csv')
 
 
     list_prior_map = []
@@ -319,7 +321,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 for i in range(nbr_repetition - 1):
                     p = pool.apply_async(run_repetition, (kappa, gamma, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, ))
                     processes.append(p)
-                print(processes)
 
                 # must run the final block manually to allow return of the models
                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=True)
@@ -373,6 +374,16 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
                              f'/Heatmap_{data_name}_{model_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
                              model_name.lower(), folder_of_the_day, data_name)
+
+            data = np.mean(heatmap_data[:, -1, :], axis=0)
+
+            re_output = np.reshape(data, y_hier.shape)
+            df = pd.DataFrame(re_output)
+            df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}.csv')
+            df = pd.DataFrame(y_hier)
+            df.to_csv(
+                f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
+
             print(f'\n{model_name} Kappa {k} Gamma {g} complete!\n')
 
         # Joint Section
@@ -385,12 +396,12 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 5
+    nbr_repetition = 15
     nbr_rand_init = 5
     k_vals = [2]
-    g_vals = [4, 5]
+    g_vals = [2, 6, 20, 40, 80, 100]
 
-    h_model = [hmodel.Efficient_UCB_Hierarchical_GP]
+    h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
         for dataset_num in [2]:
