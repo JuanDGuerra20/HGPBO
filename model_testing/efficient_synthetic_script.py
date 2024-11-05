@@ -49,7 +49,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/model_testing/{data_name}/efficient"
+    workspace = f"{data_name}/efficient"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -302,6 +302,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 heatmap_data.append(heatmap_rep)
                 print(f'\nRepetition {repetition} complete!\n')
 
+            print(heatmap_data)
             heatmap_data = np.array(heatmap_data)
 
             k = str(kappa).replace('.', ',')

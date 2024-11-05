@@ -11,7 +11,6 @@ from tqdm import tqdm
 import multiprocessing as mp
 from threading import Thread
 import pandas as pd
-from visualization_information import heatmap_r_score
 
 
 def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
@@ -290,7 +289,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/model_testing/{data_name}/{model_name}"
+    workspace = f"{data_name}/{model_name.lower()}"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -306,6 +305,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     list_prior_map = []
     list_objective_mean_map = []
+    final_exploitation_metric = []
+    final_exploration_metric = []
 
     for kappa in k_vals:
         over_exploit = []
@@ -349,18 +350,19 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
             y = np.mean(better_exploration_score, axis=0)
             over_explor.append(y)
+            final_exploration_metric.append(y[-1])
             std = np.std(better_exploration_score, axis=0)
             plt.plot(y, label='Exploration')
             plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
             y = np.mean(better_exploitation_score, axis=0)
             over_exploit.append(y)
-
+            final_exploitation_metric.append[-1]
             std = np.std(better_exploitation_score, axis=0)
             plt.plot(y, label='Exploitation')
             plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
-            r2 = heatmap_r_score(heatmap_data, y_hier)
+            r2 = vi.heatmap_r_score(heatmap_data, y_hier)
             plt.plot(r2, label="Heatmap R2")
 
             plt.legend()
@@ -368,27 +370,39 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
             plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g}')
             plt.savefig(
-                f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
+                f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
             plt.close()
 
             vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                             f'/Heatmap_{data_name}_{model_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
+                             f'/Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
                              model_name.lower(), folder_of_the_day, data_name)
 
             data = np.mean(heatmap_data[:, -1, :], axis=0)
 
             re_output = np.reshape(data, y_hier.shape)
             df = pd.DataFrame(re_output)
-            df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}.csv')
+            df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}.csv')
             df = pd.DataFrame(y_hier)
             df.to_csv(
                 f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
-
+            
             print(f'\n{model_name} Kappa {k} Gamma {g} complete!\n')
 
         # Joint Section
 
         joint_plots(over_exploit, over_explor, kappa, g_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
+    
+    plt.plot(kappa, final_exploitation_metric)
+    plt.xlabel("Kappa Value (Gamma set to 6)")
+    plt.ylabel(f"Exploitation Score at end of {nbr_query} queries")
+    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_{data_name}_HGPBO_{nbr_repetition}_repetitions_final_exploit_score')
+    plt.close()
+
+    plt.plot(kappa, final_exploitation_metric)
+    plt.xlabel("Kappa Value (Gamma set to 6)")
+    plt.ylabel(f"Exploration Score at end of {nbr_query} queries")
+    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_{data_name}_HGPBO_{nbr_repetition}_repetitions_final_explor_score')
+    plt.close()
 
 
 if __name__ == '__main__':
@@ -398,8 +412,8 @@ if __name__ == '__main__':
     training_iter = 5
     nbr_repetition = 15
     nbr_rand_init = 5
-    k_vals = [2]
-    g_vals = [2, 6, 20, 40, 80, 100]
+    k_vals = [0.5, 1, 1.5, 1.74, 2, 2.25, 2.5, 3, 4, 6, 12, 24, 48, 96]
+    g_vals = [6]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
