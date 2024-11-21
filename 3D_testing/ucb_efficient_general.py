@@ -1,5 +1,5 @@
 import gpytorch
-import three_d_models as models
+import models_3d as models
 import hmodel_3d as hmodel
 from dataset_actions_3d import *
 from datetime import datetime
@@ -39,7 +39,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/3D_testing/{data_name}/efficient_3D"
+    workspace = f"{data_name}/efficient_3D"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -97,6 +97,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         train_y_hier = train_y_hier / max_seen_resp_2D"""
 
                         # Need to modify this section such that the model is receiving the partial contribution
+                        print(train_x_sub1)
+                        print(train_x_hier.shape)
+                        print(train_x_hier)
                         train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1,
                                                                           train_x_hier[:, 0], train_y_hier)
                         train_x_sub2, train_y_sub2 = update_training_data(train_x_sub2, train_y_sub2,
