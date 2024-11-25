@@ -23,8 +23,10 @@ def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, d
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploitation Score')
     plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploitation')
+
+    k = str(kappa).replace('.', ',')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{k}')
     plt.close()
 
     for i, gamma in enumerate(g_vals):
@@ -36,7 +38,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, d
     plt.ylabel(f'Exploration Score')
     plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{k}')
     plt.close()
 
 def run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=False):
@@ -270,7 +272,7 @@ def run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension, training_i
 
         pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
         master_like = master.likelihood(pred)
-        heatmap_rep.append(master_like.mean)
+        heatmap_rep.append(master_like.mean.detach().cpu().numpy())
 
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep
@@ -335,6 +337,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     better_exploration_score.append(rep_exploration_score)
                     better_exploitation_score.append(rep_exploitation_score)
                     heatmap_data.append(heatmap_rep)
+            for heat in heatmap_data:
+                print(len(heat))
+                print(type(heat))
+                for thing in heat:
+                    print(len(thing))
+                    print(type(thing))
 
             heatmap_data = np.array(heatmap_data)
 
@@ -349,15 +357,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                model_name.lower(), folder_of_the_day, data_name)
 
             y = np.mean(better_exploration_score, axis=0)
-            over_explor.append(y)
-            final_exploration_metric.append(y[-1])
+            over_explor.append(y)            
             std = np.std(better_exploration_score, axis=0)
             plt.plot(y, label='Exploration')
             plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
             y = np.mean(better_exploitation_score, axis=0)
             over_exploit.append(y)
-            final_exploitation_metric.append[-1]
             std = np.std(better_exploitation_score, axis=0)
             plt.plot(y, label='Exploitation')
             plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
@@ -392,17 +398,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
         joint_plots(over_exploit, over_explor, kappa, g_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
     
-    plt.plot(kappa, final_exploitation_metric)
-    plt.xlabel("Kappa Value (Gamma set to 6)")
-    plt.ylabel(f"Exploitation Score at end of {nbr_query} queries")
-    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_{data_name}_HGPBO_{nbr_repetition}_repetitions_final_exploit_score')
-    plt.close()
-
-    plt.plot(kappa, final_exploitation_metric)
-    plt.xlabel("Kappa Value (Gamma set to 6)")
-    plt.ylabel(f"Exploration Score at end of {nbr_query} queries")
-    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_{data_name}_HGPBO_{nbr_repetition}_repetitions_final_explor_score')
-    plt.close()
 
 
 if __name__ == '__main__':
@@ -412,7 +407,7 @@ if __name__ == '__main__':
     training_iter = 5
     nbr_repetition = 15
     nbr_rand_init = 5
-    k_vals = [0.5, 1, 1.5, 1.74, 2, 2.25, 2.5, 3, 4, 6, 12, 24, 48, 96]
+    k_vals = [0.5, 1, 1.5, 2, 2.25, 2.5, 3, 4, 12, 24]
     g_vals = [6]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]

@@ -13,13 +13,15 @@ def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, d
     for i, gamma in enumerate(g_vals):
         plt.plot(joint_exploit[i], label=f'gamma {gamma}')
 
+    k = str(kappa).replace('.', ',')
+
     plt.legend()
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploitation Score')
     plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploitation Kappa {kappa}')
     plt.savefig(
-        f'{data_name}/efficient_3D{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}')
+        f'{data_name}/efficient_3D{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{k}')
     plt.close()
 
     for i, gamma in enumerate(g_vals):
@@ -31,7 +33,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, g_vals, folder_of_the_day, d
     plt.ylabel(f'Exploration Score')
     plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploration Kappa {kappa}')
     plt.savefig(
-        f'{data_name}/efficient_3D{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa{kappa}')
+        f'{data_name}/efficient_3D{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa{k}')
     plt.close()
 
 def run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=False):
@@ -173,9 +175,9 @@ def run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension, training_i
         cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
         cont3 = y_mu_point_c + gamma * torch.nan_to_num(y_conf_point_c / torch.sqrt(y_qc_c))
 
-        contribution1 = torch.nan_to_num(response * np.exp(cont1) / (np.exp(cont1) + np.exp(cont2) + np.exp(cont3)))
-        contribution2 = torch.nan_to_num(response * np.exp(cont2) / (np.exp(cont1) + np.exp(cont2) + np.exp(cont3)))
-        contribution3 = torch.nan_to_num(response * np.exp(cont3) / (np.exp(cont1) + np.exp(cont2) + np.exp(cont3)))
+        contribution1 = torch.nan_to_num(response * torch.exp(cont1) / (torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)))
+        contribution2 = torch.nan_to_num(response * torch.exp(cont2) / (torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)))
+        contribution3 = torch.nan_to_num(response * torch.exp(cont3) / (torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)))
 
 
         response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
@@ -320,10 +322,8 @@ def run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension, training_i
         better_exploitation_score.append(exploitation_score_2D)
         pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
         master_like = master.likelihood(pred)
-        heatmap_rep.append(master_like.mean)
+        heatmap_rep.append(master_like.mean.detach().cpu().numpy())
     
-    print(f'Dim 1: {len(heatmap_rep)}\tDim2: {len(heatmap_rep[0])}')
-
     
     if final:
         return master, sub1, sub2, sub3, better_exploration_score, better_exploitation_score, heatmap_rep
@@ -390,6 +390,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     better_exploitation_score.append(rep_exploitation_score)
                     heatmap_data.append(heatmap_rep)
             
+            for heat in heatmap_data:
+                print(len(heat))
+                print(type(heat))
+                for thing in heat:
+                    print(len(thing))
+                    print(type(thing))
             
             heatmap_data = np.array(heatmap_data)
             k = str(kappa).replace('.', ',')
