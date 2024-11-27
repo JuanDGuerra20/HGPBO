@@ -315,7 +315,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             better_exploitation_score = []
             heatmap_data = []
             processes = []
-            with mp.Pool(processes=nbr_repetition - 1) as pool:
+            """
+            # with mp.Pool(processes=nbr_repetition - 1) as pool:
 
                 # running the repetitions in parallel except for the last one
                 for i in range(nbr_repetition - 1):
@@ -334,7 +335,28 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     better_exploration_score.append(rep_exploration_score)
                     better_exploitation_score.append(rep_exploitation_score)
                     heatmap_data.append(heatmap_rep)
+            """
+            for i in range(nbr_repetition):
+                rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps)
 
+                better_exploration_score.append(rep_exploration_score)
+                better_exploitation_score.append(rep_exploitation_score)
+                heatmap_data.append(heatmap_rep)
+            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa,
+                                                                                                            gamma,
+                                                                                                            nbr_query,
+                                                                                                            nbr_rand_init,
+                                                                                                            dimension,
+                                                                                                            training_iter,
+                                                                                                            hierarchical_model,
+                                                                                                            data_creation_func,
+                                                                                                            eps,
+                                                                                                            final=True)
+
+            better_exploration_score.append(rep_exploration_score)
+            better_exploitation_score.append(rep_exploitation_score)
+            heatmap_data.append(heatmap_rep)
+            
             heatmap_data = np.array(heatmap_data)
 
             k = str(kappa).replace('.', ',')
@@ -394,7 +416,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 if __name__ == '__main__':
 
     dimension = 10
-    nbr_query = 80
+    nbr_query = 2
     training_iter = 5
     nbr_repetition = 15
     nbr_rand_init = 5
