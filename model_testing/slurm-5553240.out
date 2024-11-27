@@ -1,0 +1,14 @@
+[=== Module python/3.10 loaded ===]
+ID of process: 3513898
+Data folder is ready
+efficient_general_2d.py:339: FutureWarning: The input object of type 'Tensor' is an array-like implementing one of the corresponding protocols (`__array__`, `__array_interface__` or `__array_struct__`); but not a sequence (or 0-D). In the future, this object will be coerced as if it was first converted using `np.array(obj)`. To retain the old behaviour, you have to either modify the type 'Tensor', or assign to an empty array created with `np.empty(correct_shape, dtype=object)`.
+  heatmap_data = np.array(heatmap_data)
+Process Process-1:
+Traceback (most recent call last):
+  File "/cvmfs/ai.mila.quebec/apps/arch/distro/python/3.8/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/cvmfs/ai.mila.quebec/apps/arch/distro/python/3.8/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "efficient_general_2d.py", line 339, in training_procedure
+    heatmap_data = np.array(heatmap_data)
+ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 2 dimensions. The detected shape was (15, 80) + inhomogeneous part.

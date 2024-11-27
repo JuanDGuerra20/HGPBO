@@ -1,6 +1,9 @@
 """
 This file will have the task of defining the models we will use in this project and the functions to modify/use them
 """
+import torch
+import sys
+import os
 
 from dataset_actions import *
 import gpytorch
@@ -17,7 +20,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
     Simple GP classifier from the GPytorch library
     """
 
-    def __init__(self, train_x, train_y, likelihood):
+    def __init__(self, train_x, train_y, likelihood, query_counter=None):
         """
         Initialize the Exact GP model.
 
@@ -29,6 +32,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
         super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
         self.mean_module = gpytorch.means.ConstantMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=2.5))
+        self.query_counter = query_counter
 
     def forward(self, x):
         """
@@ -43,6 +47,15 @@ class ExactGPModel(gpytorch.models.ExactGP):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+
+    def increment_q_n(model, query_c, query, domain):
+        for x in range(len(domain)):
+            if domain[x] == query:
+                query_c[x] += 1
+                break
+
+        model.query_counter = query_c
+        return query_c
 
 
 """
@@ -88,13 +101,14 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20):
     - new_query_value_random (float): Randomly chosen new value to add_kernel to the training dataset.
     - new_query_value_mean (float): Mean value of the corresponding pins to compute exploitation score.
     """
+    # next_query_pins = next_query_pins.to(torch.int)
     new_training_values_tampon = np.zeros(nbr_rdm_points_data)
+    reshape_y = torch.reshape(Y, (-1, 1))
     i = 0
     for indices, pins in enumerate(X):
         # find pins of ((x, y), (x, y)) coordinates in X
-        if (pins[0] == next_query_pins[0] and pins[1] == next_query_pins[1]
-                and pins[2] == next_query_pins[2] and pins[3] == next_query_pins[3]):
-            new_training_values_tampon[i] = Y[indices]
+        if pins[0] == next_query_pins[0] and pins[1] == next_query_pins[1]:
+            new_training_values_tampon[i] = reshape_y[indices]
             i += 1
 
     # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
@@ -152,7 +166,7 @@ def optimize(model, likelihood, training_iter, train_x, train_y, verbose=True, h
     return model, likelihood
 
 
-def get_acquisition_map(kappa, observed_pred):
+def get_acquisition_map(kappa, observed_pred, query_count):
     """
     Compute the acquisition map for Bayesian optimization.
     Here UCB function : a(x;k)=μ(x)+kσ(x)
@@ -170,7 +184,8 @@ def get_acquisition_map(kappa, observed_pred):
     y_sigma2 = observed_pred.stddev
 
     # compute acquisition map
-    acquisition_map = y_mu + kappa * torch.nan_to_num(torch.sqrt(y_sigma2))  # here UCB acquisition function
+    acquisition_map = y_mu + kappa * torch.nan_to_num(y_sigma2/torch.sqrt(query_count))  # here UCB acquisition function
+    # print(f'Average UCB Ratio mean/({kappa} * std): {torch.mean(y_mu/(kappa * y_sigma2))}')
     return acquisition_map, y_mu
 
 
@@ -309,12 +324,12 @@ def get_exploration_score(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_poin
         next_query = argmax_mu[0][0]
         next_query_pins = torch.as_tensor(coord_pins[next_query], dtype=torch.float64)
 
-    for indices, pins in enumerate(X):
+    for indices_x, pins in enumerate(X):
         # find pins of ((x, y), (x, y)) coordinates in X
-        if (pins[0] == next_query_pins[0] and pins[1] == next_query_pins[1]
-                and pins[2] == next_query_pins[2] and pins[3] == next_query_pins[3]):
-            new_training_values_tampon[i] = Y[indices]
-            i += 1
+        for indices_y, sub_pin in enumerate(pins):
+            if sub_pin[0] == next_query_pins[0] and sub_pin[1] == next_query_pins[1]:
+                new_training_values_tampon[i] = Y[indices_x, indices_y]
+                i += 1
 
     # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
     # (most of the time is 10 in 2D dataset because they took 10 emg responses from monkeys)

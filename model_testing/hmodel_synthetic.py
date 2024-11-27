@@ -5,7 +5,7 @@ Easier to separate these files because they have similar uses
 This file contains the hierarchical specific things, anything that is both will be in the models file
 """
 import gpytorch.mlls
-from models import *
+from synthetic_models import *
 from scipy.special import jn
 from scipy.optimize import root_scalar
 
