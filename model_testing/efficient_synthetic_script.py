@@ -303,7 +303,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     heatmap_data.append(heatmap_rep)
                     print(f'\nRepetition {repetition} complete!\n')
 
-            heatmap_data = np.array(heatmap_data)
+                heatmap_data = np.array(heatmap_data)
 
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
