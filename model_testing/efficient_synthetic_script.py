@@ -28,7 +28,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploitation Score')
     plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'{data_name}/efficient{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
     for i, nu in enumerate(nu_vals):
@@ -40,7 +40,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploration Score')
     plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/efficient{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
 
@@ -49,7 +49,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/model_testing/{data_name}/efficient"
+    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/model_testing/{data_name}/{model_name}"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -312,7 +312,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 # Currently only takes the last model of the repetitions, currently too lazy to fix
                 vi.contour_plot_1D(master.sub_models, x_sub1, [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
                                    f'/contour/Contour_{data_name}_Norm_Efficient_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
-                                   'efficient', folder_of_the_day, data_name)
+                                   model_name, folder_of_the_day, data_name)
                 exploration_scores = []
                 exploitation_scores = []
 
@@ -336,17 +336,21 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 r2 = heatmap_r_score(heatmap_data, y_hier)
                 plt.plot(r2, label="Heatmap R2")
 
+                rand = np.random.rand(*heatmap_data.shape)
+                random_r2 = heatmap_r_score(rand, y_hier)
+                plt.plot(random_r2, label="Random Heatmap R2")
+
                 plt.legend()
-                plt.ylim(0, 1.1)
+                plt.ylim(-0.1, 1.1)
 
                 plt.title(f'Norm_Efficient HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {nu}')
                 plt.savefig(
-                    f'{data_name}/efficient{folder_of_the_day}/differentiable_plots/Norm_Efficient_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}')
+                    f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/Norm_Efficient_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}')
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
                                  f'/Heatmap_{data_name}_Norm_Efficient_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
-                                 "lossless_efficient", folder_of_the_day, data_name)
+                                 model_name, folder_of_the_day, data_name)
                 print(f'\nModel Kappa {k} Gamma {g} Nu {nu} complete!\n')
 
             # Joint Section
@@ -359,11 +363,12 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 3
+    nbr_repetition = 1
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
-    nu_vals = [1.5, 2, 2.5, 3, 3.5]
+    nu_vals = [1.5]
+    model_name = 'lossless_efficient'
     for dataset_num in [2]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
