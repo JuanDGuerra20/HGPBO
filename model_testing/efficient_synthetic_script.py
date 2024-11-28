@@ -26,9 +26,9 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploitation Score')
-    plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploitation')
+    plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
     for i, nu in enumerate(nu_vals):
@@ -38,9 +38,38 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploration Score')
-    plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploration')
+    plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
+    plt.close()
+
+def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
+                data_name):
+
+    names = []
+
+    for n in nu_vals:
+        names.append(f'kappa_{kappa}_gamma_{gamma}_nu_{n}')
+    fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
+    heatmap(joint_exploit, xticklabels=list(range(nbr_query)), yticklabels=names, cmap='coolwarm', ax=ax)
+
+    plt.ylabel(f'Model Type')
+    plt.xlabel(f'Training Step')
+    plt.title(f'Joint HP Exploitation Performance over {nbr_repetition} repetitions')
+    plt.tight_layout()
+    plt.savefig(
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+    plt.close()
+
+    fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
+    heatmap(joint_explor, xticklabels=list(range(nbr_query)), yticklabels=names, cmap='coolwarm', ax=ax)
+
+    plt.ylabel(f'Model Type')
+    plt.xlabel(f'Training Step')
+    plt.title(f'Joint HP Exploration Performance over {nbr_repetition} repetitions')
+    plt.tight_layout()
+    plt.savefig(
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
 
@@ -59,8 +88,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         os.mkdir(workspace + folder_of_the_day + '/contour')
         print("Contour folder created")
         os.mkdir(workspace + folder_of_the_day + '/differentiable_plots')
-        print("Plots folder created")
-        os.mkdir(workspace + folder_of_the_day + '/plots')
+        print("HP folder created")
+        os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
 
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
@@ -111,10 +140,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                                                               train_x_hier[:, 1], train_y_hier)
 
                             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-                            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like, query_counter=sub1_qc)
+                            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like, query_counter=sub1_qc, nu=nu)
 
                             sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-                            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like, query_counter=sub2_qc)
+                            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like, query_counter=sub2_qc, nu=nu)
 
                             sub1.eval()
                             sub2.eval()
@@ -356,6 +385,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             # Joint Section
 
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
+            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
 
 
 if __name__ == '__main__':
@@ -363,11 +393,11 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 1
+    nbr_repetition = 5
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
-    nu_vals = [1.5]
+    nu_vals = [0.5, 1.5, 2.5]
     model_name = 'lossless_efficient'
     for dataset_num in [2]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
