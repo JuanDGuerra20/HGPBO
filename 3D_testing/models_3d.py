@@ -17,7 +17,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
     Simple GP classifier from the GPytorch library
     """
 
-    def __init__(self, train_x, train_y, likelihood, query_counter):
+    def __init__(self, train_x, train_y, likelihood, query_counter, nu=2.5):
         """
         Initialize the Exact GP model.
 
@@ -28,7 +28,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
         """
         super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
         self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=2.5))
+        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=nu))
         self.query_counter = query_counter
 
 
