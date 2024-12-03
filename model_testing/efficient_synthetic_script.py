@@ -90,6 +90,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         os.mkdir(workspace + folder_of_the_day + '/differentiable_plots')
         print("HP folder created")
         os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
+        print("CSV folder created")
+        os.mkdir(workspace + folder_of_the_day + '/csv')
 
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 

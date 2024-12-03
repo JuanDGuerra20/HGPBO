@@ -311,7 +311,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         vi.contour_plot_1D(master.sub_models, x_sub1,
                            [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_{os.getpid()}',
+                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
                            model_name.lower(), folder_of_the_day, data_name)
 
     if final:
@@ -341,8 +341,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         os.mkdir(workspace + folder_of_the_day + '/contour')
         print("Contour folder created")
         os.mkdir(workspace + folder_of_the_day + '/differentiable_plots')
-        print("Plots folder created")
+        print("CSV folder created")
         os.mkdir(workspace + folder_of_the_day + '/csv')
+        print("HP folder created")
+        os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
+        print("Model folder created")
+        os.mkdir(workspace + folder_of_the_day + '/models')
 
 
     list_prior_map = []
@@ -394,12 +398,16 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         better_exploitation_score.append(rep_exploitation_score)
                         heatmap_data.append(heatmap_rep)
 
+                # Save the model
+                x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
                 heatmap_data = np.array(heatmap_data)
 
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
+                n = str(nu).replace('.', ',')
 
+                torch.save(master.state_dict(), f'{data_name}/{model_name.lower()}{folder_of_the_day}/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
                 over_explor.append(y)
