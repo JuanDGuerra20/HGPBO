@@ -407,7 +407,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 g = str(gamma).replace('.', ',')
                 n = str(nu).replace('.', ',')
 
-                torch.save(master.state_dict(), f'{data_name}/{model_name.lower()}{folder_of_the_day}/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
+                torch.save(master.state_dict(), f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
                 over_explor.append(y)
