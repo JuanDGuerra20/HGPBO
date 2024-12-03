@@ -362,7 +362,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                           eps, hierarchical_model):
+                           eps, hierarchical_model, multi):
     
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -403,19 +403,30 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 heatmap_data = []
                 processes = []
 
-                with mp.Pool(processes=nbr_repetition - 1) as pool:
-                    for i in range(nbr_repetition - 1):
-                        p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, ))
-                        processes.append(p)
+                if multi:
+                    with mp.Pool(processes=nbr_repetition - 1) as pool:
+                        for i in range(nbr_repetition - 1):
+                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, ))
+                            processes.append(p)
 
-                    master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=True)
+                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=True)
 
-                    better_exploration_score.append(rep_exploration_score)
-                    better_exploitation_score.append(rep_exploitation_score)
-                    heatmap_data.append(heatmap_rep)
+                        better_exploration_score.append(rep_exploration_score)
+                        better_exploitation_score.append(rep_exploitation_score)
+                        heatmap_data.append(heatmap_rep)
 
-                    for proc in processes:
-                        rep_exploration_score, rep_exploitation_score, heatmap_rep = proc.get()
+                        for proc in processes:
+                            rep_exploration_score, rep_exploitation_score, heatmap_rep = proc.get()
+
+                            better_exploration_score.append(rep_exploration_score)
+                            better_exploitation_score.append(rep_exploitation_score)
+                            heatmap_data.append(heatmap_rep)
+
+                else:
+                    for i in range(nbr_repetition):
+                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
+                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
+                            data_creation_func, eps, final=True)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -483,12 +494,14 @@ if __name__ == '__main__':
     h_model = [hmodel.Efficient_UCB_Hierarchical_GP]
     process = []
 
+    multi = True
+
     for h in h_model:
         for dataset_num in [5]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
             p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                               eps, h,))
+                               eps, h, multi, ))
             process.append(p)
             p.start()
             print(f"ID of process: {p.pid}")

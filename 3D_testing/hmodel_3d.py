@@ -281,8 +281,6 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
             norm = contributions.sum()
 
-
-
             sub.train()
             sub_out = sub(sub.train_inputs[0])  # TODO: currently a duct tape fix
 
@@ -449,6 +447,82 @@ class Changing_Data_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
             sub_loss.backward(retain_graph=True)
             sub_opt.step()
             sub_opt.zero_grad()
+
+class Lossless_Efficient_UCB_Hierarchical_GP(Efficient_UCB_Hierarchical_GP):
+    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
+        super().__init__(train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=query_counter)
+
+    def Hoptimize(self, likelihood, training_iter, train_x, train_y, verbose=True):
+        """
+        Optimize the GP model.
+
+        Parameters:
+        - model: GP model.
+        - likelihood: Likelihood function.
+        - training_iter (int): Number of optimization iterations.
+        - train_x (torch.Tensor): Training input data. . If 1D [x, y], if 2D [x1, y1, x2, y2]
+        - train_y (torch.Tensor): Training output data: EMG values
+        - verbose (bool): Whether to print optimization progress.
+
+        Returns:
+        - model: Optimized GP model.
+        - likelihood: Optimized likelihood function.
+        """
+
+        self.train()
+        likelihood.train()
+        # Use the adam optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.01)  # Includes GaussianLikelihood parameters
+        sub_optimizers = []
+        sub_loss_functions = []
+        for sub in self.sub_models:
+            sub.train()
+            sub_optimizers.append(torch.optim.Adam(sub.parameters(), lr=0.01))
+            sub_loss_functions.append(gpytorch.mlls.ExactMarginalLogLikelihood(sub.likelihood, sub))
+
+        """
+        Don't need this since every hierarchical training step is linked to submodel training
+
+        for i, sub in enumerate(model.sub_models):
+            sub.train()
+            sub_train_x = list(sub.train_inputs)
+            sub_train_y = list(sub.train_targets)
+
+            sub_train_x.append(torch.reshape(train_x[:, i], (-1, 1)))
+            sub_train_y.append(train_y)
+            sub_train_x = torch.stack(sub_train_x)
+            sub_train_y = torch.as_tensor(sub_train_y)
+            sub.set_train_data(sub_train_x, sub_train_y, strict=False)"""
+
+        # "Loss" for GPs - the marginal log likelihood
+        mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, self)
+
+        for i in range(training_iter):
+            # Zero gradients from previous iteration
+            optimizer.zero_grad()
+            for opt in sub_optimizers:
+                # I am guessing, but I guess this is the best spot to zero the gradients
+                opt.zero_grad()
+
+            torch.autograd.set_detect_anomaly(True)
+            # Output from model
+            output = self(train_x)
+            # Calc loss and backprop gradients
+            loss = -mll(output, train_y)
+            # decompose_hkernel_loss(model, loss, train_x)
+            loss.sum().backward(retain_graph=True)
+            if verbose:
+                print(
+                    'Iter %d/%d - Loss: %.3f   lengthscale_1: [%.3f , %.3f]   lengthscale_2: [%.3f , %.3f]   noise: %.3f' % (
+                        i + 1, training_iter, loss.item(),
+                        self.covar_module.kernels[0].lengthscale[0][0].item(),
+                        self.covar_module.kernels[0].lengthscale[0][1].item(),
+                        self.covar_module.kernels[1].lengthscale[0][0].item(),
+                        self.covar_module.kernels[1].lengthscale[0][1].item(),
+                        self.likelihood.noise.item()
+                    ))
+            optimizer.step()
+        return self, likelihood
 
 def random_initialization(random_sample, emg, trainsC, max_seen_resp, dt):
     """
