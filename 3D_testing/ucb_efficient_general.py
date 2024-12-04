@@ -10,7 +10,7 @@ from seaborn import heatmap
 
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
-                data_name):
+                data_name, model_name):
     for i, nu in enumerate(nu_vals):
         plt.plot(joint_exploit[i], label=f'nu {nu}')
 
@@ -20,7 +20,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploitation Score')
     plt.title(f'Joint Efficient Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'{data_name}/efficient_3D{folder_of_the_day}/hp_analysis/Joint_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
     for i, nu in enumerate(nu_vals):
@@ -33,12 +33,12 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploration Score')
     plt.title(f'Joint Efficient Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/efficient_3D{folder_of_the_day}/hp_analysis/Joint_Efficient_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
 
 def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
-                data_name):
+                data_name, model_name):
 
     names = []
 
@@ -52,7 +52,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploitation 3D Performance over {nbr_repetition} repetitions')
     plt.tight_layout()
     plt.savefig(
-        f'{data_name}/efficient_3D{folder_of_the_day}/hp_analysis/HP_3D_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_3D_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
     fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
@@ -63,7 +63,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploration 3D Performance over {nbr_repetition} repetitions')
     plt.tight_layout()
     plt.savefig(
-        f'{data_name}/efficient_3D{folder_of_the_day}/hp_analysis/HP_3D_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_3D_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=False):
@@ -372,7 +372,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"{data_name}/efficient_3D"
+    workspace = f"{data_name}/{model_name}"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -445,7 +445,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 # Currently only takes the last model of the repetitions, currently too lazy to fix
                 vi.contour_plot_1D(master.sub_models, x_sub1, [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
                                    f'/contour/Contour_{data_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
-                                   f"{model_name.lower()}_3D", folder_of_the_day, data_name)
+                                   f"{model_name.lower()}", folder_of_the_day, data_name)
 
                 y = np.mean(better_exploration_score, axis=0)
                 over_explor.append(y)
@@ -471,14 +471,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.ylim(-0.1, 1.1)
 
 
-                plt.title(f'Norm_Efficient HGP-BO {nbr_repetition} repetitions with kappa {k} gamma {g}')
+                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} gamma {g}')
                 plt.savefig(
-                    f'{data_name}/efficient_3D{folder_of_the_day}/differentiable_plots/Norm_Efficient_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
+                    f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
                 plt.close()
             # Joint Section
-            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
+            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
 
-            joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
+            joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
 
 if __name__ == '__main__':
 
