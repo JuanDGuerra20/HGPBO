@@ -438,11 +438,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}')
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'/Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
+                                 f'/Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
                                  model_name.lower(), folder_of_the_day, data_name)
 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
