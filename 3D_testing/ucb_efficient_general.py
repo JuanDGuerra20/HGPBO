@@ -380,14 +380,22 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         g = str(gamma).replace('.', ',')
         n = str(nu).replace('.', ',')
 
-
         plt.plot(range(len(h_optimize_time)), h_optimize_time)
         plt.title(f"Hierarchical Optimization Computation Time")
         plt.ylabel("Time (s)")
         plt.xlabel("Query Number")
         plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
+
+        plt.plot(range(len(h_pred_time)), h_pred_time)
+        plt.title(f"Hierarchical Space Prediction Computation Time")
+        plt.ylabel("Time (s)")
+        plt.xlabel("Query Number")
+        plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
     
-    
+    vi.contour_plot_1D(master.sub_models, x_sub1,
+                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
+                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
+                           model_name.lower(), folder_of_the_day, data_name)
     if final:
         return master, sub1, sub2, sub3, better_exploration_score, better_exploitation_score, heatmap_rep
     else:

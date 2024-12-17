@@ -12,6 +12,7 @@ import multiprocessing as mp
 from threading import Thread
 import pandas as pd
 from seaborn import heatmap
+import time
 
 from model_testing.efficient_synthetic_script import joint_performance
 
@@ -92,6 +93,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     better_exploration_score = []
 
     heatmap_rep = []
+    h_opt_time = []
+    h_pred_time = []
     for q in range(nbr_query):
         if q == 0:
             # Need to initialize the model - Will be random in this method
@@ -276,10 +279,15 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master.train()
             likelihood.train()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  train_y_hier / max_seen_resp_2D,
-                                                  verbose=False)
-            # Get into evaluation (predictive posterior) mode
+            start = time.time()
+
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
+                                                    verbose=False)
+            
+            t = time.time() - start
+            h_opt_time.append(t)
+            print(f"Hoptimize time: {t}")
+
             master.eval()
             likelihood.eval()
             sub1.eval()
@@ -289,7 +297,24 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub2_like.eval()
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
+            start = time.time()
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
+            t = time.time() - start
+            h_pred_time.append(t)
+            print(f"Hierarchical pred time: {t}")
+
+        plt.plot(range(len(h_optimize_time)), h_optimize_time)
+        plt.title(f"Hierarchical Optimization Computation Time")
+        plt.ylabel("Time (s)")
+        plt.xlabel("Query Number")
+        plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
+
+        plt.plot(range(len(h_pred_time)), h_pred_time)
+        plt.title(f"Hierarchical Space Prediction Computation Time")
+        plt.ylabel("Time (s)")
+        plt.xlabel("Query Number")
+        plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
+    
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
