@@ -188,11 +188,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         response = torch.tensor(next_query_value_random)
 
+
+
         cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
         cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
 
-        contribution1 = response * math.exp(cont1) / (math.exp(cont1) + math.exp(cont2))
-        contribution2 = response * math.exp(cont2) / (math.exp(cont1) + math.exp(cont2))
+        div = torch.exp(cont1) + torch.exp(cont2)
+
+
+        contribution1 = response * torch.exp(cont1) / div)
+        contribution2 = response * torch.exp(cont2) / div)
 
         response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
                                                                                  max_seen_resp_1_1D)

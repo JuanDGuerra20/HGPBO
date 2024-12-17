@@ -205,9 +205,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
         cont3 = y_mu_point_c - gamma * torch.nan_to_num(y_conf_point_c / torch.sqrt(y_qc_c))
 
-        contribution1 = torch.nan_to_num(response * torch.exp(cont1) / (torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)))
-        contribution2 = torch.nan_to_num(response * torch.exp(cont2) / (torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)))
-        contribution3 = torch.nan_to_num(response * torch.exp(cont3) / (torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)))
+        div = torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)
+
+        contribution1 = torch.nan_to_num(response * torch.exp(cont1) / div)
+        contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
+        contribution3 = torch.nan_to_num(response * torch.exp(cont3) / div)
 
 
         response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
