@@ -307,8 +307,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         better_exploration_score.append(exploration_score_2D)
         better_exploitation_score.append(exploitation_score_2D)
 
-        pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
-        master_like = master.likelihood(pred)
+        master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
 
         k = str(kappa).replace('.', ',')

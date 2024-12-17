@@ -1,4 +1,3 @@
-print("Above Imports")
 import gpytorch
 import models_3d as models
 import hmodel_3d as hmodel
@@ -10,7 +9,6 @@ import multiprocessing as mp
 from seaborn import heatmap
 import time
 
-print("Below Imports")
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
                 data_name, model_name):
@@ -379,8 +377,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         better_exploration_score.append(exploration_score_2D)
         better_exploitation_score.append(exploitation_score_2D)
-        pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
-        master_like = master.likelihood(pred)
+        master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
     
     
@@ -512,7 +509,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
 if __name__ == '__main__':
 
-    print(f"Starting the script")
 
     dimension = 10
     nbr_query = 120
@@ -527,8 +523,6 @@ if __name__ == '__main__':
     process = []
 
     multi = False
-
-    print(f"Hello?")
 
     for h in h_model:
         for dataset_num in [5]:
