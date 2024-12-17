@@ -87,7 +87,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     better_exploration_score = []
     better_exploitation_score = []
     heatmap_rep = []
-    h_optimize_time = []
+    h_opt_time = []
     h_pred_time = []
 
     for q in range(nbr_query):
@@ -339,7 +339,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                     verbose=False)
             
             t = time.time() - start
-            h_optimize_time.append(t)
+            h_opt_time.append(t)
             print(f"Hoptimize time: {t}")
 
             # Get into evaluation (predictive posterior) mode
@@ -380,17 +380,19 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         g = str(gamma).replace('.', ',')
         n = str(nu).replace('.', ',')
 
-        plt.plot(range(len(h_optimize_time)), h_optimize_time)
+        plt.plot(range(len(h_opt_time)), h_opt_time)
         plt.title(f"Hierarchical Optimization Computation Time")
         plt.ylabel("Time (s)")
         plt.xlabel("Query Number")
         plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
+        plt.close()
 
         plt.plot(range(len(h_pred_time)), h_pred_time)
         plt.title(f"Hierarchical Space Prediction Computation Time")
         plt.ylabel("Time (s)")
         plt.xlabel("Query Number")
         plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
+        plt.close()
     
     vi.contour_plot_1D(master.sub_models, x_sub1,
                            [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],

@@ -308,13 +308,15 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         plt.ylabel("Time (s)")
         plt.xlabel("Query Number")
         plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
+        plt.close()
 
         plt.plot(range(len(h_pred_time)), h_pred_time)
         plt.title(f"Hierarchical Space Prediction Computation Time")
         plt.ylabel("Time (s)")
         plt.xlabel("Query Number")
         plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
-    
+        plt.close()
+
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
