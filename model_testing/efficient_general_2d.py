@@ -473,15 +473,19 @@ if __name__ == '__main__':
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5, 1.5, 2.5]
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
         for dataset_num in [2]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-            p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+            if multi:
+                p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
                                eps, h, multi,))
-            process.append(p)
-            p.start()
-            print(f"ID of process: {p.pid}")
-
+                process.append(p)
+                p.start()
+                print(f"ID of process: {p.pid}")
+            else:
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+                               eps, h, multi)
+            

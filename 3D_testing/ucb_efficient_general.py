@@ -446,7 +446,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 # Currently only takes the last model of the repetitions, currently too lazy to fix
                 vi.contour_plot_1D(master.sub_models, x_sub1, [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                                   f'/contour/Contour_{data_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
+                                   f'/contour/Contour_{data_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
                                    f"{model_name}", folder_of_the_day, data_name)
 
                 y = np.mean(better_exploration_score, axis=0)
@@ -473,9 +473,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.ylim(-0.1, 1.1)
 
 
-                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} gamma {g}')
+                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} gamma {g} nu {n}')
                 plt.savefig(
-                    f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}')
+                    f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}')
                 plt.close()
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
@@ -501,10 +501,11 @@ if __name__ == '__main__':
     for h in h_model:
         for dataset_num in [5]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+            if multi:
+                p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, ))
+                process.append(p)
+                p.start()
+                print(f"ID of process: {p.pid}")
+            else:
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
                                eps, h, multi)
-            """p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, ))
-            process.append(p)
-            p.start()
-            print(f"ID of process: {p.pid}")"""
