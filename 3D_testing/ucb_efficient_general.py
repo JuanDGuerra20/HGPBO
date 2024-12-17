@@ -1,3 +1,4 @@
+print("Above Imports")
 import gpytorch
 import models_3d as models
 import hmodel_3d as hmodel
@@ -7,7 +8,9 @@ import visualization_information as vi
 from tqdm import tqdm
 import multiprocessing as mp
 from seaborn import heatmap
+import time
 
+print("Below Imports")
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
                 data_name, model_name):
@@ -65,6 +68,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.savefig(
         f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_3D_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
+
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=False):
     
@@ -176,13 +180,18 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
 
+        print(f"\n====================================\nQuery Number {q}\n")
+        start = time.time()
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
+        print(f"Acquisition map gen time: {time.time() - start}")
+        start = time.time()
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
         next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
                                                                                         test_x_hier,
                                                                                         y_hier)
+        print(f"Next Query gen time: {time.time() - start}")
 
         y_mu_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_mu1, x_sub1)
         y_mu_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_mu2, x_sub2)
@@ -200,6 +209,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                     max_seen_resp_2D)
 
         response = torch.tensor(next_query_value_random)
+        start = time.time()
 
         cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
         cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
@@ -211,6 +221,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
         contribution3 = torch.nan_to_num(response * torch.exp(cont3) / div)
 
+        print(f"Contribution Calculations time: {time.time() - start}")
 
         response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
                                                                                     max_seen_resp_1_1D)
@@ -233,6 +244,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         hier_qc = master.increment_q_n(hier_qc, next_query_pins, x_hier)
 
         # next_query_pins = next_query_pins.to(torch.int)
+
+        start = time.time()
         flag = True
         x = 0
         while x < len(x_hier) and flag:
@@ -249,7 +262,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 y += 1
             x += 1
 
+        print(f"Finding Next Query pins: {time.time() - start}")
 
+        start = time.time()
         sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
                                                                                 train_y_sub1,
                                                                                 x_sub1[next_query_indices[0]],
@@ -271,6 +286,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                         contribution3,
                                                                                         max_seen_resp_3_1D,
                                                                                         training_iter=training_iter)
+        
+        print(f"Updating submodels time: {time.time() - start}")
 
         sub1.eval()
         sub1_like.eval()
@@ -281,11 +298,15 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         sub3.eval()
         sub3_like.eval()
 
+        start = time.time()
+
         # Make a prediction, observed_pred = likelihood
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
             observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
             observed_pred3 = models.make_prediction(sub3, x_sub3, sub3_like)
+
+        print(f"Submodel space prediction time: {time.time() - start}")
 
         y_mu1 = observed_pred1.mean
         y_mu2 = observed_pred2.mean
@@ -323,8 +344,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master.train()
             likelihood.train()
 
+            start = time.time()
+
             master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
                                                     verbose=False)
+            print(f"Hoptimize time: {time.time() - start}")
+
             # Get into evaluation (predictive posterior) mode
             master.eval()
             likelihood.eval()
@@ -335,7 +360,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub2_like.eval()
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
+            start = time.time()
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
+            print(f"Hierarchical pred time: {time.time() - start}")
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -428,6 +455,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 else:
                     for i in range(nbr_repetition):
+                        print(f"Entering Repetition {i}")
                         master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                             data_creation_func, eps, final=True)
@@ -484,6 +512,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
 if __name__ == '__main__':
 
+    print(f"Starting the script")
+
     dimension = 10
     nbr_query = 120
     training_iter = 5
@@ -496,7 +526,9 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = True
+    multi = False
+
+    print(f"Hello?")
 
     for h in h_model:
         for dataset_num in [5]:
