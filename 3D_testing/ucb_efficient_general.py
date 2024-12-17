@@ -201,9 +201,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         response = torch.tensor(next_query_value_random)
 
-        cont1 = y_mu_point_a + gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
-        cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
-        cont3 = y_mu_point_c + gamma * torch.nan_to_num(y_conf_point_c / torch.sqrt(y_qc_c))
+        cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
+        cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
+        cont3 = y_mu_point_c - gamma * torch.nan_to_num(y_conf_point_c / torch.sqrt(y_qc_c))
 
         contribution1 = torch.nan_to_num(response * torch.exp(cont1) / (torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)))
         contribution2 = torch.nan_to_num(response * torch.exp(cont2) / (torch.exp(cont1) + torch.exp(cont2) + torch.exp(cont3)))
@@ -365,7 +365,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                            eps, hierarchical_model, multi):
     
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
-        model_name = "Efficient"
+        model_name = "Efficient_3D"
 
     elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
         model_name = "Lossless_Efficient"
@@ -439,13 +439,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 g = str(gamma).replace('.', ',')
                 n = str(nu).replace('.', ',')
 
-                torch.save(master.state_dict(), f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_3D_model_state_{nbr_query}_queries.pth')
+                torch.save(master.state_dict(), f'{data_name}/{model_name}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_3D_model_state_{nbr_query}_queries.pth')
 
 
                 # Currently only takes the last model of the repetitions, currently too lazy to fix
                 vi.contour_plot_1D(master.sub_models, x_sub1, [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
                                    f'/contour/Contour_{data_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}',
-                                   f"{model_name.lower()}", folder_of_the_day, data_name)
+                                   f"{model_name}", folder_of_the_day, data_name)
 
                 y = np.mean(better_exploration_score, axis=0)
                 over_explor.append(y)
@@ -485,7 +485,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 120
     training_iter = 5
-    nbr_repetition = 5
+    nbr_repetition = 15
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
