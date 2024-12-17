@@ -303,7 +303,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             h_pred_time.append(t)
             print(f"Hierarchical pred time: {t}")
 
-        plt.plot(range(len(h_optimize_time)), h_optimize_time)
+        k = str(kappa).replace('.', ',')
+        g = str(gamma).replace('.', ',')
+        n = str(nu).replace('.', ',')
+        
+        plt.plot(range(len(h_opt_time)), h_opt_time)
         plt.title(f"Hierarchical Optimization Computation Time")
         plt.ylabel("Time (s)")
         plt.xlabel("Query Number")
