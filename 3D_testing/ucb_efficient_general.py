@@ -68,7 +68,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.close()
 
 
-def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=False):
+def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False):
     
     x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
     prior_map = torch.zeros(dimension, dimension, dimension)
@@ -87,6 +87,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     better_exploration_score = []
     better_exploitation_score = []
     heatmap_rep = []
+    h_optimize_time = []
+    h_pred_time = []
 
     for q in range(nbr_query):
         if q == 0:
@@ -179,17 +181,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
 
         print(f"\n====================================\nQuery Number {q}\n")
-        start = time.time()
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
-        print(f"Acquisition map gen time: {time.time() - start}")
-        start = time.time()
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
         next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
                                                                                         test_x_hier,
                                                                                         y_hier)
-        print(f"Next Query gen time: {time.time() - start}")
 
         y_mu_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_mu1, x_sub1)
         y_mu_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_mu2, x_sub2)
@@ -207,7 +205,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                     max_seen_resp_2D)
 
         response = torch.tensor(next_query_value_random)
-        start = time.time()
 
         cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
         cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
@@ -219,7 +216,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
         contribution3 = torch.nan_to_num(response * torch.exp(cont3) / div)
 
-        print(f"Contribution Calculations time: {time.time() - start}")
 
         response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
                                                                                     max_seen_resp_1_1D)
@@ -243,7 +239,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         # next_query_pins = next_query_pins.to(torch.int)
 
-        start = time.time()
         flag = True
         x = 0
         while x < len(x_hier) and flag:
@@ -260,7 +255,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 y += 1
             x += 1
 
-        print(f"Finding Next Query pins: {time.time() - start}")
 
         start = time.time()
         sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
@@ -296,15 +290,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         sub3.eval()
         sub3_like.eval()
 
-        start = time.time()
-
         # Make a prediction, observed_pred = likelihood
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
             observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
             observed_pred3 = models.make_prediction(sub3, x_sub3, sub3_like)
-
-        print(f"Submodel space prediction time: {time.time() - start}")
 
         y_mu1 = observed_pred1.mean
         y_mu2 = observed_pred2.mean
@@ -346,7 +336,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
                                                     verbose=False)
-            print(f"Hoptimize time: {time.time() - start}")
+            
+            t = time.time() - start
+            h_optimize_time.append(t)
+            print(f"Hoptimize time: {t}")
 
             # Get into evaluation (predictive posterior) mode
             master.eval()
@@ -360,7 +353,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             start = time.time()
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-            print(f"Hierarchical pred time: {time.time() - start}")
+            t = time.time() - start
+            h_pred_time.append(t)
+            print(f"Hierarchical pred time: {t}")
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -379,6 +374,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         better_exploitation_score.append(exploitation_score_2D)
         master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
+
+        k = str(kappa).replace('.', ',')
+        g = str(gamma).replace('.', ',')
+        n = str(nu).replace('.', ',')
+
+
+        plt.plot(range(len(h_optimize_time)), h_optimize_time)
+        plt.title(f"Hierarchical Optimization Computation Time")
+        plt.ylabel("Time (s)")
+        plt.xlabel("Query Number")
+        plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
     
     
     if final:
@@ -434,7 +440,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 if multi:
                     with mp.Pool(processes=nbr_repetition - 1) as pool:
                         for i in range(nbr_repetition - 1):
-                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, ))
+                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, model_name, folder_of_the_day, data_name,))
                             processes.append(p)
 
                         master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=True)
@@ -453,9 +459,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 else:
                     for i in range(nbr_repetition):
                         print(f"Entering Repetition {i}")
-                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
+                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, final=True)
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
