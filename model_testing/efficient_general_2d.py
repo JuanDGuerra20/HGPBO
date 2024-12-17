@@ -17,6 +17,7 @@ from model_testing.efficient_synthetic_script import joint_performance
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
                 data_name, model_name):
+    print('Entering Joint Plots')
     for i, nu in enumerate(nu_vals):
         plt.plot(joint_exploit[i], label=f'nu {nu}')
 
@@ -26,7 +27,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploitation Score')
     plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
     for i, nu in enumerate(nu_vals):
@@ -38,7 +39,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploration Score')
     plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
 
@@ -57,7 +58,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploitation Performance over {nbr_repetition} repetitions')
     plt.tight_layout()
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
     fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
@@ -68,7 +69,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploration Performance over {nbr_repetition} repetitions')
     plt.tight_layout()
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
 
@@ -188,11 +189,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         response = torch.tensor(next_query_value_random)
 
+
+
         cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
         cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
 
-        contribution1 = response * math.exp(cont1) / (math.exp(cont1) + math.exp(cont2))
-        contribution2 = response * math.exp(cont2) / (math.exp(cont1) + math.exp(cont2))
+        div = torch.exp(cont1) + torch.exp(cont2)
+
+
+        contribution1 = response * torch.exp(cont1) / div
+        contribution2 = response * torch.exp(cont2) / div
 
         response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
                                                                                  max_seen_resp_1_1D)
@@ -457,28 +463,29 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
 
 
-
 if __name__ == '__main__':
 
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 15
+    nbr_repetition = 5
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5, 1.5, 2.5]
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
         for dataset_num in [2]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                               eps, h, multi)
-            """p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+            if multi:
+                p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
                                eps, h, multi,))
-            process.append(p)
-            p.start()
-            print(f"ID of process: {p.pid}")"""
-
+                process.append(p)
+                p.start()
+                print(f"ID of process: {p.pid}")
+            else:
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+                               eps, h, multi)
+            
