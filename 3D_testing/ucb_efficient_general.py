@@ -91,6 +91,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     h_pred_time = []
 
     for q in range(nbr_query):
+        print(f"\n====================================\nQuery Number {q}\n")
+
         if q == 0:
             # Need to initialize the model - Will be random in this method
             train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
@@ -180,7 +182,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
 
-        print(f"\n====================================\nQuery Number {q}\n")
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)

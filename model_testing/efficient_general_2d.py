@@ -96,6 +96,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     h_opt_time = []
     h_pred_time = []
     for q in range(nbr_query):
+        print(f"\n====================================\nQuery Number {q}\n")
+
         if q == 0:
             # Need to initialize the model - Will be random in this method
             train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
@@ -306,7 +308,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         k = str(kappa).replace('.', ',')
         g = str(gamma).replace('.', ',')
         n = str(nu).replace('.', ',')
-        
+
         plt.plot(range(len(h_opt_time)), h_opt_time)
         plt.title(f"Hierarchical Optimization Computation Time")
         plt.ylabel("Time (s)")
