@@ -545,6 +545,8 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
 
         likelihood = model.likelihood
         likelihood.eval()
+        print(test_x)
+        print(true_y)
 
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
