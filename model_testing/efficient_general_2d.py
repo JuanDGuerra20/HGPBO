@@ -347,10 +347,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         g = str(gamma).replace('.', ',')
         n = str(nu).replace('.', ',')
 
-        vi.contour_plot_1D(master.sub_models, x_sub1,
-                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
-                           model_name.lower(), folder_of_the_day, data_name)
+    vi.contour_plot_1D(master.sub_models, x_sub1,
+                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
+                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
+                        model_name.lower(), folder_of_the_day, data_name)
 
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep
