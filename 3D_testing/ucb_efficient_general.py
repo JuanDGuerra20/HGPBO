@@ -396,7 +396,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         plt.close()
     
     vi.contour_plot_1D(master.sub_models, x_sub1,
-                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
+                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
                            f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
                            model_name, folder_of_the_day, data_name)
     if final:
@@ -529,7 +529,7 @@ if __name__ == '__main__':
 
 
     dimension = 10
-    nbr_query = 100
+    nbr_query = 10
     training_iter = 5
     nbr_repetition = 20
     nbr_rand_init = 5
