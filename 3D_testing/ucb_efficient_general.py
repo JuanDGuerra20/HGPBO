@@ -531,7 +531,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 10
+    nbr_repetition = 5
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
