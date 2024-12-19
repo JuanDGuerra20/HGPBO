@@ -471,7 +471,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 else:
                     for i in range(nbr_repetition):
                         print(f"Entering Repetition {i}")
-                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
+                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                             data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True)
 
@@ -529,9 +529,9 @@ if __name__ == '__main__':
 
 
     dimension = 10
-    nbr_query = 10
+    nbr_query = 100
     training_iter = 5
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
