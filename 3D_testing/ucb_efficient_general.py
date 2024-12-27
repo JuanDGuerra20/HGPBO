@@ -90,14 +90,18 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     h_opt_time = []
     h_pred_time = []
 
+    k = str(kappa).replace('.', ',')
+    g = str(gamma).replace('.', ',')
+    n = str(nu).replace('.', ',')
+
     for q in range(nbr_query):
         print(f"\n====================================\nQuery Number {q}\n")
 
         if q == 0:
             # Need to initialize the model - Will be random in this method
-            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
-            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
-            train_x_sub3, train_y_sub3 = select_random_queries(nbr_rand_init, x_sub3, y_sub3)
+            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init + 15, x_sub1, y_sub1)
+            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init + 15, x_sub2, y_sub2)
+            train_x_sub3, train_y_sub3 = select_random_queries(nbr_rand_init + 15, x_sub3, y_sub3)
             train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier)
             max_seen_resp_1_1D = torch.max(train_y_sub1)
             max_seen_resp_2_1D = torch.max(train_y_sub2)
@@ -111,12 +115,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             train_y_hier = train_y_hier / max_seen_resp_2D"""
 
             # Need to modify this section such that the model is receiving the partial contribution
-            train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1,
+            """train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1,
                                                                 train_x_hier[:, 0], train_y_hier)
             train_x_sub2, train_y_sub2 = update_training_data(train_x_sub2, train_y_sub2,
                                                                 train_x_hier[:, 1], train_y_hier)
             train_x_sub3, train_y_sub3 = update_training_data(train_x_sub3, train_y_sub3,
-                                                                train_x_hier[:, 2], train_y_hier)
+                                                                train_x_hier[:, 2], train_y_hier)"""
 
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
             sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like, sub1_qc, nu=nu)
@@ -182,6 +186,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
 
+        vi.contour_plot_1D(master.sub_models, x_sub1,
+                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
+                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
+                           model_name, folder_of_the_day, data_name)
+       
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
@@ -377,9 +386,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
 
-        k = str(kappa).replace('.', ',')
-        g = str(gamma).replace('.', ',')
-        n = str(nu).replace('.', ',')
 
         plt.plot(range(len(h_opt_time)), h_opt_time)
         plt.title(f"Hierarchical Optimization Computation Time")
@@ -395,10 +401,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
         plt.close()
     
-    vi.contour_plot_1D(master.sub_models, x_sub1,
-                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
-                           model_name, folder_of_the_day, data_name)
+    
     if final:
         return master, sub1, sub2, sub3, better_exploration_score, better_exploitation_score, heatmap_rep
     else:
@@ -531,11 +534,11 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 5
+    nbr_repetition = 1
     nbr_rand_init = 5
     k_vals = [2]
-    g_vals = [6]
-    nu_vals = [0.5, 1.5, 2.5]
+    g_vals = [4, 6, 8]
+    nu_vals = [2.5]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []

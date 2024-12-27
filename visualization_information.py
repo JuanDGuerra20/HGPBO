@@ -545,19 +545,18 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
 
         likelihood = model.likelihood
         likelihood.eval()
-        print(test_x)
-        print(true_y)
 
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
-
+        
         with torch.no_grad():
             f, ax = plt.subplots(1, 1)
 
             mean = observed_pred.mean.numpy()
+            mean = mean/np.max(mean)
             std = observed_pred.stddev.numpy() / np.sqrt(model.query_counter.numpy())
             train_x = model.train_inputs[0]
-            train_y = model.train_targets
+            train_y = model.train_targets/torch.max(model.train_targets)
 
             if neural:
                 temp_x = list(range(len(test_x)))
