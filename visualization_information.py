@@ -556,7 +556,11 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
             mean = mean/np.max(mean)
             std = observed_pred.stddev.numpy() / np.sqrt(model.query_counter.numpy())
             train_x = model.train_inputs[0]
-            train_y = model.train_targets/torch.max(model.train_targets)
+            train_y = model.train_targets
+
+            div1 = torch.clone(train_y)
+            div1[model.env_ind] = div1[model.env_ind]/model.env_max_seen
+            div1[model.bif_ind] = div1[model.bif_ind]/model.bif_max_seen
 
             if neural:
                 temp_x = list(range(len(test_x)))
@@ -567,7 +571,7 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
 
                 ax.plot(temp_x, true_y[i].numpy(), 'r')
             else:
-                ax.plot(train_x.numpy(), train_y.numpy(), 'k*')
+                #ax.plot(train_x.numpy(), div1.numpy(), 'k*')
                 ax.plot(test_x.numpy(), mean, 'b')
                 ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5)
                 ax.plot(test_x.numpy(), true_y[i].numpy(), 'r')

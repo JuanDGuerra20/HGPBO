@@ -185,10 +185,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-
         vi.contour_plot_1D(master.sub_models, x_sub1,
                            [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
+                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
                            model_name, folder_of_the_day, data_name)
        
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
@@ -228,12 +227,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         contribution3 = torch.nan_to_num(response * torch.exp(cont3) / div)
 
 
-        response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
-                                                                                    max_seen_resp_1_1D)
-        response_2, max_seen_resp_2_1D = models.update_max_seen_response_no_norm(contribution2,
-                                                                                    max_seen_resp_2_1D)
-        response_3, max_seen_resp_3_1D = models.update_max_seen_response_no_norm(contribution3,
-                                                                                    max_seen_resp_3_1D)
+        response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
+        response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
+        response_3 = sub3.update_max_seen_response_no_norm(contribution3, max_seen_resp_3_1D)
 
         """train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1, next_query_pins[0],
                                                             response_1)
@@ -534,11 +530,11 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 1
+    nbr_repetition = 10
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [4, 6, 8]
-    nu_vals = [2.5]
+    nu_vals = [1.5, 2.5]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
