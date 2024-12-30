@@ -202,8 +202,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         div = torch.exp(cont1) + torch.exp(cont2)
 
 
-        contribution1 = response * torch.exp(cont1) / div
-        contribution2 = response * torch.exp(cont2) / div
+        contribution1 = torch.nan_to_num(response * torch.exp(cont1) / div)
+        contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
 
         response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
         response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
