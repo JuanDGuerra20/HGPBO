@@ -99,9 +99,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         if q == 0:
             # Need to initialize the model - Will be random in this method
-            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init + 15, x_sub1, y_sub1)
-            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init + 15, x_sub2, y_sub2)
-            train_x_sub3, train_y_sub3 = select_random_queries(nbr_rand_init + 15, x_sub3, y_sub3)
+            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
+            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
+            train_x_sub3, train_y_sub3 = select_random_queries(nbr_rand_init, x_sub3, y_sub3)
             train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier)
             max_seen_resp_1_1D = torch.max(train_y_sub1)
             max_seen_resp_2_1D = torch.max(train_y_sub2)

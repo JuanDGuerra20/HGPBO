@@ -205,10 +205,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         contribution1 = response * torch.exp(cont1) / div
         contribution2 = response * torch.exp(cont2) / div
 
-        response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
-                                                                                 max_seen_resp_1_1D)
-        response_2, max_seen_resp_2_1D = models.update_max_seen_response_no_norm(contribution2,
-                                                                                 max_seen_resp_2_1D)
+        response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
+        response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
 
         # Potentially could make this more efficient by incorporating it into the next finder
         sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[0], x_sub1)
