@@ -33,6 +33,8 @@ class ExactGPModel(gpytorch.models.ExactGP):
         self.mean_module = gpytorch.means.ConstantMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=2.5))
         self.query_counter = query_counter
+        self.env_max_seen = torch.max(train_y)
+        self.env_ind = list(range(0, len(train_x) - 1))
 
     def forward(self, x):
         """
@@ -56,6 +58,15 @@ class ExactGPModel(gpytorch.models.ExactGP):
 
         model.query_counter = query_c
         return query_c
+    def update_max_seen_response_no_norm(self, next_query_value_random, max_seen_resp, env=False):
+        if env:
+            if next_query_value_random > self.env_max_seen:
+                self.env_max_seen = next_query_value_random
+        else:
+            if next_query_value_random > self.bif_max_seen:
+                self.bif_max_seen = next_query_value_random
+        # next_query_value_random = next_query_value_random / max_seen_resp
+        return next_query_value_random
 
 
 """

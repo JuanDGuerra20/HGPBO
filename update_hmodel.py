@@ -161,7 +161,7 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
 
 class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
-    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa):
+    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter):
         super(Efficient_UCB_Hierarchical_GP, self).__init__(train_x, train_y, likelihood)
 
         self.sub_models = sub_models  # This will be useful for creating the training procedure
@@ -170,6 +170,8 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
         self.mean_module.requires_grad = False
         self.covar_module = hierarchical_kernel
         self.kappa = kappa
+        self.query_counter = query_counter
+
 
     def forward(self, x):
         mean_x = self.mean_module(x)
@@ -246,53 +248,7 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
                         self.likelihood.noise.item()
                     ))
             optimizer.step()
-
-            self.simplified_subkernel_loss_sanity(loss, train_x, train_y, sub_optimizers, sub_loss_functions)
-            # self.mult_penalized_subkernel_loss(loss, train_x, train_y, sub_optimizers, sub_loss_functions)
-
         return self, likelihood
-
-    def simplified_subkernel_loss_sanity(self, loss, train_x, train_y, sub_optimizers, sub_loss_functions):
-        """
-        This is the kernel loss but using the full training data that does not changing
-        :param loss:
-        :param train_x:
-        :param train_y:
-        :param sub_optimizers:
-        :param sub_loss_functions:
-        :return:
-        """
-        target_loss = loss.detach().numpy()
-
-        for i, sub in enumerate(self.sub_models):
-            contributions = torch.zeros((len(self.sub_models),))
-            for j, sub_sub in enumerate(self.sub_models):
-                # Calculating the contributions based on the UCB assumption
-                train_out = sub_sub(sub_sub.train_inputs[0])
-
-                tense = sub_sub.likelihood(train_out).mean
-                std = sub_sub.likelihood(train_out).stddev * self.kappa
-                tense = tense + std
-                contributions[j] = torch.mean(tense)
-
-            norm = contributions.sum()
-
-            sub.train()
-            sub_out = sub(sub.train_inputs[0])  # TODO: currently a duct tape fix
-
-            loss_func = sub_loss_functions[i]
-            sub_opt = sub_optimizers[i]
-
-            sub_loss = -loss_func(sub_out, sub.train_targets)  # TODO: Currently a duct tape fix
-            scaling = sub_loss.detach() / target_loss
-            multiplier = contributions[i].divide(norm).detach()
-
-            sub_loss = sub_loss.divide(scaling)
-            sub_loss = sub_loss.multiply(multiplier)
-
-            sub_loss.backward(retain_graph=True)
-            sub_opt.step()
-            sub_opt.zero_grad()
 
 
 
@@ -338,7 +294,9 @@ def get_y_mu_point_value(next_query_pins, y_mu, X):
     return a
 
 
-def make_Hierarchique_prediction(model, x, likelihood):
+def make_Hierarchique_prediction(model, x, likelihood, device=torch.device('cpu')):
+    model.eval()
+    likelihood.eval()
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         observed_pred = likelihood(model(x))
         return observed_pred
@@ -478,6 +436,38 @@ def update_model1_1D_Efficient(model, likelihood, train_x, train_y, next_query_p
     likelihood.train()
 
     model, likelihood = optimize(model, likelihood, training_iter, train_x, train_y, verbose=False)
+
+    return model, likelihood, train_x, train_y
+
+def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pin, response1, env, training_iter=10):
+    """
+    Used to update the submodel within the hierarchical model
+    :param model: the child model that will be updated
+    :param likelihood: the likelihood associated to param model
+    :param train_x: x input
+    :param train_y: y output
+    :param next_query_pins: which pins will be queried next
+    :param response1: EMG response of first target
+    :param response2: EMG response of second target
+    :param training_iter: number of training iterations
+    :return:
+    """
+
+    # Update training data by adding next_query_value to the train dataset
+    train_x, train_y = model.update_training_data(train_x, train_y, next_query_pin, env)  # has to be 1D dataset
+    # Update the model with the new training data
+
+    div_y = train_y.clone()
+
+    div_y[model.env_ind] = div_y[model.env_ind]/model.env_max_seen
+    div_y[model.bif_ind] = div_y[model.bif_ind]/model.bif_max_seen
+
+    model.set_train_data(train_x, div_y, strict=False)
+    # Find optimal model hyperparameters
+    model.train()
+    likelihood.train()
+
+    model, likelihood = optimize(model, likelihood, training_iter, train_x, div_y, verbose=False)
 
     return model, likelihood, train_x, train_y
 

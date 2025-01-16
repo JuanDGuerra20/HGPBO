@@ -112,12 +112,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier)
             max_seen_resp_2D = torch.max(train_y_hier)
-
+            
+            """
             train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1,
                                                               train_x_hier[:, 0], train_y_hier)
             train_x_sub2, train_y_sub2 = update_training_data(train_x_sub2, train_y_sub2,
                                                               train_x_hier[:, 1], train_y_hier)
-
+            """
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
             sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like,
                                        query_counter=sub1_qc, nu=nu)
@@ -194,13 +195,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         response = torch.tensor(next_query_value_random)
 
-
-
         cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
         cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
 
         div = torch.exp(cont1) + torch.exp(cont2)
-
 
         contribution1 = torch.nan_to_num(response * torch.exp(cont1) / div)
         contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
@@ -341,9 +339,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
 
-        k = str(kappa).replace('.', ',')
-        g = str(gamma).replace('.', ',')
-        n = str(nu).replace('.', ',')
+    k = str(kappa).replace('.', ',')
+    g = str(gamma).replace('.', ',')
+    n = str(nu).replace('.', ',')
 
     vi.contour_plot_1D(master.sub_models, x_sub1,
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],

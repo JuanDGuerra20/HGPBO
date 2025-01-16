@@ -11,6 +11,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm
+from seaborn import heatmap
 
 
 
@@ -48,18 +49,19 @@ kern_op = 'add_kernel'
 folder_of_the_day = (str(workspace_folder) + f'/efficient_3D/data-' + str(name_code) + str(current_dateday))
 
 
-def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, nbr_query, nbr_repetition):
-
-    for i, kappa in enumerate(k_vals):
-        plt.plot(joint_exploit[i], label=f'kappa {kappa}')
+def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
+                data_name, model_name):
+    print('Entering Joint Plots')
+    for i, nu in enumerate(nu_vals):
+        plt.plot(joint_exploit[i], label=f'nu {nu}')
 
     plt.legend()
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploitation Score')
-    plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploitation')
+    plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'efficient_3D{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Neural_Propagation_HGPBO_{nbr_repetition}_Exploitation_query_{nbr_query}')
+        f'{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Neural_Propagation_HGPBO_{nbr_repetition}_Exploitation_query_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
     for i, kappa in enumerate(k_vals):
@@ -69,9 +71,39 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, nbr_quer
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploration Score')
-    plt.title(f'Joint Norm_Efficient Propagation HGPBO {nbr_repetition} Exploration')
+    plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'efficient_3D{folder_of_the_day}/differentiable_plots/Joint_Norm_Efficient_Neural_Propagation_HGPBO_{nbr_repetition}_Exploration_query_{nbr_query}')
+        f'{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Neural_Propagation_HGPBO_{nbr_repetition}_Exploration_query_kappa_{kappa}_gamma_{gamma}')
+    plt.close()
+
+
+def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
+                data_name, model_name):
+
+    names = []
+
+    for n in nu_vals:
+        names.append(f'kappa_{kappa}_gamma_{gamma}_nu_{n}')
+    fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
+    heatmap(joint_exploit, xticklabels=list(range(nbr_query)), yticklabels=names, cmap='coolwarm', ax=ax)
+
+    plt.ylabel(f'Model Type')
+    plt.xlabel(f'Training Step')
+    plt.title(f'Joint HP Exploitation Performance over {nbr_repetition} repetitions')
+    plt.tight_layout()
+    plt.savefig(
+        f'{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+    plt.close()
+
+    fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
+    heatmap(joint_explor, xticklabels=list(range(nbr_query)), yticklabels=names, cmap='coolwarm', ax=ax)
+
+    plt.ylabel(f'Model Type')
+    plt.xlabel(f'Training Step')
+    plt.title(f'Joint HP Exploration Performance over {nbr_repetition} repetitions')
+    plt.tight_layout()
+    plt.savefig(
+        f'{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
 
