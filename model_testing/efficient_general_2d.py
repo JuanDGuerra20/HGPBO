@@ -18,7 +18,6 @@ from model_testing.efficient_synthetic_script import joint_performance
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
                 data_name, model_name):
-    print('Entering Joint Plots')
     for i, nu in enumerate(nu_vals):
         plt.plot(joint_exploit[i], label=f'nu {nu}')
 
@@ -483,7 +482,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
 
-                print(f'\n{model_name} Kappa {k} Gamma {g} complete!\n')
+                print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
 
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)

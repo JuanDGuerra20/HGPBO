@@ -12,6 +12,8 @@ from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm
 from seaborn import heatmap
+import multiprocessing as mp
+import pandas as pd
 
 
 
@@ -41,17 +43,13 @@ name_code = 'HGP_BO-test6-priorMAP-1model1D'
 current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
 current_dateday = datetime.now().strftime("%Y-%m-%d")
 
-workspace_folder = (r'C:\Users\preda\PycharmProjects\HierarchicalGPBO') #path to folder
+workspace_folder = (r'C:\Users\preda\PycharmProjects\HGPBO') #path to folder
 
 os.chdir(workspace_folder)
 
 kern_op = 'add_kernel'
-folder_of_the_day = (str(workspace_folder) + f'/efficient_3D/data-' + str(name_code) + str(current_dateday))
 
-
-def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
-                data_name, model_name):
-    print('Entering Joint Plots')
+def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query, nbr_repetition, model_name):
     for i, nu in enumerate(nu_vals):
         plt.plot(joint_exploit[i], label=f'nu {nu}')
 
@@ -77,8 +75,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.close()
 
 
-def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
-                data_name, model_name):
+def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query, nbr_repetition, model_name):
 
     names = []
 
@@ -106,7 +103,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
         f'{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
-def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False):
+def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False):
     prior_map_max = 0
     max_seen_resp_2D = 0
     max_seen_resp_1_1D = 0
@@ -114,6 +111,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     ground_truth_max_1 = torch.max(y_sub1)
     ground_truth_max_2 = torch.max(y_sub2)
     ground_truth_max_hier = torch.max(y_hier)
+    sub1_qc = torch.ones(len(test_x_1D))
+    sub2_qc = torch.ones(len(test_x_1D))
+    hier_qc = torch.ones(len(test_x_hier))
 
     heatmap_rep = []
     
@@ -128,8 +128,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     better_exploitation_score = []
     better_exploration_score = []
 
-    for q in range(nbr_query):
-        print(f"\n====================================\nQuery Number {q}\n")
+    for q in tqdm(range(nbr_query)):
 
         if q == 0:
             # Need to initialize the model - Will be random in this method
@@ -143,6 +142,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             
             train_x_hier, train_y_hier = hmodel.random_initialization(nbr_rand_init, EMG, trainsC,
                                                                 max_seen_resp_2D, DT)
+            train_x_hier = torch.tensor(train_x_hier)
+            train_y_hier = torch.tensor(train_y_hier)
             max_seen_resp_2D = torch.max(train_y_hier)
             
             train_x_hier = torch.tensor(train_x_hier, dtype=torch.float64)
@@ -175,8 +176,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub2_like.eval()
 
             for i in range(len(train_x_sub1)):
-                sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
-                sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
+                sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], test_x_1D)
+                sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], test_x_1D)
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred1 = models.make_prediction(sub1, test_x_1D, sub1_like)
@@ -205,7 +206,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                             sub_models=[sub1, sub2],
                                                             kappa=kappa, query_counter=hier_qc)
             for i in range(nbr_rand_init):
-                hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
+                hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], test_x_hier)
             
             master.eval()
             likelihood.eval()
@@ -222,8 +223,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
         next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
-                                                                                        X_2D,
-                                                                                        Y_2D)
+                                                                                        x_hier,
+                                                                                        y_hier)
         list_next_value_mean.append(next_query_value_mean)
 
         list_queries.append(next_query_pins)
@@ -232,11 +233,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         y_mu_point_a = hmodel.get_y_mu_point_value(next_query_pins[:2], y_mu1, test_x_1D)
         y_mu_point_b = hmodel.get_y_mu_point_value(next_query_pins[2:], y_mu2, test_x_1D)
         
-        y_conf_point_a = hmodel.get_y_mu_point_value(next_query_pins[:2], y_conf1, x_sub1)
-        y_conf_point_b = hmodel.get_y_mu_point_value(next_query_pins[2:], y_conf2, x_sub2)
+        y_conf_point_a = hmodel.get_y_mu_point_value(next_query_pins[:2], y_conf1, test_x_1D)
+        y_conf_point_b = hmodel.get_y_mu_point_value(next_query_pins[2:], y_conf2, test_x_1D)
         
-        y_qc_a = hmodel.get_y_mu_point_value(next_query_pins[:2], sub1_qc, x_sub1)
-        y_qc_b = hmodel.get_y_mu_point_value(next_query_pins[2:], sub2_qc, x_sub2)
+        y_qc_a = hmodel.get_y_mu_point_value(next_query_pins[:2], sub1_qc, test_x_1D)
+        y_qc_b = hmodel.get_y_mu_point_value(next_query_pins[2:], sub2_qc, test_x_1D)
 
         next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
                                                                                     max_seen_resp_2D)
@@ -260,15 +261,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
 
         # Potentially could make this more efficient by incorporating it into the next finder
-        sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[0], x_sub1)
-        sub2_qc = sub2.increment_q_n(sub2_qc, next_query_pins[1], x_sub2)
-        hier_qc = master.increment_q_n(hier_qc, next_query_pins, x_hier)
-        flag = True
-
-        #TODO: THIS NEEDS TO BE COMPLETED or see if we don't need
-        for x in range(len(x_hier)):
-            for y in range(len(x_hier(x))):
-                if 
+        sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[:2], test_x_1D)
+        sub2_qc = sub2.increment_q_n(sub2_qc, next_query_pins[2:], test_x_1D)
+        hier_qc = master.increment_q_n(hier_qc, next_query_pins, test_x_hier)
 
         # update unitary model with response_1 and response_2
         sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
@@ -344,7 +339,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
                                                                                             ground_truth_max_2D,
                                                                                             test_x_hier,
-                                                                                            X_2D, Y_2D)
+                                                                                            x_hier, y_hier)
         exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_2D)
         """print(f'\nQuery Number: {q}')
         print(f'Next Query Pins: {next_query_pins_exploration_2D}')
@@ -361,16 +356,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     g = str(gamma).replace('.', ',')
     n = str(nu).replace('.', ',')
 
-    vi.contour_plot_1D(master.sub_models, x_sub1,
-                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                        f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
+    vi.contour_plot_1D(master.sub_models, test_x_1D,
+                        [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
+                        f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
                         model_name.lower(), folder_of_the_day, "Neural", neural=True)
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep
     else:
         return better_exploration_score, better_exploitation_score, heatmap_rep
 
-def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, dimension, k_vals, g_vals, nu_vals, eps, hierarchical_model, multi):
+def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, hierarchical_model, multi):
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
 
@@ -378,7 +373,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         model_name = "Lossless_Efficient"
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HierarchicalGPBO/efficient_3D"
+    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/{model_name.lower()}"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -388,7 +383,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         os.mkdir(workspace + folder_of_the_day + '/contour')
         print("Contour folder created")
         os.mkdir(workspace + folder_of_the_day + '/differentiable_plots')
-        print("Plots folder created")
+        print("CSV folder created")
+        os.mkdir(workspace + folder_of_the_day + '/csv')
+        print("HP folder created")
+        os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
+        print("Model folder created")
+        os.mkdir(workspace + folder_of_the_day + '/models')
 
     list_prior_map = []
     list_objective_mean_map = []
@@ -410,11 +410,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                         # running the repetitions in parallel except for the last one
                         for i in range(nbr_repetition - 1):
-                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, model_name, folder_of_the_day,))
+                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day,))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
-                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, model_name, folder_of_the_day, final=True)
+                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=True)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -432,49 +432,66 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                     for i in range(nbr_repetition ):
 
                         master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
-                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, model_name, folder_of_the_day, final=True)
+                            kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=True)
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
                         heatmap_data.append(heatmap_rep)
-            
 
-        exploration_scores = []
-        exploitation_scores = []
+                heatmap_data = np.array(heatmap_data)
 
-        for i in range(nbr_repetition):
-            exploitation_scores.append(better_exploitation_score[i * nbr_query:(i + 1) * nbr_query])
-            exploration_scores.append(better_exploration_score[i * nbr_query:(i + 1) * nbr_query])
+                k = str(kappa).replace('.', ',')
+                g = str(gamma).replace('.', ',')
+                n = str(nu).replace('.', ',')
 
-        y = np.mean(exploration_scores, axis=0)
-        over_explor.append(y)
-        std = np.std(exploration_scores, axis=0)
-        plt.plot(y, label='Exploration')
-        plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
+                y = np.mean(better_exploration_score, axis=0)
+                over_explor.append(y)
+                std = np.std(better_exploration_score, axis=0)
+                plt.plot(y, label='Exploration')
+                plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
-        y = np.mean(exploitation_scores, axis=0)
-        over_exploit.append(y)
+                y = np.mean(better_exploitation_score, axis=0)
+                over_exploit.append(y)
 
-        std = np.std(exploitation_scores, axis=0)
-        plt.plot(y, label='Exploitation')
-        plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
+                std = np.std(better_exploitation_score, axis=0)
+                plt.plot(y, label='Exploitation')
+                plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
-        k = str(kappa).replace(".", ",")
+                r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
+                plt.plot(r2, label="Heatmap R2")
 
-        plt.legend()
-        plt.ylim(0, 1.1)
-        plt.title(f'Norm_Efficient HGP-BO {nbr_repetition} repetitions with kappa value {k}')
-        plt.savefig(
-            f'efficient_3D{folder_of_the_day}/differentiable_plots/Norm_Efficient_Prop_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}')
-        plt.close()
+                rand = np.random.rand(*heatmap_data.shape)
+                random_r2 = vi.heatmap_r_score(rand, test_y_hier)
+                plt.plot(random_r2, label="Random Heatmap R2")
 
-        vi.contour_plot_1D([sub1, sub2], test_x_1D, [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
-                         f'/Heatmap_Neural_Efficient_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}',
-                         "efficient_3D", folder_of_the_day, 'N.A', neural=True)
+                plt.legend()
+                plt.ylim(0, 1.1)
+                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with Kappa {k} Gamma {g} Nu {n}')
+                plt.savefig(
+                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}')
+                plt.close()
 
-    # Joint Section
+                """vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
+                                 f'/Heatmap_Neural_{model_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}',
+                                 model_name.lower(), folder_of_the_day, "Neural", neural=True)"""
+                data = np.mean(heatmap_data[:, -1, :], axis=0)
 
-    joint_plots(over_exploit, over_explor, k_vals, folder_of_the_day, nbr_query, nbr_repetition)
+                re_output = np.reshape(data, test_y_hier.shape)
+                df = pd.DataFrame(re_output)
+                df.to_csv(
+                    f'{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}.csv')
+                df = pd.DataFrame(y_hier)
+                df.to_csv(
+                    f'{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
 
+                print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
+
+            # Joint Section
+
+            joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
+                              nbr_repetition, model_name)
+
+            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
+                              nbr_repetition, model_name)
 
 if __name__ == '__main__':
 
@@ -501,6 +518,7 @@ if __name__ == '__main__':
     y_sub2 = torch.from_numpy(Y_1D[:, 0].copy())
 
     X_2D, Y_2D, Xmean_2D, Ymean_2D = make_dataset_2d(trainsC)
+
     ground_truth_max_2D = np.max(Ymean_2D)
 
     x_hier = torch.from_numpy(X_2D.copy())
@@ -509,11 +527,27 @@ if __name__ == '__main__':
 
     trainsC.plot_response_matrix()
     test_x_hier = torch.tensor(Xmean_2D)
+    test_y_hier = torch.tensor(Ymean_2D)
 
-    nbr_query = 100
+
+    nbr_query = 40
     training_iter = 5
-    nbr_repetition = 30
+    nbr_repetition = 3
     nbr_rand_init = 5
-    k_vals = np.array(range(12, 37, 2))/4
+    k_vals = [2]
+    g_vals = [6]
+    nu_vals = [0.5, 1.5, 2.5]
+    multi = False
+    h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
+    process = []
+    for h in h_model:
+        if multi:
+            p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                               h, multi,))
+            process.append(p)
+            p.start()
+            print(f"ID of process: {p.pid}")
+        else:
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                               h, multi)
 
-    training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals)

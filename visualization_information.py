@@ -508,8 +508,11 @@ def exploitation_visualization_function(folder_data_path, nbr_repetition):
 
 def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data_name, neural=False):
     data = np.mean(data, axis=0)
-
-    re_output = np.reshape(data, z.shape)
+    if neural:
+        re_output = np.reshape(data, (10, 10))
+        input = np.reshape(input, (10, 10))
+    else:
+        re_output = np.reshape(data, z.shape)
 
     fig, axs = plt.subplots(1, 2)
     ax = heatmap(re_output, cmap="viridis", xticklabels=np.round(input[0, :, 1].numpy(), 3),
@@ -565,9 +568,9 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
             if neural:
                 temp_x = list(range(len(test_x)))
                 new_train = map_neural_to_list(train_x.numpy())
-                ax.plot(new_train, train_y.numpy(), 'k*')
+                #ax.plot(new_train, train_y.numpy(), 'k*')
                 ax.plot(temp_x, mean, 'b')
-                ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
+                #ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 
                 ax.plot(temp_x, true_y[i].numpy(), 'r')
             else:
@@ -581,7 +584,7 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
         plt.tight_layout()
         if save:
             if neural:
-                plt.savefig(f'{model_type}/{folder_of_the_day}/contour/{file_name}_submodel_{i}')
+                plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_submodel_{i}')
 
             else:
                 plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_submodel_{i}')
