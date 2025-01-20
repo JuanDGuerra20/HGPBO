@@ -7,8 +7,9 @@ model_testing/synthetic3
 3D_testing/first_3D/
 3D_testing/second_3D/
 ucb_confidence/
-ucb_max_confidence/
+ucb_max_efficient/
 ucb_pretrain/
 add_kernel/
 efficient/
 mult_kernel/
+vanilla/
