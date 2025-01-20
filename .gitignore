@@ -12,3 +12,4 @@ ucb_pretrain/
 add_kernel/
 efficient/
 mult_kernel/
+vanilla/
