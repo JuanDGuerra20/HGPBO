@@ -94,7 +94,8 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
     for n in nu_vals:
         names.append(f'kappa_{kappa}_gamma_{gamma}_nu_{n}')
-    fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))    heatmap(joint_explor, xticklabels=list(range(nbr_query)), yticklabels=names, cmap='coolwarm', ax=ax)
+    fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
+    heatmap(joint_explor, xticklabels=list(range(nbr_query)), yticklabels=names, cmap='coolwarm', ax=ax)
 
     plt.ylabel(f'Model Type')
     plt.xlabel(f'Training Step')
