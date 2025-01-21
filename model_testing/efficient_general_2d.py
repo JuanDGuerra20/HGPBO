@@ -94,8 +94,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     heatmap_rep = []
     h_opt_time = []
     h_pred_time = []
-    for q in range(nbr_query):
-        print(f"\n====================================\nQuery Number {q}\n")
+    for q in tqdm(range(nbr_query)):
+        # print(f"\n====================================\nQuery Number {q}\n")
 
         if q == 0:
             # Need to initialize the model - Will be random in this method
@@ -276,14 +276,14 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master.train()
             likelihood.train()
 
-            start = time.time()
+            # start = time.time()
 
             master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
                                                     verbose=False)
             
-            t = time.time() - start
+            """t = time.time() - start
             h_opt_time.append(t)
-            print(f"Hoptimize time: {t}")
+            print(f"Hoptimize time: {t}")"""
 
             master.eval()
             likelihood.eval()
@@ -294,11 +294,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub2_like.eval()
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
-            start = time.time()
+            # start = time.time()
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-            t = time.time() - start
+            """t = time.time() - start
             h_pred_time.append(t)
-            print(f"Hierarchical pred time: {t}")
+            print(f"Hierarchical pred time: {t}")"""
 
         k = str(kappa).replace('.', ',')
         g = str(gamma).replace('.', ',')
