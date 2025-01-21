@@ -90,6 +90,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     h_opt_time = []
     h_pred_time = []
 
+    k = str(kappa).replace('.', ',')
+    g = str(gamma).replace('.', ',')
+    n = str(nu).replace('.', ',')
+
     for q in range(nbr_query):
         print(f"\n====================================\nQuery Number {q}\n")
 
@@ -111,12 +115,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             train_y_hier = train_y_hier / max_seen_resp_2D"""
 
             # Need to modify this section such that the model is receiving the partial contribution
-            train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1,
+            """train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1,
                                                                 train_x_hier[:, 0], train_y_hier)
             train_x_sub2, train_y_sub2 = update_training_data(train_x_sub2, train_y_sub2,
                                                                 train_x_hier[:, 1], train_y_hier)
             train_x_sub3, train_y_sub3 = update_training_data(train_x_sub3, train_y_sub3,
-                                                                train_x_hier[:, 2], train_y_hier)
+                                                                train_x_hier[:, 2], train_y_hier)"""
 
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
             sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like, sub1_qc, nu=nu)
@@ -181,7 +185,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-
+        vi.contour_plot_1D(master.sub_models, x_sub1,
+                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
+                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
+                           model_name, folder_of_the_day, data_name)
+       
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
@@ -202,8 +210,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         y_qc_b = hmodel.get_y_mu_point_value(next_query_pins[1], sub2_qc, x_sub2)
         y_qc_c = hmodel.get_y_mu_point_value(next_query_pins[2], sub3_qc, x_sub3)
 
-        next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
-                                       
+        next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,   
                                                                                     max_seen_resp_2D)
 
         response = torch.tensor(next_query_value_random)
@@ -219,12 +226,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         contribution3 = torch.nan_to_num(response * torch.exp(cont3) / div)
 
 
-        response_1, max_seen_resp_1_1D = models.update_max_seen_response_no_norm(contribution1,
-                                                                                    max_seen_resp_1_1D)
-        response_2, max_seen_resp_2_1D = models.update_max_seen_response_no_norm(contribution2,
-                                                                                    max_seen_resp_2_1D)
-        response_3, max_seen_resp_3_1D = models.update_max_seen_response_no_norm(contribution3,
-                                                                                    max_seen_resp_3_1D)
+        response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
+        response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
+        response_3 = sub3.update_max_seen_response_no_norm(contribution3, max_seen_resp_3_1D)
 
         """train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1, next_query_pins[0],
                                                             response_1)
@@ -377,9 +381,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
 
-        k = str(kappa).replace('.', ',')
-        g = str(gamma).replace('.', ',')
-        n = str(nu).replace('.', ',')
 
         plt.plot(range(len(h_opt_time)), h_opt_time)
         plt.title(f"Hierarchical Optimization Computation Time")
@@ -395,10 +396,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
         plt.close()
     
-    vi.contour_plot_1D(master.sub_models, x_sub1,
-                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
-                           model_name, folder_of_the_day, data_name)
+    
     if final:
         return master, sub1, sub2, sub3, better_exploration_score, better_exploitation_score, heatmap_rep
     else:
@@ -471,7 +469,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 else:
                     for i in range(nbr_repetition):
                         print(f"Entering Repetition {i}")
-                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
+                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                             data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True)
 
@@ -529,13 +527,13 @@ if __name__ == '__main__':
 
 
     dimension = 10
-    nbr_query = 10
+    nbr_query = 100
     training_iter = 5
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_rand_init = 5
     k_vals = [2]
-    g_vals = [6]
-    nu_vals = [0.5, 1.5, 2.5]
+    g_vals = [4, 6, 8]
+    nu_vals = [1.5, 2.5]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []

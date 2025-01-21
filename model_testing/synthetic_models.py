@@ -33,6 +33,11 @@ class ExactGPModel(gpytorch.models.ExactGP):
         self.mean_module = gpytorch.means.ConstantMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=nu))
         self.query_counter = query_counter
+        self.env_max_seen = torch.max(train_y)
+        self.env_ind = list(range(0, len(train_x) - 1))
+
+        self.bif_max_seen = torch.tensor(-9999999, dtype=torch.float64)
+        self.bif_ind = []
 
     def forward(self, x):
         """
@@ -56,6 +61,53 @@ class ExactGPModel(gpytorch.models.ExactGP):
 
         model.query_counter = query_c
         return query_c
+
+    def update_max_seen_response_no_norm(self, next_query_value_random, max_seen_resp, env=False):
+        if env:
+            if next_query_value_random > self.env_max_seen:
+                self.env_max_seen = next_query_value_random
+        else:
+            if next_query_value_random > self.bif_max_seen:
+                self.bif_max_seen = next_query_value_random
+        # next_query_value_random = next_query_value_random / max_seen_resp
+        return next_query_value_random
+    
+    def update_training_data(self, train_x, train_y, next_query_pins, next_query_value, env=False):
+        """
+        Update the training data with the new query values.
+
+        Parameters:
+        - train_x (torch.Tensor): Training input data.
+        - train_y (torch.Tensor): Training output data.
+        - next_query_pins (torch.Tensor): Coordinates of the next query pins.
+        - next_query_value (float): Value for the next query.
+
+        Returns:
+        - train_x (torch.Tensor): Updated training input data. (pin coordinates)
+        - train_y (torch.Tensor): Updated training output data. (pin value)
+        """
+        """train_x = list(train_x)
+        train_y = list(train_y)
+        train_x.append(next_query_pins)
+        train_y.append(next_query_value)
+        train_x = torch.stack(train_x)
+        train_y = torch.as_tensor(train_y)"""  # torch.as_tensor avoids copying the tensor in memory again, unlike torch.tensor
+        if next_query_pins.ndim != train_x.ndim:
+            next_query_pins = next_query_pins.unsqueeze(0)
+        if next_query_value.ndim != train_y.ndim:
+            next_query_value = next_query_value.unsqueeze(0)
+
+        train_x = torch.cat((train_x, next_query_pins))
+        train_y = torch.cat((train_y, next_query_value))
+        
+        
+        next_q_val = len(self.env_ind) + len(self.bif_ind)
+        if env:
+            self.env_ind.append(next_q_val)
+        else:
+            self.bif_ind.append(next_q_val)
+
+        return train_x, train_y
 
 
 """

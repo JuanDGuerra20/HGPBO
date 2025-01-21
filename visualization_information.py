@@ -508,8 +508,11 @@ def exploitation_visualization_function(folder_data_path, nbr_repetition):
 
 def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data_name, neural=False):
     data = np.mean(data, axis=0)
-
-    re_output = np.reshape(data, z.shape)
+    if neural:
+        re_output = np.reshape(data, (10, 10))
+        input = np.reshape(input, (10, 10))
+    else:
+        re_output = np.reshape(data, z.shape)
 
     fig, axs = plt.subplots(1, 2)
     ax = heatmap(re_output, cmap="viridis", xticklabels=np.round(input[0, :, 1].numpy(), 3),
@@ -545,30 +548,33 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
 
         likelihood = model.likelihood
         likelihood.eval()
-        print(test_x)
-        print(true_y)
 
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
-
+        
         with torch.no_grad():
             f, ax = plt.subplots(1, 1)
 
             mean = observed_pred.mean.numpy()
+            mean = mean/np.max(mean)
             std = observed_pred.stddev.numpy() / np.sqrt(model.query_counter.numpy())
             train_x = model.train_inputs[0]
             train_y = model.train_targets
 
+            div1 = torch.clone(train_y)
+            div1[model.env_ind] = div1[model.env_ind]/model.env_max_seen
+            div1[model.bif_ind] = div1[model.bif_ind]/model.bif_max_seen
+
             if neural:
                 temp_x = list(range(len(test_x)))
                 new_train = map_neural_to_list(train_x.numpy())
-                ax.plot(new_train, train_y.numpy(), 'k*')
+                #ax.plot(new_train, train_y.numpy(), 'k*')
                 ax.plot(temp_x, mean, 'b')
-                ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
+                #ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 
                 ax.plot(temp_x, true_y[i].numpy(), 'r')
             else:
-                ax.plot(train_x.numpy(), train_y.numpy(), 'k*')
+                #ax.plot(train_x.numpy(), div1.numpy(), 'k*')
                 ax.plot(test_x.numpy(), mean, 'b')
                 ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5)
                 ax.plot(test_x.numpy(), true_y[i].numpy(), 'r')
@@ -578,7 +584,7 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
         plt.tight_layout()
         if save:
             if neural:
-                plt.savefig(f'{model_type}/{folder_of_the_day}/contour/{file_name}_submodel_{i}')
+                plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_submodel_{i}')
 
             else:
                 plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_submodel_{i}')

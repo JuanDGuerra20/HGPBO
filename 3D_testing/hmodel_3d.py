@@ -675,7 +675,7 @@ def update_model1_1D(model, likelihood, train_x, train_y, next_query_pin, respon
 
     return model, likelihood, train_x, train_y
 
-def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pin, response1, max_seen_response, training_iter=10):
+def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pin, response1, env, training_iter=10):
     """
     Used to update the submodel within the hierarchical model
     :param model: the child model that will be updated
@@ -690,14 +690,20 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
     """
 
     # Update training data by adding next_query_value to the train dataset
-    train_x, train_y = update_training_data(train_x, train_y, next_query_pin, response1)  # has to be 1D dataset
+    train_x, train_y = model.update_training_data(train_x, train_y, next_query_pin, env)  # has to be 1D dataset
     # Update the model with the new training data
-    model.set_train_data(train_x, train_y/max_seen_response, strict=False)
+
+    div_y = train_y.clone()
+
+    div_y[model.env_ind] = div_y[model.env_ind]/model.env_max_seen
+    div_y[model.bif_ind] = div_y[model.bif_ind]/model.bif_max_seen
+
+    model.set_train_data(train_x, div_y, strict=False)
     # Find optimal model hyperparameters
     model.train()
     likelihood.train()
 
-    model, likelihood = optimize(model, likelihood, training_iter, train_x, train_y / max_seen_response, verbose=False)
+    model, likelihood = optimize(model, likelihood, training_iter, train_x, div_y, verbose=False)
 
     return model, likelihood, train_x, train_y
 
