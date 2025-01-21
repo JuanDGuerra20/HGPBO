@@ -92,8 +92,9 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
         f'{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
-    fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
-    heatmap(joint_explor, xticklabels=list(range(nbr_query)), yticklabels=names, cmap='coolwarm', ax=ax)
+    for n in nu_vals:
+        names.append(f'kappa_{kappa}_gamma_{gamma}_nu_{n}')
+    fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))    heatmap(joint_explor, xticklabels=list(range(nbr_query)), yticklabels=names, cmap='coolwarm', ax=ax)
 
     plt.ylabel(f'Model Type')
     plt.xlabel(f'Training Step')
@@ -438,6 +439,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                         heatmap_data.append(heatmap_rep)
 
                 heatmap_data = np.array(heatmap_data)
+                torch.save(master.state_dict(), f'{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
@@ -530,12 +532,12 @@ if __name__ == '__main__':
     test_y_hier = torch.tensor(Ymean_2D)
 
 
-    nbr_query = 40
+    nbr_query = 100
     training_iter = 5
-    nbr_repetition = 3
+    nbr_repetition = 30
     nbr_rand_init = 5
-    k_vals = [2]
-    g_vals = [6]
+    k_vals = [2, 4, 6]
+    g_vals = [5, 6, 7]
     nu_vals = [0.5, 1.5, 2.5]
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
