@@ -392,6 +392,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
     final_exploitation_metric = []
     final_exploration_metric = []
 
+    list_models = []
+
     for kappa in k_vals:
         over_exploit = []
         over_explor = []
@@ -482,25 +484,27 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 re_output = np.reshape(data, y_hier.shape)
                 df = pd.DataFrame(re_output)
-                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}.csv')
+                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} complete!\n')
 
+                list_models.append([f"kappa_{k}_gamma_{g}_nu_{n}", master])
+
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
 
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
 
-
+    return list_models
 if __name__ == '__main__':
 
-    dimension = 10
+    dimension = 15
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 5
+    nbr_repetition = 30
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
