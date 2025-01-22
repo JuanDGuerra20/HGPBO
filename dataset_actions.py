@@ -783,6 +783,43 @@ def generate_3d_2_dataset(dimension, eps):
 
     return x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier
 
+def generate_modularity_dataset(dimension, eps):
+    x_sub1 = torch.linspace(0, 2, dimension).double()
+    y_sub1 = torch.zeros(x_sub1.shape)
+
+    for i, x in enumerate(x_sub1):
+        y_sub1[i] = -(x - 2) ** 2 + 2
+    y_sub1 = y_sub1.double()
+
+    x_sub2 = torch.linspace(0, 2, dimension).double()
+    y_sub2 = torch.sin(x_sub2 * (2 * math.pi)) / (x_sub2 - 1) + 2
+    y_sub2 = torch.where(y_sub2 == -torch.inf, 6.283, y_sub2)  # solved the overflow by limits
+
+    y_sub2 = y_sub2.double()
+
+    x_hier = torch.zeros((dimension, dimension, 2)).double()
+
+    for i in range(len(x_sub1)):
+        for j in range(len(x_sub2)):
+            x_hier[i, j, 0] = x_sub1[i]
+            x_hier[i, j, 1] = x_sub2[j]
+
+    y_hier = torch.zeros((dimension, dimension))
+
+    test_x = make_test_sub(5, x_sub1)
+    # test_x_hier = make_test_hierarchical(10, x_hier)
+    test_x_hier = torch.reshape(x_hier, (-1, 2))
+
+    for i in range(len(y_sub1)):
+        for j in range(len(y_sub2)):
+            y_hier[i, j] = (y_sub1[i] + y_sub2[j]) / (
+                ((x_sub1[i] - x_sub2[j]) ** 2 + eps))  # Adding a convolution and need epsilon
+            # the added 1e-10 will make it a multiplier if they are right on each other and no effect if far
+
+    y_hier = y_hier.double()
+
+    return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
+
 
 
 def get_dataset_info(dataset_num):
@@ -807,6 +844,10 @@ def get_dataset_info(dataset_num):
         data_name = 'second_3D'
         data_creation_func = generate_3d_2_dataset
         eps = 2
+    elif dataset_num == 6:
+        data_name = 'modular_2D'
+        data_creation_func = generate_modularity_dataset
+        eps = 5
     else:
         raise AssertionError("Dataset number invalid")
 

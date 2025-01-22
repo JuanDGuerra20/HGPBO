@@ -1,5 +1,6 @@
 from efficient_general_2d import *
 
+
 if __name__ == '__main__':
     dimension = 10
     nbr_query = 80
@@ -16,14 +17,14 @@ if __name__ == '__main__':
     data_name, data_creation_func, eps = get_dataset_info(2)
 
     parent_1 = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                  nu_vals, data_name, data_creation_func, eps, h, multi)
+                                  nu_vals, data_name, data_creation_func, eps, h_model, multi)
 
     parent_1 = parent_1[0][1]
     # Setting up for dataset number 2
-    data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+    data_name, data_creation_func, eps = get_dataset_info(3)
 
     parent_2 = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                  nu_vals, data_name, data_creation_func, eps, h, multi)
+                                  nu_vals, data_name, data_creation_func, eps, h_model, multi)
 
     parent_2 = parent_2[0][1]
 
@@ -31,3 +32,12 @@ if __name__ == '__main__':
 
     child_21, child_22 = parent_2.sub_models
 
+
+    # =======================================================
+    # Modular Section
+
+    modular_children = [child_11, child_22]
+
+    data_name, data_creation_func, eps = get_dataset_info(6)
+    training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+                                      nu_vals, data_name, data_creation_func, eps, h_model, multi, children=modular_children)
