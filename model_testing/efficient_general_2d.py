@@ -75,7 +75,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[]):
+                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True):
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     prior_map = torch.zeros(dimension, dimension)
@@ -305,25 +305,26 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             h_pred_time.append(t)
             print(f"Hierarchical pred time: {t}")"""
 
-        k = str(kappa).replace('.', ',')
-        g = str(gamma).replace('.', ',')
-        n = str(nu).replace('.', ',')
+        if visualize:
+            k = str(kappa).replace('.', ',')
+            g = str(gamma).replace('.', ',')
+            n = str(nu).replace('.', ',')
 
-        plt.plot(range(len(h_opt_time)), h_opt_time)
-        plt.title(f"Hierarchical Optimization Computation Time")
-        plt.ylabel("Time (s)")
-        plt.xlabel("Query Number")
-        plt.savefig(
-            f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
-        plt.close()
+            plt.plot(range(len(h_opt_time)), h_opt_time)
+            plt.title(f"Hierarchical Optimization Computation Time")
+            plt.ylabel("Time (s)")
+            plt.xlabel("Query Number")
+            plt.savefig(
+                f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
+            plt.close()
 
-        plt.plot(range(len(h_pred_time)), h_pred_time)
-        plt.title(f"Hierarchical Space Prediction Computation Time")
-        plt.ylabel("Time (s)")
-        plt.xlabel("Query Number")
-        plt.savefig(
-            f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
-        plt.close()
+            plt.plot(range(len(h_pred_time)), h_pred_time)
+            plt.title(f"Hierarchical Space Prediction Computation Time")
+            plt.ylabel("Time (s)")
+            plt.xlabel("Query Number")
+            plt.savefig(
+                f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
+            plt.close()
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -344,14 +345,15 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
 
-    k = str(kappa).replace('.', ',')
-    g = str(gamma).replace('.', ',')
-    n = str(nu).replace('.', ',')
+    if visualize:
+        k = str(kappa).replace('.', ',')
+        g = str(gamma).replace('.', ',')
+        n = str(nu).replace('.', ',')
 
-    vi.contour_plot_1D(master.sub_models, x_sub1,
-                       [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                       f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
-                       model_name.lower(), folder_of_the_day, data_name)
+        vi.contour_plot_1D(master.sub_models, x_sub1,
+                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
+                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
+                        model_name.lower(), folder_of_the_day, data_name)
 
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep
@@ -360,7 +362,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals,
-                       data_name, data_creation_func, eps, hierarchical_model, multi, children=[]):
+                       data_name, data_creation_func, eps, hierarchical_model, multi, children=[], visualize=True):
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
 
@@ -410,13 +412,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         for i in range(nbr_repetition - 1):
                             p = pool.apply_async(run_repetition, (
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, ))
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, visualize, ))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
                         master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children)
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -434,7 +436,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     for i in range(nbr_repetition):
                         master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children)
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize)
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
                         heatmap_data.append(heatmap_rep)
@@ -494,7 +496,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
 
-                list_models.append([f"kappa_{k}_gamma_{g}_nu_{n}", master])
+                list_models.append([f"kappa_{k}_gamma_{g}_nu_{n}", master, better_exploration_score, better_exploitation_score, r2])
 
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
