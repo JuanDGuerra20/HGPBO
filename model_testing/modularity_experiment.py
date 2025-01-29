@@ -5,7 +5,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 5
+    nbr_repetition = 10
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     avg_exploit_mod = []
     avg_r2_mod = []
     
-    for i in range(nbr_repetition):
+    for i in tqdm(range(nbr_repetition)):
         # Setting up for dataset number 1
         data_name, data_creation_func, eps = get_dataset_info(2)
 
@@ -34,9 +34,9 @@ if __name__ == '__main__':
         
         name_1, parent_1, explor_1, exploit_1, r2_1 = func_1[0]
 
-        avg_explor_1.append(explor_1)
-        avg_exploit_1.append(exploit_1)
-        avg_r2_1.append(r2_1)
+        avg_explor_1.append(np.mean(explor_1, axis=0))
+        avg_exploit_1.append(np.mean(exploit_1, axis=0))
+        avg_r2_1.append(np.mean(r2_1, axis=0))
 
         # Setting up for dataset number 2
         data_name, data_creation_func, eps = get_dataset_info(3)
@@ -46,9 +46,9 @@ if __name__ == '__main__':
 
         name_2, parent_2, explor_2, exploit_2, r2_2 = func_2[0]
 
-        avg_explor_2.append(explor_2)
-        avg_exploit_2.append(exploit_2)
-        avg_r2_2.append(r2_2)
+        avg_explor_2.append(np.mean(explor_2, axis=0))
+        avg_exploit_2.append(np.mean(exploit_2, axis=0))
+        avg_r2_2.append(np.mean(r2_2, axis=0))
 
         child_11, child_12 = parent_1.sub_models
 
@@ -66,9 +66,9 @@ if __name__ == '__main__':
         
         name_mod, parent_mod, explor_mod, exploit_mod, r2_mod = func_mod[0]
 
-        avg_explor_mod.append(explor_mod)
-        avg_exploit_mod.append(exploit_mod)
-        avg_r2_mod.append(r2_mod)
+        avg_explor_mod.append(np.mean(explor_mod, axis=0))
+        avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
+        avg_r2_mod.append(np.mean(r2_mod, axis=0))
     
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -80,20 +80,6 @@ if __name__ == '__main__':
     current_dateday = datetime.now().strftime("%Y-%m-%d")
     workspace = f"{data_name}/{model_name.lower()}"
     folder_of_the_day = '/data-' + str(current_dateday)
-    if os.path.exists(workspace + folder_of_the_day):
-        print('Data folder is ready')
-    else:
-        os.mkdir(workspace + folder_of_the_day)
-        print('Data folder created')
-        os.mkdir(workspace + folder_of_the_day + '/contour')
-        print("Contour folder created")
-        os.mkdir(workspace + folder_of_the_day + '/differentiable_plots')
-        print("CSV folder created")
-        os.mkdir(workspace + folder_of_the_day + '/csv')
-        print("HP folder created")
-        os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
-        print("Model folder created")
-        os.mkdir(workspace + folder_of_the_day + '/models')
 
     k = str(k_vals[0]).replace('.', ',')
     g = str(g_vals[0]).replace('.', ',')
@@ -116,18 +102,24 @@ if __name__ == '__main__':
     plt.plot(avg_explor_mod, label='Exploration Modular')
 
     plt.legend()
-    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}modular_exploration_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+    plt.title(f'2D Modularity Experiment Exploration with {nbr_repetition} repetitions')
+    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_exploration_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+    plt.close()
 
     plt.plot(avg_exploit_1, label='Exploitation 1')
     plt.plot(avg_exploit_2, label='Exploitation 2')
     plt.plot(avg_exploit_mod, label='Exploitation Modular')
 
     plt.legend()
-    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}modular_exploitation_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+    plt.title(f'2D Modularity Experiment Exploitation with {nbr_repetition} repetitions')
+    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_exploitation_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+    plt.close()
 
     plt.plot(avg_r2_1, label='R2 1')
     plt.plot(avg_r2_2, label='R2 2')
     plt.plot(avg_r2_mod, label='R2 Modular')
 
     plt.legend()
-    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}modular_r2_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+    plt.figure(f'2D Modularity R2 Exploration with {nbr_repetition} repetitions')
+    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_r2_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+    plt.close()
