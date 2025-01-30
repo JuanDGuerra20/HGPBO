@@ -32,31 +32,31 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
         exploit.append(np.mean(temp_exploit))
         r2.append(np.mean(temp_r2))
 
-    if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
-        model_name = "Efficient"
+        if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
+            model_name = "Efficient"
 
-    elif h_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-        model_name = "Lossless_Efficient"
+        elif h_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+            model_name = "Lossless_Efficient"
 
-    current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
-    current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"{data_name}/{model_name.lower()}"
-    folder_of_the_day = '/data-' + str(current_dateday)
+        current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+        current_dateday = datetime.now().strftime("%Y-%m-%d")
+        workspace = f"{data_name}/{model_name.lower()}"
+        folder_of_the_day = '/data-' + str(current_dateday)
 
-    k = str(k_vals[0]).replace('.', ',')
-    g = str(g_vals[0]).replace('.', ',')
-    n = str(nu_vals[0]).replace('.', ',')
+        k = str(k_vals[0]).replace('.', ',')
+        g = str(g_vals[0]).replace('.', ',')
+        n = str(nu_vals[0]).replace('.', ',')
 
-    plt.plot(alpha_vals, explor, label='exploration')
-    plt.plot(alpha_vals, exploit, label='exploitation')
-    plt.plot(alpha_vals, r2, label='R2')
+        plt.plot(alpha_vals, explor, label='exploration')
+        plt.plot(alpha_vals, exploit, label='exploitation')
+        plt.plot(alpha_vals, r2, label='R2')
 
-    plt.xlabel('Alpha Value (nonlinearity)')
+        plt.xlabel('Alpha Value (nonlinearity)')
 
-    plt.ylabel("Performance")
-    plt.legend()
-    plt.title(f'Exponential Nonlinearity Experiment')
-    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/exponential_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+        plt.ylabel("Performance")
+        plt.legend()
+        plt.title(f'Exponential Nonlinearity Experiment')
+        plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/exponential_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
 
 if __name__ == "__main__":
     alpha_vals = np.arange(1,8)
