@@ -96,8 +96,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     heatmap_rep = []
     h_opt_time = []
     h_pred_time = []
-    for q in range(nbr_query):
-        # print(f"\n====================================\nQuery Number {q}\n")
+    for q in tqdm(range(nbr_query)):
 
         if q == 0:
             if children == []:
