@@ -12,7 +12,7 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
     explor = []
     exploit = []
     r2 = []
-    for alpha in alpha_vals:
+    for i, alpha in enumerate(alpha_vals):
 
         temp_explor = []
         temp_exploit = []
@@ -47,11 +47,12 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
         g = str(g_vals[0]).replace('.', ',')
         n = str(nu_vals[0]).replace('.', ',')
 
-        plt.plot(alpha_vals, explor, label='exploration')
-        plt.plot(alpha_vals, exploit, label='exploitation')
-        plt.plot(alpha_vals, r2, label='R2')
+        plt.plot(alpha_vals[:i+1], explor, label='exploration')
+        plt.plot(alpha_vals[:i+1], exploit, label='exploitation')
+        plt.plot(alpha_vals[:i+1], r2, label='R2')
 
         plt.xlabel('Alpha Value (nonlinearity)')
+        plt.ylim(0, 1.1)
 
         plt.ylabel("Performance")
         plt.legend()
@@ -59,6 +60,6 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
         plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/exponential_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
 
 if __name__ == "__main__":
-    alpha_vals = np.arange(1,8)
+    alpha_vals = np.arange(1,20)
 
     exponential_experiment(10, 10, 80, alpha_vals)
