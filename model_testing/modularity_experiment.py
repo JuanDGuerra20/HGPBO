@@ -5,7 +5,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 10
+    nbr_repetition = 5
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
@@ -30,25 +30,25 @@ if __name__ == '__main__':
         data_name, data_creation_func, eps = get_dataset_info(2)
 
         func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
         
         name_1, parent_1, explor_1, exploit_1, r2_1 = func_1[0]
 
         avg_explor_1.append(np.mean(explor_1, axis=0))
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
-        avg_r2_1.append(np.mean(r2_1, axis=0))
+        avg_r2_1.append(r2_1)
 
         # Setting up for dataset number 2
         data_name, data_creation_func, eps = get_dataset_info(3)
 
         func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
 
         name_2, parent_2, explor_2, exploit_2, r2_2 = func_2[0]
 
         avg_explor_2.append(np.mean(explor_2, axis=0))
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
-        avg_r2_2.append(np.mean(r2_2, axis=0))
+        avg_r2_2.append(r2_2)
 
         child_11, child_12 = parent_1.sub_models
 
@@ -62,13 +62,13 @@ if __name__ == '__main__':
 
         data_name, data_creation_func, eps = get_dataset_info(6)
         func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, children=modular_children, visualize=False)
+                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, children=modular_children, visualize=True)
         
         name_mod, parent_mod, explor_mod, exploit_mod, r2_mod = func_mod[0]
 
         avg_explor_mod.append(np.mean(explor_mod, axis=0))
         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-        avg_r2_mod.append(np.mean(r2_mod, axis=0))
+        avg_r2_mod.append(r2_mod)
     
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -120,6 +120,6 @@ if __name__ == '__main__':
     plt.plot(avg_r2_mod, label='R2 Modular')
 
     plt.legend()
-    plt.figure(f'2D Modularity R2 Exploration with {nbr_repetition} repetitions')
+    plt.title(f'2D Modularity Experiment R2 with {nbr_repetition} repetitions')
     plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_r2_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
     plt.close()

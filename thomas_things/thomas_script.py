@@ -216,11 +216,7 @@ def run_training_and_eval(nbr_query, nbr_repetition, kappa):
     # Compute the mean on each line which accumulated value over repetitions
     for q in range(nbr_query):
         array_explr_mean_2D[q] = array_explr_mean_2D[q] / nbr_repetition
-        if array_explr_mean_2D[q] > 1:
-            print("I hate this")
         array_explt_mean_2D[q] = array_explt_mean_2D[q] / nbr_repetition
-        if array_explt_mean_2D[q] > 1:
-            print("I hate this")
 
     array_pins_count_2D = count_pin(array_pins_coord_2D, test_x_2D)
     array_pins_count_exploration_2D = count_pin(array_pins_coord_exploration_2D, test_x_2D)
