@@ -592,6 +592,27 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
             plt.show()
         plt.close()
 
+def child_contour_r2(sub_models, test_x, true_y):
+    children = []
+    for i, model in enumerate(sub_models):
+        model.eval()
+
+        likelihood = model.likelihood
+        likelihood.eval()
+
+        with torch.no_grad(), gpytorch.settings.fast_pred_var():
+            observed_pred = likelihood(model(test_x))
+
+        with torch.no_grad():
+            f, ax = plt.subplots(1, 1)
+
+            mean = observed_pred.mean.numpy()
+            mean = mean / np.max(mean)
+
+        children.append(linregress(true_y[i], mean).rvalue)
+
+    return children
+
 def map_neural_to_list(train):
     new_train = []
 

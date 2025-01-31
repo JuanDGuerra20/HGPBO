@@ -92,6 +92,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     hier_qc = torch.ones(len(x_sub1) * len(x_sub2))
     better_exploitation_score = []
     better_exploration_score = []
+    child_1_r2 = []
+    child_2_r2 = []
 
     heatmap_rep = []
     h_opt_time = []
@@ -304,6 +306,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             h_pred_time.append(t)
             print(f"Hierarchical pred time: {t}")"""
 
+        c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
+                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+
+        child_1_r2.append(c1_r2)
+        child_2_r2.append(c2_r2)
+
         if visualize:
             k = str(kappa).replace('.', ',')
             g = str(gamma).replace('.', ',')
@@ -343,6 +351,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
+
+
 
     if visualize:
         k = str(kappa).replace('.', ',')

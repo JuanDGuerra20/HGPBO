@@ -18,8 +18,13 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
         temp_exploit = []
         temp_r2 = []
         data_name, data_creation_func, eps = get_dataset_info(7, alpha=alpha)
-        result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+        try:
+            result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                     nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+        except:
+            result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+
         for rep in result:
             name_1, parent_1, explor_1, exploit_1, r2_1 = rep
 
