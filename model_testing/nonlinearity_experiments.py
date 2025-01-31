@@ -19,7 +19,7 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
         temp_r2 = []
         data_name, data_creation_func, eps = get_dataset_info(7, alpha=alpha)
         result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
         for rep in result:
             name_1, parent_1, explor_1, exploit_1, r2_1 = rep
 
@@ -60,6 +60,6 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
         plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/exponential_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
 
 if __name__ == "__main__":
-    alpha_vals = np.arange(1,20)
+    alpha_vals = np.arange(1, 100, 5)
 
     exponential_experiment(10, 10, 80, alpha_vals)

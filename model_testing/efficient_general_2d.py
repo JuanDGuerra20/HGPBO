@@ -448,6 +448,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
                 n = str(nu).replace('.', ',')
+                e = str(eps).replace('.', ',')
 
                 torch.save(master.state_dict(),
                            f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
@@ -476,11 +477,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}')
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'/Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
+                                 f'/Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_dim_{dimension}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}',
                                  model_name.lower(), folder_of_the_day, data_name)
 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
@@ -488,14 +489,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 re_output = np.reshape(data, y_hier.shape)
                 df = pd.DataFrame(re_output)
                 df.to_csv(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}.csv')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
 
-                print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
+                print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
 
-                list_models.append([f"kappa_{k}_gamma_{g}_nu_{n}", master, better_exploration_score, better_exploitation_score, r2])
+                list_models.append([f"eps_{e}_kappa_{k}_gamma_{g}_nu_{n}", master, better_exploration_score, better_exploitation_score, r2])
 
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
