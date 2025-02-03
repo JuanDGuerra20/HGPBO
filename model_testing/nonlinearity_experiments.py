@@ -68,7 +68,7 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
         plt.ylabel("Performance")
         plt.legend()
         plt.title(f'Exponential Nonlinearity Experiment')
-        plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/exponential_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+        plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/exponential_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
 
 if __name__ == "__main__":
     alpha_vals = np.arange(1, 100, 5)
