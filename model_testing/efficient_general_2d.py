@@ -115,7 +115,22 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like,
                                            query_counter=sub2_qc, nu=nu)
 
-            else:
+            elif len(children) == 1:
+                sub1 = children[0]
+
+                sub1_like = sub1.likelihood
+
+                train_x_sub1 = sub1.train_inputs[0][:,0]
+                train_y_sub1 = sub1.train_targets
+                max_seen_resp_1_1D = torch.max(train_y_sub1)
+
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
+                max_seen_resp_2_1D = torch.max(train_y_sub2)
+                sub2_like = gpytorch.likelihoods.GaussianLikelihood()
+                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like,
+                                           query_counter=sub2_qc, nu=nu)
+
+            elif len(children) == 2:
                 sub1 = children[0]
                 sub2 = children[1]
 
@@ -130,6 +145,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
+
 
             train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier)
             max_seen_resp_2D = torch.max(train_y_hier)
@@ -358,10 +374,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         k = str(kappa).replace('.', ',')
         g = str(gamma).replace('.', ',')
         n = str(nu).replace('.', ',')
+        e = str(eps).replace('.', ',')
 
         vi.contour_plot_1D(master.sub_models, x_sub1,
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
+                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps{e}',
                         model_name.lower(), folder_of_the_day, data_name)
 
     if final:
@@ -461,7 +478,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 e = str(eps).replace('.', ',')
 
                 torch.save(master.state_dict(),
-                           f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
+                           f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
                 over_explor.append(y)
