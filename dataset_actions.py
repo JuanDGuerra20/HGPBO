@@ -884,6 +884,38 @@ def generate_mult_factor_nonlinearity_dataset(dimension, eps):
 
     return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
 
+def generate_b_mult_factor_nonlinearity_dataset(dimension, eps):
+    x_sub1 = torch.linspace(0, 2, dimension).double()
+    y_sub1 = torch.sin(x_sub1)
+    y_sub1 = y_sub1.double()
+
+    x_sub2 = torch.linspace(0, 2, dimension).double()
+    y_sub2 = torch.tanh(x_sub2)
+
+    y_sub2 = y_sub2.double()
+
+    x_hier = torch.zeros((dimension, dimension, 2)).double()
+
+    for i in range(len(x_sub1)):
+        for j in range(len(x_sub2)):
+            x_hier[i, j, 0] = x_sub1[i]
+            x_hier[i, j, 1] = x_sub2[j]
+
+    y_hier = torch.zeros((dimension, dimension))
+
+    test_x = make_test_sub(5, x_sub1)
+    # test_x_hier = make_test_hierarchical(10, x_hier)
+    test_x_hier = torch.reshape(x_hier, (-1, 2))
+
+    b1, b2 = eps
+    for i in range(len(y_sub1)):
+        for j in range(len(y_sub2)):
+            y_hier[i, j] = b1*y_sub1[i] + b2*y_sub2[j]   # Adding a convolution and need epsilon
+
+    y_hier = y_hier.double()
+
+    return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
+
 
 def get_dataset_info(dataset_num, alpha=1):
     if dataset_num == 1:
@@ -917,7 +949,11 @@ def get_dataset_info(dataset_num, alpha=1):
         eps = alpha
     elif dataset_num == 8:
         data_name = 'nonlinearity_mult_factor'
-        data_creation_func = generate_exponential_nonlinearity_dataset
+        data_creation_func = generate_mult_factor_nonlinearity_dataset
+        eps = alpha
+    elif dataset_num == 9:
+        data_name = 'nonlinearity_beta_mult_factor'
+        data_creation_func = generate_b_mult_factor_nonlinearity_dataset
         eps = alpha
     else:
         raise AssertionError("Dataset number invalid")
