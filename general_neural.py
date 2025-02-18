@@ -110,9 +110,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     max_seen_resp_2D = 0
     max_seen_resp_1_1D = 0
     max_seen_resp_2_1D = 0
-    ground_truth_max_1 = torch.max(y_sub1)
-    ground_truth_max_2 = torch.max(y_sub2)
-    ground_truth_max_hier = torch.max(y_hier)
     sub1_qc = torch.ones(len(test_x_1D))
     sub2_qc = torch.ones(len(test_x_1D))
     hier_qc = torch.ones(len(test_x_hier))
@@ -129,6 +126,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     list_next_value_mean = []
     better_exploitation_score = []
     better_exploration_score = []
+    child_1_r2 = []
+    child_2_r2 = []
 
     for q in tqdm(range(nbr_query)):
 
@@ -335,6 +334,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
+            c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
+                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+
+            child_1_r2.append(c1_r2)
+            child_2_r2.append(c2_r2)
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -363,9 +367,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
                         f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
                         model_name.lower(), folder_of_the_day, "Neural", neural=True)
     if final:
-        return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep
+        return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
     else:
-        return better_exploration_score, better_exploitation_score, heatmap_rep
+        return better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, hierarchical_model, multi):
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
@@ -396,6 +400,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
     list_objective_mean_map = []
     final_exploitation_metric = []
     final_exploration_metric = []
+    child_1_r2_data = []
+    child_2_r2_data = []
 
     for kappa in k_vals:
         over_exploit = []
@@ -416,35 +422,42 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
-                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=True)
+                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=True)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
                         heatmap_data.append(heatmap_rep)
+                        child_1_r2_data.append(child_1_r2)
+                        child_2_r2_data.append(child_2_r2)
                         for i, proc in enumerate(processes):
-                            rep_exploration_score, rep_exploitation_score, heatmap_rep = proc.get()
+                            rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = proc.get()
 
                             better_exploration_score.append(rep_exploration_score)
                             better_exploitation_score.append(rep_exploitation_score)
                             heatmap_data.append(heatmap_rep)
+                            child_1_r2_data.append(child_1_r2)
+                            child_2_r2_data.append(child_2_r2)
 
 
                 else:
 
                     for i in range(nbr_repetition ):
 
-                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
+                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=True)
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
                         heatmap_data.append(heatmap_rep)
+                        child_1_r2_data.append(child_1_r2)
+                        child_2_r2_data.append(child_2_r2)
 
-                heatmap_data = np.array(heatmap_data)
-                torch.save(master.state_dict(), f'{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
                 n = str(nu).replace('.', ',')
+                heatmap_data = np.array(heatmap_data)
+                torch.save(master.state_dict(),
+                           f'{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
                 over_explor.append(y)
@@ -465,6 +478,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 rand = np.random.rand(*heatmap_data.shape)
                 random_r2 = vi.heatmap_r_score(rand, test_y_hier)
                 plt.plot(random_r2, label="Random Heatmap R2")
+                child_1_r2 = np.mean(child_1_r2_data, axis=0)
+                child_2_r2 = np.mean(child_2_r2_data, axis=0)
+
+                plt.plot(child_1_r2, label="Child 1 R2")
+                plt.plot(child_2_r2, label="Child 2 R2")
 
                 plt.legend()
                 plt.ylim(0, 1.1)
@@ -535,11 +553,11 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 30
-    nbr_rand_init = 5
-    k_vals = [2, 4, 6]
-    g_vals = [5, 6, 7]
-    nu_vals = [0.5, 1.5, 2.5]
+    nbr_repetition = 11
+    nbr_rand_init = 20
+    k_vals = [2]
+    g_vals = [6]
+    nu_vals = [2.5]
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []

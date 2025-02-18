@@ -12,63 +12,77 @@ def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
     explor = []
     exploit = []
     r2 = []
+    child_1_r2 = []
+    child_2_r2 = []
     for i, alpha in enumerate(alpha_vals):
 
         temp_explor = []
         temp_exploit = []
         temp_r2 = []
+        temp_child_1_r2_1 = []
+        temp_child_2_r2_1 = []
         data_name, data_creation_func, eps = get_dataset_info(8, alpha=alpha)
         try:
-            result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+            result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                        g_vals,
+                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
         except:
             try:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                             g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                            nu_vals, data_name, data_creation_func, eps, h_model, multi,
+                                            visualize=False)
             except:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                             g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                            nu_vals, data_name, data_creation_func, eps, h_model, multi,
+                                            visualize=False)
 
-        for rep in result:
-            name_1, parent_1, explor_1, exploit_1, r2_1 = rep
+        name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2_1, child_1_r2_2 = result[0]
 
-            temp_explor.append(explor_1)
-            temp_exploit.append(exploit_1)
-            temp_r2.append(r2_1)
+        temp_explor = np.mean(explor_1, axis=0)
+        temp_exploit = np.mean(exploit_1, axis=0)
+        """temp_r2 = np.mean(r2_1, axis=0)
+
+
+        temp_child_1_r2_1 = np.mean(child_1_r2_1 ,axis=0)
+        temp_child_2_r2_1 = np.mean(child_1_r2_2, axis=0)"""
 
         # Here we want to get a single value to plot as alpha increases
-        explor.append(np.mean(temp_explor))
-        exploit.append(np.mean(temp_exploit))
-        r2.append(np.mean(temp_r2))
+        explor.append(temp_explor[-1])
+        exploit.append(temp_exploit[-1])
+        r2.append(r2_1[-1])
+        child_1_r2.append(child_1_r2_1[-1])
+        child_2_r2.append(child_1_r2_2[-1])
 
-        if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
-            model_name = "Efficient"
+    if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
+        model_name = "Efficient"
 
-        elif h_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-            model_name = "Lossless_Efficient"
+    elif h_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+        model_name = "Lossless_Efficient"
 
-        current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
-        current_dateday = datetime.now().strftime("%Y-%m-%d")
-        workspace = f"{data_name}/{model_name.lower()}"
-        folder_of_the_day = '/data-' + str(current_dateday)
+    current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+    current_dateday = datetime.now().strftime("%Y-%m-%d")
+    workspace = f"{data_name}/{model_name.lower()}"
+    folder_of_the_day = '/data-' + str(current_dateday)
 
-        k = str(k_vals[0]).replace('.', ',')
-        g = str(g_vals[0]).replace('.', ',')
-        n = str(nu_vals[0]).replace('.', ',')
+    k = str(k_vals[0]).replace('.', ',')
+    g = str(g_vals[0]).replace('.', ',')
+    n = str(nu_vals[0]).replace('.', ',')
 
-        plt.plot(alpha_vals[:i+1], explor, label='exploration')
-        plt.plot(alpha_vals[:i+1], exploit, label='exploitation')
-        plt.plot(alpha_vals[:i+1], r2, label='R2')
+    plt.plot(alpha_vals[:i + 1], explor, label='exploration')
+    plt.plot(alpha_vals[:i + 1], exploit, label='exploitation')
+    plt.plot(alpha_vals[:i + 1], r2, label='Parent R2')
+    plt.plot(alpha_vals[:i + 1], child_1_r2, label='Child 1 R2')
+    plt.plot(alpha_vals[:i + 1], child_2_r2, label='Child 2 R2')
 
-        plt.xlabel('Alpha Value (nonlinearity)')
-        plt.ylim(0, 1.1)
+    plt.xlabel('Alpha Value (nonlinearity)')
+    plt.ylim(0, 1.1)
 
-        plt.ylabel("Performance")
-        plt.legend()
-        plt.title(f'Mult Factor Nonlinearity Experiment')
-        plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/mult_factor_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+    plt.ylabel("Performance")
+    plt.legend()
+    plt.title(f'Mult Factor Nonlinearity Experiment')
+    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/mult_factor_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
 
     plt.close()
 
@@ -84,11 +98,15 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
     explor = []
     exploit = []
     r2 = []
+    child_1_r2 = []
+    child_2_r2 = []
     for i, alpha in enumerate(alpha_vals):
 
         temp_explor = []
         temp_exploit = []
         temp_r2 = []
+        temp_child_1_r2_1 = []
+        temp_child_2_r2_1 = []
         data_name, data_creation_func, eps = get_dataset_info(7, alpha=alpha)
         try:
             result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
@@ -103,17 +121,22 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
                                             g_vals,
                                             nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
 
-        for rep in result:
-            name_1, parent_1, explor_1, exploit_1, r2_1 = rep
+        name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2_1, child_1_r2_2 = result[0]
 
-            temp_explor.append(explor_1)
-            temp_exploit.append(exploit_1)
-            temp_r2.append(r2_1)
+        temp_explor = np.mean(explor_1, axis=0)
+        temp_exploit = np.mean(exploit_1, axis=0)
+        """temp_r2 = np.mean(r2_1, axis=0)
+
+
+        temp_child_1_r2_1 = np.mean(child_1_r2_1 ,axis=0)
+        temp_child_2_r2_1 = np.mean(child_1_r2_2, axis=0)"""
 
         # Here we want to get a single value to plot as alpha increases
-        explor.append(np.mean(temp_explor))
-        exploit.append(np.mean(temp_exploit))
-        r2.append(np.mean(temp_r2))
+        explor.append(temp_explor[-1])
+        exploit.append(temp_exploit[-1])
+        r2.append(r2_1[-1])
+        child_1_r2.append(child_1_r2_1[-1])
+        child_2_r2.append(child_1_r2_2[-1])
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -132,7 +155,9 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
 
     plt.plot(alpha_vals[:i+1], explor, label='exploration')
     plt.plot(alpha_vals[:i+1], exploit, label='exploitation')
-    plt.plot(alpha_vals[:i+1], r2, label='R2')
+    plt.plot(alpha_vals[:i+1], r2, label='Parent R2')
+    plt.plot(alpha_vals[:i+1], child_1_r2, label='Child 1 R2')
+    plt.plot(alpha_vals[:i+1], child_2_r2, label='Child 2 R2')
 
     plt.xlabel('Alpha Value (nonlinearity)')
     plt.ylim(0, 1.1)
@@ -218,9 +243,14 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
 
     plt.close()
 if __name__ == "__main__":
+
     alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
 
-    mult_factor_experiment(5, 10, 80, alpha_vals)
+    exponential_experiment(20, 10, 80, alpha_vals)
+
+    alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
+
+    mult_factor_experiment(20, 10, 80, alpha_vals)
 
     """alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
     

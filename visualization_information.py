@@ -580,6 +580,8 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
                 ax.plot(test_x.numpy(), true_y[i].numpy(), 'r')
 
             ax.legend(['Observed Data', 'Mean', 'Confidence', 'True'])
+        plt.xlabel("Input Space")
+        plt.ylabel("Output Value")
         plt.title(f"{model_type} SubModel {i} Contour Map for Respective Data")
         plt.tight_layout()
         if save:

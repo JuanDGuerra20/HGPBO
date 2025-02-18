@@ -59,7 +59,7 @@ class PriorMean(gpytorch.means.Mean):  # PMF
 
 class Hierarchical_GP(gpytorch.models.ExactGP):
 
-    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa):
+    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter):
         super(Hierarchical_GP, self).__init__(train_x, train_y, likelihood)
 
         self.sub_models = sub_models  # This will be useful for creating the training procedure
@@ -68,6 +68,7 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
         self.mean_module.requires_grad = False
         self.covar_module = hierarchical_kernel
         self.kappa = kappa
+        self.query_counter = query_counter
 
     def forward(self, x):
         mean_x = self.mean_module(x)
@@ -160,6 +161,8 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
             opt.zero_grad()
 
             loss1 = loss
+    def increment_q_n(self, query_c, query, domain):
+        return query_c
 
 
 class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):

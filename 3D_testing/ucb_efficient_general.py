@@ -89,14 +89,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     heatmap_rep = []
     h_opt_time = []
     h_pred_time = []
+    children_r2 = []
 
     k = str(kappa).replace('.', ',')
     g = str(gamma).replace('.', ',')
     n = str(nu).replace('.', ',')
 
-    for q in range(nbr_query):
-        print(f"\n====================================\nQuery Number {q}\n")
-
+    for q in tqdm(range(nbr_query)):
         if q == 0:
             # Need to initialize the model - Will be random in this method
             train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
@@ -185,10 +184,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-        vi.contour_plot_1D(master.sub_models, x_sub1,
-                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
-                           model_name, folder_of_the_day, data_name)
+
        
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
@@ -284,8 +280,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                         contribution3,
                                                                                         max_seen_resp_3_1D,
                                                                                         training_iter=training_iter)
-        
-        print(f"Updating submodels time: {time.time() - start}")
 
         sub1.eval()
         sub1_like.eval()
@@ -338,14 +332,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master.train()
             likelihood.train()
 
-            start = time.time()
-
             master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
                                                     verbose=False)
-            
-            t = time.time() - start
-            h_opt_time.append(t)
-            print(f"Hoptimize time: {t}")
+
 
             # Get into evaluation (predictive posterior) mode
             master.eval()
@@ -357,11 +346,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub2_like.eval()
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
-            start = time.time()
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-            t = time.time() - start
-            h_pred_time.append(t)
-            print(f"Hierarchical pred time: {t}")
+            temp_child_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
+                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3/torch.max(y_sub3)])
+
+        children_r2.append(temp_child_r2)
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -381,26 +370,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
 
+    vi.contour_plot_1D(master.sub_models, x_sub1,
+                       [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
+                       f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
+                       model_name, folder_of_the_day, data_name)
 
-        plt.plot(range(len(h_opt_time)), h_opt_time)
-        plt.title(f"Hierarchical Optimization Computation Time")
-        plt.ylabel("Time (s)")
-        plt.xlabel("Query Number")
-        plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
-        plt.close()
-
-        plt.plot(range(len(h_pred_time)), h_pred_time)
-        plt.title(f"Hierarchical Space Prediction Computation Time")
-        plt.ylabel("Time (s)")
-        plt.xlabel("Query Number")
-        plt.savefig(f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
-        plt.close()
-    
     
     if final:
-        return master, sub1, sub2, sub3, better_exploration_score, better_exploitation_score, heatmap_rep
+        return master, sub1, sub2, sub3, better_exploration_score, better_exploitation_score, heatmap_rep, children_r2
     else:
-        return better_exploration_score, better_exploitation_score, heatmap_rep
+        return better_exploration_score, better_exploitation_score, heatmap_rep, children_r2
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
@@ -446,36 +425,54 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 better_exploitation_score = []
                 heatmap_data = []
                 processes = []
+                c1_r2_data = []
+                c2_r2_data = []
+                c3_r2_data = []
 
                 if multi:
                     with mp.Pool(processes=nbr_repetition - 1) as pool:
                         for i in range(nbr_repetition - 1):
-                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, model_name, folder_of_the_day, data_name,))
+                            p = pool.apply_async(run_repetition, (
+                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name,))
                             processes.append(p)
 
-                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, final=True)
-
-                        better_exploration_score.append(rep_exploration_score)
-                        better_exploitation_score.append(rep_exploitation_score)
-                        heatmap_data.append(heatmap_rep)
-
-                        for proc in processes:
-                            rep_exploration_score, rep_exploitation_score, heatmap_rep = proc.get()
-
-                            better_exploration_score.append(rep_exploration_score)
-                            better_exploitation_score.append(rep_exploitation_score)
-                            heatmap_data.append(heatmap_rep)
-
-                else:
-                    for i in range(nbr_repetition):
-                        print(f"Entering Repetition {i}")
-                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep = run_repetition(
+                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                             data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
                         heatmap_data.append(heatmap_rep)
+                        children_r2 = np.array(children_r2)
+                        c1_r2_data.append(children_r2[:,0])
+                        c2_r2_data.append(children_r2[:,1])
+                        c3_r2_data.append(children_r2[:,2])
+
+                        for proc in processes:
+                            rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = proc.get()
+
+                            better_exploration_score.append(rep_exploration_score)
+                            better_exploitation_score.append(rep_exploitation_score)
+                            heatmap_data.append(heatmap_rep)
+                            children_r2 = np.array(children_r2)
+                            c1_r2_data.append(children_r2[:, 0])
+                            c2_r2_data.append(children_r2[:, 1])
+                            c3_r2_data.append(children_r2[:, 2])
+
+                else:
+                    for i in range(nbr_repetition):
+                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
+                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True)
+
+                        better_exploration_score.append(rep_exploration_score)
+                        better_exploitation_score.append(rep_exploitation_score)
+                        heatmap_data.append(heatmap_rep)
+                        children_r2 = np.array(children_r2)
+                        c1_r2_data.append(children_r2[:, 0])
+                        c2_r2_data.append(children_r2[:, 1])
+                        c3_r2_data.append(children_r2[:, 2])
 
                 heatmap_data = np.array(heatmap_data)
                 k = str(kappa).replace('.', ',')
@@ -510,6 +507,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 random_r2 = vi.heatmap_r_score(rand, y_hier)
                 plt.plot(random_r2, label="Random Heatmap R2")
 
+                child_1_r2 = np.mean(c1_r2_data, axis=0)
+                child_2_r2 = np.mean(c2_r2_data, axis=0)
+                child_3_r2 = np.mean(c3_r2_data, axis=0)
+
+                plt.plot(child_1_r2, label="Child 1 R2")
+                plt.plot(child_2_r2, label="Child 2 R2")
+                plt.plot(child_3_r2, label="Child 3 R2")
+
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
 
@@ -530,24 +535,24 @@ if __name__ == '__main__':
     nbr_query = 100
     training_iter = 5
     nbr_repetition = 10
-    nbr_rand_init = 5
+    nbr_rand_init = 10
     k_vals = [2]
-    g_vals = [4, 6, 8]
-    nu_vals = [1.5, 2.5]
+    g_vals = [8]
+    nu_vals = [1.5]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = False
+    multi = True
 
     for h in h_model:
         for dataset_num in [5]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-            if multi:
+            """if multi:
                 p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, ))
                 process.append(p)
                 p.start()
                 print(f"ID of process: {p.pid}")
-            else:
-                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+            else:"""
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
                                eps, h, multi)
