@@ -569,27 +569,27 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
                 temp_x = list(range(len(test_x)))
                 new_train = map_neural_to_list(train_x.numpy())
                 #ax.plot(new_train, train_y.numpy(), 'k*')
-                ax.plot(temp_x, mean, 'b')
+                ax.plot(temp_x, mean, 'b', label='Predicted Mean')
                 #ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 
-                ax.plot(temp_x, true_y[i].numpy(), 'r')
+                ax.plot(temp_x, true_y[i].numpy(), 'r', label='Ground Truth')
             else:
                 #ax.plot(train_x.numpy(), div1.numpy(), 'k*')
-                ax.plot(test_x.numpy(), mean, 'b')
-                ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5)
-                ax.plot(test_x.numpy(), true_y[i].numpy(), 'r')
+                ax.plot(test_x.numpy(), mean, 'b', label='Predicted Mean')
+                ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5, label='Uncertainty')
+                ax.plot(test_x.numpy(), true_y[i].numpy(), 'r', label='Ground Truth')
 
-            ax.legend(['Observed Data', 'Mean', 'Confidence', 'True'])
+            ax.legend()
         plt.xlabel("Input Space")
         plt.ylabel("Output Value")
         plt.title(f"{model_type} SubModel {i} Contour Map for Respective Data")
         plt.tight_layout()
         if save:
             if neural:
-                plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_submodel_{i}')
+                plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}')
 
             else:
-                plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_submodel_{i}')
+                plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}')
         else:
             plt.show()
         plt.close()

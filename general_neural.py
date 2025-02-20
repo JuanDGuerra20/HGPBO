@@ -475,9 +475,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
                 plt.plot(r2, label="Heatmap R2")
 
-                rand = np.random.rand(*heatmap_data.shape)
-                random_r2 = vi.heatmap_r_score(rand, test_y_hier)
-                plt.plot(random_r2, label="Random Heatmap R2")
                 child_1_r2 = np.mean(child_1_r2_data, axis=0)
                 child_2_r2 = np.mean(child_2_r2_data, axis=0)
 
@@ -553,11 +550,11 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 11
-    nbr_rand_init = 20
+    nbr_repetition = 30
+    nbr_rand_init = 10
     k_vals = [2]
     g_vals = [6]
-    nu_vals = [2.5]
+    nu_vals = [0.5, 1.5, 2.5]
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []

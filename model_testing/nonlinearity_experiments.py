@@ -1,3 +1,5 @@
+import numpy as np
+
 from efficient_general_2d import *
 
 def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
@@ -178,40 +180,54 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
 
-    explor = []
-    exploit = []
-    r2 = []
-    for i, alpha in enumerate(alpha_vals):
+    heat_explor = []
+    heat_exploit = []
+    heat_r2 = []
+    heat_child_1_r2 = []
+    heat_child_2_r2 = []
+    for i in range(len(alpha_vals)):
+        explor = []
+        exploit = []
+        r2 = []
+        c1_r2 = []
+        c2_r2 = []
+        for j in range(len(alpha_vals[i])):
+            betas = alpha_vals[i][j]
+            data_name, data_creation_func, eps = get_dataset_info(9, alpha=betas)
 
-        temp_explor = []
-        temp_exploit = []
-        temp_r2 = []
-        data_name, data_creation_func, eps = get_dataset_info(9, alpha=alpha)
-        try:
-            result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                        g_vals,
-                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
-        except:
+            temp_explor = []
+            temp_exploit = []
+            temp_r2 = []
+            temp_child_1_r2 = []
+            temp_child_2_r2 = []
             try:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                             g_vals,
                                             nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
             except:
-                result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                            g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                try:
+                    result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                                g_vals,
+                                                nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                except:
+                    result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                                g_vals,
+                                                nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
 
-        for rep in result:
-            name_1, parent_1, explor_1, exploit_1, r2_1 = rep
+            name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2, child_2_r2 = result[0]
 
-            temp_explor.append(explor_1)
-            temp_exploit.append(exploit_1)
-            temp_r2.append(r2_1)
+            explor.append(np.mean(explor_1, axis=0)[-1])
+            exploit.append(np.mean(exploit_1, axis=0)[-1])
+            r2.append(r2_1[-1])
+            c1_r2.append(child_1_r2[-1])
+            c2_r2.append(child_2_r2[-1])
 
-        # Here we want to get a single value to plot as alpha increases
-        explor.append(np.mean(temp_explor))
-        exploit.append(np.mean(temp_exploit))
-        r2.append(np.mean(temp_r2))
+        heat_explor.append(explor)
+        heat_exploit.append(exploit)
+        heat_r2.append(r2)
+        heat_child_1_r2.append(c1_r2)
+        heat_child_2_r2.append(c2_r2)
+
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -228,35 +244,70 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     g = str(g_vals[0]).replace('.', ',')
     n = str(nu_vals[0]).replace('.', ',')
 
-    plt.plot(alpha_vals[:i + 1], explor, label='exploration')
-    plt.plot(alpha_vals[:i + 1], exploit, label='exploitation')
-    plt.plot(alpha_vals[:i + 1], r2, label='R2')
-
-    plt.xlabel('Alpha Value (nonlinearity)')
-    plt.ylim(0, 1.1)
-
-    plt.ylabel("Performance")
-    plt.legend()
-    plt.title(f'Mult Factor Nonlinearity Experiment')
+    plt.imshow(heat_explor)
+    plt.xlabel('B1 Value (nonlinearity)')
+    plt.ylabel("B2 Value (nonlinearity)")
+    plt.colorbar()
+    plt.title(f'Mult Beta Factor Nonlinearity Exploration Score')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/mult_factor_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/BETA_explor_mult_factor_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
 
     plt.close()
+    plt.imshow(heat_exploit)
+    plt.xlabel('B1 Value (nonlinearity)')
+    plt.ylabel("B2 Value (nonlinearity)")
+    plt.colorbar()
+    plt.title(f'Mult Beta Factor Nonlinearity Exploitation Score')
+    plt.savefig(
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/BETA_exploit_mult_factor_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+
+    plt.close()
+    plt.imshow(heat_r2)
+    plt.xlabel('B1 Value (nonlinearity)')
+    plt.ylabel("B2 Value (nonlinearity)")
+    plt.colorbar()
+    plt.title(f'Mult Beta Factor Nonlinearity Parent R2 Score')
+    plt.savefig(
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/BETA_parent_r2_mult_factor_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+
+    plt.close()
+    plt.imshow(heat_child_1_r2)
+    plt.xlabel('B1 Value (nonlinearity)')
+    plt.ylabel("B2 Value (nonlinearity)")
+    plt.colorbar()
+    plt.title(f'Mult Beta Factor Nonlinearity Parent R2 Score')
+    plt.savefig(
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/BETA_child_1_r2_mult_factor_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+
+    plt.close()
+    plt.imshow(heat_child_2_r2)
+    plt.xlabel('B1 Value (nonlinearity)')
+    plt.ylabel("B2 Value (nonlinearity)")
+    plt.colorbar()
+    plt.title(f'Mult Beta Factor Nonlinearity Parent R2 Score')
+    plt.savefig(
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/BETA_child_2_r2_mult_factor_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+
+    plt.close()
+
+
 if __name__ == "__main__":
 
-    alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
+    """alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
 
     exponential_experiment(20, 10, 80, alpha_vals)
 
     alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
 
-    mult_factor_experiment(20, 10, 80, alpha_vals)
+    mult_factor_experiment(20, 10, 80, alpha_vals)"""
 
-    """alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
-    
+    #alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
+    alpha_vals = [1, 2]
     b_list = []
     for i in range(len(alpha_vals)):
+        temp_b = []
         for j in range(len(alpha_vals)):
-            b_list.append([alpha_vals[i], alpha_vals[j]])
+            temp_b.append([alpha_vals[i], alpha_vals[j]])
+        b_list.append(temp_b)
 
-    b_mult_experiment(5, 10, 80, alpha_vals)"""
+    b_mult_experiment(15, 10, 80, b_list)

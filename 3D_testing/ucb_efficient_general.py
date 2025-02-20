@@ -367,7 +367,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         better_exploration_score.append(exploration_score_2D)
         better_exploitation_score.append(exploitation_score_2D)
-        master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
 
     vi.contour_plot_1D(master.sub_models, x_sub1,
@@ -503,10 +502,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
                 plt.plot(r2, label="Heatmap R2")
 
-                rand = np.random.rand(*heatmap_data.shape)
-                random_r2 = vi.heatmap_r_score(rand, y_hier)
-                plt.plot(random_r2, label="Random Heatmap R2")
-
                 child_1_r2 = np.mean(c1_r2_data, axis=0)
                 child_2_r2 = np.mean(c2_r2_data, axis=0)
                 child_3_r2 = np.mean(c3_r2_data, axis=0)
@@ -534,7 +529,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 10
+    nbr_repetition = 30
     nbr_rand_init = 10
     k_vals = [2]
     g_vals = [8]
@@ -543,7 +538,7 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = True
+    multi = False
 
     for h in h_model:
         for dataset_num in [5]:

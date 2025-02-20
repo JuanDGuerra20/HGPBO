@@ -38,7 +38,7 @@ name_code = 'HGP_BO-test6-priorMAP-1model1D'
 current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
 current_dateday = datetime.now().strftime("%Y-%m-%d")
 
-workspace_folder = (r'C:\Users\preda\PycharmProjects\HierarchicalGPBO')  # path to folder
+workspace_folder = (r'C:\Users\preda\PycharmProjects\HGPBO')  # path to folder
 
 os.chdir(workspace_folder)
 
@@ -87,7 +87,7 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, nbr_quer
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals):
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HierarchicalGPBO/vanilla"
+    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/vanilla"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -97,17 +97,22 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         os.mkdir(workspace + folder_of_the_day + '/contour')
         print("Contour folder created")
         os.mkdir(workspace + folder_of_the_day + '/differentiable_plots')
-        print("Plots folder created")
+        print("CSV folder created")
+        os.mkdir(workspace + folder_of_the_day + '/csv')
+        print("HP folder created")
+        os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
+        print("Model folder created")
+        os.mkdir(workspace + folder_of_the_day + '/models')
 
     ground_truth_max_hier = torch.max(y_hier)
 
-    heatmap_data_sub1 = []
-    heatmap_data_sub2 = []
-
+    heatmap_data = []
     list_max_seen_2D = []
 
     over_exploit = []
     over_explor = []
+
+    hier_qc = torch.ones(len(test_x_hier))
     for kappa in k_vals:
 
         better_exploration_score = []
@@ -138,13 +143,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                     observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
 
 
-                acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
+                acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
                 next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
                 next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
-                                                                                             X_2D,
-                                                                                             Y_2D)
+                                                                                             x_hier,
+                                                                                             y_hier)
 
 
                 next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(
@@ -184,7 +189,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
                                                                                                     ground_truth_max_2D,
                                                                                                     test_x_hier,
-                                                                                                    X_2D, Y_2D)
+                                                                                                    x_hier, y_hier)
                 exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_2D)
                 """print(f'\nQuery Number: {q}')
                 print(f'Next Query Pins: {next_query_pins_exploration_2D}')
@@ -194,6 +199,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 better_exploration_score.append(exploration_score_2D)
                 better_exploitation_score.append(exploitation_score_2D)
+
+                heatmap_data.append(observed_pred.mean.detach().cpu().numpy())
 
             print(f'\nRepetition {repetition} complete!\n')
 
@@ -216,6 +223,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         std = np.std(exploitation_scores, axis=0)
         plt.plot(y, label='Exploitation')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
+
+        r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
+        plt.plot(r2, label="Parent R2")
 
         k = str(kappa).replace(".", ",")
 
@@ -263,10 +273,11 @@ if __name__ == '__main__':
 
     trainsC.plot_response_matrix()
     test_x_hier = torch.tensor(Xmean_2D)
+    test_y_hier = torch.tensor(Ymean_2D)
 
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 50
-    nbr_rand_init = 5
+    nbr_repetition = 30
+    nbr_rand_init = 10
     k_vals = [1, 2, 3, 4, 5]
     training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals)

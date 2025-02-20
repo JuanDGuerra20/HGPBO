@@ -365,8 +365,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         better_exploration_score.append(exploration_score_2D)
         better_exploitation_score.append(exploitation_score_2D)
 
-        master_like = master.likelihood(observed_pred)
-        heatmap_rep.append(master_like.mean.detach().cpu().numpy())
+        heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
 
 
 
@@ -374,11 +373,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         k = str(kappa).replace('.', ',')
         g = str(gamma).replace('.', ',')
         n = str(nu).replace('.', ',')
-        e = str(eps).replace('.', ',')
+        e = str(eps).replace('.', '_')
+        e = str(e).replace(' ', '_')
+        e = str(e).replace('[', '')
+        e = str(e).replace(']', '')
+        e = str(e).replace(',_', '_')
+        e = str(e).replace('_,', '_')
+
 
         vi.contour_plot_1D(master.sub_models, x_sub1,
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps{e}',
+                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps_{e}',
                         model_name.lower(), folder_of_the_day, data_name)
 
 
