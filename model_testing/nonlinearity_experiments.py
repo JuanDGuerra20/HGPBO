@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 from efficient_general_2d import *
@@ -88,7 +89,7 @@ def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
 
     plt.close()
 
-def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
+def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals, dataset_num):
     dimension = 10
     training_iter = 5
     k_vals = [2]
@@ -104,12 +105,7 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
     child_2_r2 = []
     for i, alpha in enumerate(alpha_vals):
 
-        temp_explor = []
-        temp_exploit = []
-        temp_r2 = []
-        temp_child_1_r2_1 = []
-        temp_child_2_r2_1 = []
-        data_name, data_creation_func, eps = get_dataset_info(7, alpha=alpha)
+        data_name, data_creation_func, eps = get_dataset_info(dataset_num, alpha=alpha)
         try:
             result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                     nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
@@ -166,8 +162,8 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
 
     plt.ylabel("Performance")
     plt.legend()
-    plt.title(f'Exponential Nonlinearity Experiment')
-    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/exponential_nonlinearity_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+    plt.title(f'{data_name} Experiment')
+    plt.savefig(f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{data_name}_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
 
     plt.close()
 
@@ -203,16 +199,16 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
             try:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                             g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
             except:
                 try:
                     result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                                 g_vals,
-                                                nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                                nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
                 except:
                     result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                                 g_vals,
-                                                nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                                nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
 
             name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2, child_2_r2 = result[0]
 
@@ -244,9 +240,13 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     g = str(g_vals[0]).replace('.', ',')
     n = str(nu_vals[0]).replace('.', ',')
 
+    alpha_vals = np.array(alpha_vals)
+
     plt.imshow(heat_explor)
     plt.xlabel('B1 Value (nonlinearity)')
     plt.ylabel("B2 Value (nonlinearity)")
+    plt.xticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
+    plt.yticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
     plt.colorbar()
     plt.title(f'Mult Beta Factor Nonlinearity Exploration Score')
     plt.savefig(
@@ -256,6 +256,8 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     plt.imshow(heat_exploit)
     plt.xlabel('B1 Value (nonlinearity)')
     plt.ylabel("B2 Value (nonlinearity)")
+    plt.xticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
+    plt.yticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
     plt.colorbar()
     plt.title(f'Mult Beta Factor Nonlinearity Exploitation Score')
     plt.savefig(
@@ -265,6 +267,8 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     plt.imshow(heat_r2)
     plt.xlabel('B1 Value (nonlinearity)')
     plt.ylabel("B2 Value (nonlinearity)")
+    plt.xticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
+    plt.yticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
     plt.colorbar()
     plt.title(f'Mult Beta Factor Nonlinearity Parent R2 Score')
     plt.savefig(
@@ -274,6 +278,8 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     plt.imshow(heat_child_1_r2)
     plt.xlabel('B1 Value (nonlinearity)')
     plt.ylabel("B2 Value (nonlinearity)")
+    plt.xticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
+    plt.yticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
     plt.colorbar()
     plt.title(f'Mult Beta Factor Nonlinearity Parent R2 Score')
     plt.savefig(
@@ -283,6 +289,8 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     plt.imshow(heat_child_2_r2)
     plt.xlabel('B1 Value (nonlinearity)')
     plt.ylabel("B2 Value (nonlinearity)")
+    plt.xticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
+    plt.yticks(range(len(alpha_vals)), alpha_vals[:, 0, 0])
     plt.colorbar()
     plt.title(f'Mult Beta Factor Nonlinearity Parent R2 Score')
     plt.savefig(
@@ -292,22 +300,22 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
 
 
 if __name__ == "__main__":
+    alpha_vals = [0.25, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
 
-    """alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
-
-    exponential_experiment(20, 10, 80, alpha_vals)
-
-    alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
-
-    mult_factor_experiment(20, 10, 80, alpha_vals)"""
-
-    #alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 32]
-    alpha_vals = [1, 2]
-    b_list = []
+    mult_factor_experiment(10, 10 ,80, alpha_vals)
+    """b_list = []
     for i in range(len(alpha_vals)):
         temp_b = []
         for j in range(len(alpha_vals)):
             temp_b.append([alpha_vals[i], alpha_vals[j]])
         b_list.append(temp_b)
 
-    b_mult_experiment(15, 10, 80, b_list)
+    with mp.Pool(processes=2) as pool:
+
+        p1 = pool.apply_async(exponential_experiment, (20, 10, 80, alpha_vals, 7.5, ))
+
+
+        p2 = pool.apply_async(b_mult_experiment, (20, 10, 80, b_list, ))
+
+        p1.get()
+        p2.get()"""

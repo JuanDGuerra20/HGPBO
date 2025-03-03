@@ -9,6 +9,98 @@ from synthetic_models import *
 from scipy.special import jn
 from scipy.optimize import root_scalar
 
+class HashTable:
+
+    # Create empty bucket list of given size
+    def __init__(self, size):
+        self.size = size
+        self.hash_table = self.create_buckets()
+
+    def create_buckets(self):
+        return [[] for _ in range(self.size)]
+
+    # Insert values into hash map
+    def set_val(self, key, val):
+
+        # Get the index from the key
+        # using hash function
+        hashed_key = hash(key) % self.size
+
+        # Get the bucket corresponding to index
+        bucket = self.hash_table[hashed_key]
+
+        found_key = False
+        for index, record in enumerate(bucket):
+            record_key, record_val = record
+
+            # check if the bucket has same key as
+            # the key to be inserted
+            if record_key[0] == key[0] and record_key[1] == key[1] and record_key[2] == key[2]:
+                found_key = True
+                break
+
+        # If the bucket has same key as the key to be inserted,
+        # Update the key value
+        # Otherwise append the new key-value pair to the bucket
+        if found_key:
+            bucket[index] = (key, val)
+        else:
+            bucket.append((key, val))
+
+    # Return searched value with specific key
+    def get_val(self, key):
+
+        # Get the index from the key using
+        # hash function
+        hashed_key = hash(key) % self.size
+
+        # Get the bucket corresponding to index
+        bucket = self.hash_table[hashed_key]
+
+        found_key = False
+        for index, record in enumerate(bucket):
+            record_key, record_val = record
+
+            # check if the bucket has same key as
+            # the key being searched
+            if record_key[0] == key[0] and record_key[1] == key[1]:
+                found_key = True
+                break
+
+        # If the bucket has same key as the key being searched,
+        # Return the value found
+        # Otherwise indicate there was no record found
+        if found_key:
+            return record_val
+        else:
+            return "No record found"
+
+    # Remove a value with specific key
+    def delete_val(self, key):
+
+        # Get the index from the key using
+        # hash function
+        hashed_key = hash(key) % self.size
+
+        # Get the bucket corresponding to index
+        bucket = self.hash_table[hashed_key]
+
+        found_key = False
+        for index, record in enumerate(bucket):
+            record_key, record_val = record
+
+            # check if the bucket has same key as
+            # the key to be deleted
+            if record_key == key:
+                found_key = True
+                break
+        if found_key:
+            bucket.pop(index)
+        return
+
+    def __str__(self):
+        return "".join(str(item) for item in self.hash_table)
+
 class PriorMean(gpytorch.means.Mean):  # PMF
     """
     This class works as basically a look-up function from the prior mean map that is passed from the submodules
@@ -16,11 +108,17 @@ class PriorMean(gpytorch.means.Mean):  # PMF
     point by looking up the prior map passed from the submodules
     """
 
-    def __init__(self, prior_map):
+    def __init__(self, prior_map, test_x):
         super().__init__()
         self.register_parameter('map', torch.nn.Parameter(prior_map, requires_grad=False))
+        self.hash_map = HashTable(np.prod(test_x.shape[:-1]))
 
-    def forward(self, input):
+        for i in range(len(test_x)):
+            for j in range(len(test_x)):
+                for k in range(len(test_x)):
+                    self.hash_map.set_val(str(test_x[i][j]), [i, j])
+
+    """def forward(self, input):
 
         Xmean_1D = torch.linspace(0.0, 2.0, self.map.shape[0]).double()
         Xmean_2D = torch.zeros((self.map.shape[0], self.map.shape[1], 2)).double()
@@ -47,7 +145,14 @@ class PriorMean(gpytorch.means.Mean):  # PMF
 
             new_prior[i] = self.map[indice_1, indice_2]
 
-        return new_prior #.to(self.device)
+        return new_prior #.to(self.device)"""
+    def forward(self, input):
+        new_prior = torch.zeros(input.shape[0])
+        for i in range(input.shape[0]):
+            look_up = self.hash_map.get_val(str(input[i]))
+            new_prior[i] = self.map[look_up[0], look_up[1]]
+
+        return new_prior
 
 
 class Hierarchical_GP(gpytorch.models.ExactGP):
@@ -157,12 +262,12 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
 
 class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
-    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
         super(Efficient_UCB_Hierarchical_GP, self).__init__(train_x, train_y, likelihood)
 
         self.sub_models = sub_models  # This will be useful for creating the training procedure
         self.kernel_op = kernel_op
-        self.mean_module = PriorMean(prior_map)
+        self.mean_module = PriorMean(prior_map, test_x)
         self.mean_module.requires_grad = False
         self.covar_module = hierarchical_kernel
         self.kappa = kappa
@@ -303,8 +408,8 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
         return query_c
 
 class Lossless_Efficient_UCB_Hierarchical_GP(Efficient_UCB_Hierarchical_GP):
-    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
-        super().__init__(train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=query_counter)
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
+        super().__init__(train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=query_counter)
 
     def Hoptimize(self, likelihood, training_iter, train_x, train_y, verbose=True):
         """

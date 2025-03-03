@@ -1,4 +1,5 @@
-import matplotlib.pyplot as plt
+import multiprocessing as mp
+
 
 from efficient_general_2d import *
 
@@ -6,7 +7,7 @@ def two_pretrained():
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 15
+    nbr_repetition = 3
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
@@ -74,6 +75,7 @@ def two_pretrained():
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
         avg_r2_2.append(r2_2)
 
+        avg_r2_c2_1.append(child_1_r2)
         avg_r2_c2_2.append(child_2_r2)
 
         child_11, child_12 = parent_1.sub_models
@@ -106,6 +108,9 @@ def two_pretrained():
         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
         avg_r2_mod.append(r2_mod)
 
+        avg_r2_c2_mod.append(child_1_r2)
+        avg_r2_c2_mod.append(child_2_r2)
+
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
 
@@ -132,6 +137,13 @@ def two_pretrained():
     avg_explor_mod = np.mean(avg_explor_mod, axis=0)
     avg_exploit_mod = np.mean(avg_exploit_mod, axis=0)
     avg_r2_mod = np.mean(avg_r2_mod, axis=0)
+
+    avg_r2_c1_1 = np.mean(avg_r2_c1_1, axis=0)
+    avg_r2_c1_2 = np.mean(avg_r2_c1_2, axis=0)
+    avg_r2_c2_1 = np.mean(avg_r2_c2_1, axis=0)
+    avg_r2_c2_2 = np.mean(avg_r2_c2_2, axis=0)
+    avg_r2_c1_mod = np.mean(avg_r2_c1_mod, axis=0)
+    avg_r2_c2_mod = np.mean(avg_r2_c2_mod, axis=0)
 
     plt.plot(avg_explor_1, label='Exploration 1')
     plt.plot(avg_explor_2, label='Exploration 2')
@@ -166,7 +178,7 @@ def two_pretrained():
     plt.plot(avg_r2_1, label='R2 1')
     plt.plot(avg_r2_2, label='R2 2')
     plt.plot(avg_r2_mod, label='R2 Modular')
-    plt.ylim(0, 1.1)
+    # plt.ylim(0, 1.1)
 
 
     plt.xlabel('Query Number')
@@ -179,12 +191,12 @@ def two_pretrained():
     plt.close()
 
     plt.plot(avg_r2_c1_1, label='Func 1 child 1', color='red')
-    plt.plot(avg_r2_c1_2, label='Func 1 child 2', color='red', marker='o')
-    plt.plot(avg_r2_c2_1, label='Func 2 child 1', color='blue')
-    plt.plot(avg_r2_c2_2, label='Func 2 child 2', color='blue', marker='o')
+    plt.plot(avg_r2_c2_1, label='Func 1 child 2', color='red', linestyle='dashed')
+    plt.plot(avg_r2_c1_2, label='Func 2 child 1', color='blue')
+    plt.plot(avg_r2_c2_2, label='Func 2 child 2', color='blue', linestyle='dashed')
     plt.plot(avg_r2_c1_mod, label='Modular Func Child 1', color='green')
-    plt.plot(avg_r2_c1_mod, label='Modular Func Child 2', color='green', marker='o')
-    plt.ylim(0, 1.1)
+    plt.plot(avg_r2_c2_mod, label='Modular Func Child 2', color='green', linestyle='dashed')
+    #plt.ylim(0, 1.1)
 
 
     plt.legend()
@@ -198,7 +210,7 @@ def two_pretrained_bad():
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 15
+    nbr_repetition = 30
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
@@ -226,11 +238,12 @@ def two_pretrained_bad():
 
     for i in range(nbr_repetition):
         # Setting up for dataset number 1
-        data_name, data_creation_func, eps = get_dataset_info(2)
+        data_name, data_creation_func, eps = get_dataset_info(1)
+        data_name = 'bad_modular_2D'
 
         try:
             func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
         except:
             try:
                 func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
@@ -245,10 +258,10 @@ def two_pretrained_bad():
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
         avg_r2_1.append(r2_1)
         avg_r2_c1_1.append(child_1_r2)
-        avg_r2_c1_2.append(child_2_r2)
+        avg_r2_c2_1.append(child_2_r2)
 
         # Setting up for dataset number 2
-        data_name, data_creation_func, eps = get_dataset_info(3)
+        data_name, data_creation_func, eps = get_dataset_info(7, 3)
 
         try:
             func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
@@ -265,7 +278,7 @@ def two_pretrained_bad():
         avg_explor_2.append(np.mean(explor_2, axis=0))
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
         avg_r2_2.append(r2_2)
-        avg_r2_c2_1.append(child_1_r2)
+
         avg_r2_c2_2.append(child_2_r2)
 
         child_11, child_12 = parent_1.sub_models
@@ -275,15 +288,13 @@ def two_pretrained_bad():
         # =======================================================
         # Modular Section
 
-        # PUTTING IN THE WR0NG CHILDREN SHOULD MAKE IT WORSE
+        modular_children = [child_21, child_12]
 
-        modular_children = [child_11, child_22]
-
-        data_name, data_creation_func, eps = get_dataset_info(7)
+        data_name, data_creation_func, eps = get_dataset_info(6)
         try:
             func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                      nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                      children=modular_children, visualize=True)
+                                          nu_vals, data_name, data_creation_func, eps, h_model, multi,
+                                          children=modular_children, visualize=True)
         except:
             try:
                 func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
@@ -299,8 +310,6 @@ def two_pretrained_bad():
         avg_explor_mod.append(np.mean(explor_mod, axis=0))
         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
         avg_r2_mod.append(r2_mod)
-        avg_r2_c1_mod.append(child_1_r2)
-        avg_r2_c2_mod.append(child_2_r2)
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -333,7 +342,6 @@ def two_pretrained_bad():
     avg_r2_c1_2 = np.mean(avg_r2_c1_2, axis=0)
     avg_r2_c2_1 = np.mean(avg_r2_c2_1, axis=0)
     avg_r2_c2_2 = np.mean(avg_r2_c2_2, axis=0)
-
     avg_r2_c1_mod = np.mean(avg_r2_c1_mod, axis=0)
     avg_r2_c2_mod = np.mean(avg_r2_c2_mod, axis=0)
 
@@ -342,14 +350,13 @@ def two_pretrained_bad():
     plt.plot(avg_explor_mod, label='Exploration Modular')
     plt.ylim(0, 1.1)
 
-
     plt.xlabel('Query Number')
     plt.ylabel('Performance')
 
     plt.legend()
-    plt.title(f'2D Modularity 2 BAD Children Experiment Exploration with {nbr_repetition} repetitions')
+    plt.title(f'2D BAD Modularity 2 Children Experiment Exploration with {nbr_repetition} repetitions')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/BAD_modular_2_children_exploration_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/bad_modular_2_children_exploration_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
     plt.close()
 
     plt.plot(avg_exploit_1, label='Exploitation 1')
@@ -357,44 +364,41 @@ def two_pretrained_bad():
     plt.plot(avg_exploit_mod, label='Exploitation Modular')
     plt.ylim(0, 1.1)
 
-
     plt.xlabel('Query Number')
     plt.ylabel('Performance')
 
     plt.legend()
-    plt.title(f'2D Modularity 2 BAD Children Experiment Exploitation with {nbr_repetition} repetitions')
+    plt.title(f'2D BAD Modularity 2 Children Experiment Exploitation with {nbr_repetition} repetitions')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/BAD_modular_2_children_exploitation_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/bad_modular_2_children_exploitation_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
     plt.close()
 
     plt.plot(avg_r2_1, label='R2 1')
     plt.plot(avg_r2_2, label='R2 2')
     plt.plot(avg_r2_mod, label='R2 Modular')
-    plt.ylim(0, 1.1)
-
+    # plt.ylim(0, 1.1)
 
     plt.xlabel('Query Number')
     plt.ylabel('Performance')
 
     plt.legend()
-    plt.title(f'2D Modularity 2 BAD Children Experiment R2 with {nbr_repetition} repetitions')
+    plt.title(f'2D BAD Modularity 2 Children Experiment R2 with {nbr_repetition} repetitions')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/BAD_modular_2_r2_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/bad_modular_2_r2_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
     plt.close()
 
     plt.plot(avg_r2_c1_1, label='Func 1 child 1', color='red')
-    plt.plot(avg_r2_c1_2, label='Func 1 child 2', color='red', marker='o')
-    plt.plot(avg_r2_c2_1, label='Func 2 child 1', color='blue')
-    plt.plot(avg_r2_c2_2, label='Func 2 child 2', color='blue', marker='o')
+    plt.plot(avg_r2_c2_1, label='Func 1 child 2', color='red', linestyle='dashed')
+    plt.plot(avg_r2_c1_2, label='Func 2 child 1', color='blue')
+    plt.plot(avg_r2_c2_2, label='Func 2 child 2', color='blue', linestyle='dashed')
     plt.plot(avg_r2_c1_mod, label='Modular Func Child 1', color='green')
-    plt.plot(avg_r2_c2_mod, label='Modular Func Child 2', color='green', marker='o')
-    plt.ylim(0, 1.1)
-
+    plt.plot(avg_r2_c2_mod, label='Modular Func Child 2', color='green', linestyle='dashed')
+    # plt.ylim(0, 1.1)
 
     plt.legend()
-    plt.title(f'Children R2 Scores with {nbr_repetition} repetitions')
+    plt.title(f'BAD Children R2 Scores with {nbr_repetition} repetitions')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/BAD_modular_2_children_r2_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/bad_modular_2_children_r2_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
     plt.close()
 
 
@@ -540,4 +544,3 @@ def one_pretrained():
 
 if __name__ == '__main__':
     two_pretrained()
-    two_pretrained_bad()

@@ -8,6 +8,8 @@ from tqdm import tqdm
 import multiprocessing as mp
 from seaborn import heatmap
 import time
+import cProfile
+import pstats
 
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
@@ -170,11 +172,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", [sub1, sub2, sub3])
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hmodel.Efficient_UCB_Hierarchical_GP(train_x_hier, train_y_hier / max_seen_resp_2D, likelihood,
-                                                            prior_hierarchical_kernel,
-                                                            prior_map / prior_map_max, kernel_op='add_kernel',
-                                                            sub_models=[sub1, sub2, sub3],
-                                                            kappa=kappa, query_counter=hier_qc)
+            master = hmodel.Efficient_UCB_Hierarchical_GP(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+                                                            prior_hierarchical_kernel, prior_map / prior_map_max,'add_kernel', [sub1, sub2, sub3], kappa, hier_qc)
 
             for i in range(nbr_rand_init):
                 hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
@@ -367,7 +366,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         better_exploration_score.append(exploration_score_2D)
         better_exploitation_score.append(exploitation_score_2D)
-        heatmap_rep.append(master_like.mean.detach().cpu().numpy())
+        heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
 
     vi.contour_plot_1D(master.sub_models, x_sub1,
                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
@@ -529,7 +528,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 30
+    nbr_repetition = 10
     nbr_rand_init = 10
     k_vals = [2]
     g_vals = [8]
@@ -549,5 +548,8 @@ if __name__ == '__main__':
                 p.start()
                 print(f"ID of process: {p.pid}")
             else:"""
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                               eps, h, multi)
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)
+
+            """cProfile.run("training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)", "output.prof")
+            stats = pstats.Stats('output.prof')
+            stats.sort_stats("percall").print_stats(20)"""

@@ -67,7 +67,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.ylabel(f'Model Type')
     plt.xlabel(f'Training Step')
     plt.title(f'Joint HP Exploration Performance over {nbr_repetition} repetitions')
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.savefig(
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
@@ -178,7 +178,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, likelihood,
+            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
@@ -327,27 +327,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         child_1_r2.append(c1_r2)
         child_2_r2.append(c2_r2)
-
-        if visualize:
-            k = str(kappa).replace('.', ',')
-            g = str(gamma).replace('.', ',')
-            n = str(nu).replace('.', ',')
-
-            plt.plot(range(len(h_opt_time)), h_opt_time)
-            plt.title(f"Hierarchical Optimization Computation Time")
-            plt.ylabel("Time (s)")
-            plt.xlabel("Query Number")
-            plt.savefig(
-                f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-OPT_time_kappa_{k}_gamma_{g}_nu_{n}')
-            plt.close()
-
-            plt.plot(range(len(h_pred_time)), h_pred_time)
-            plt.title(f"Hierarchical Space Prediction Computation Time")
-            plt.ylabel("Time (s)")
-            plt.xlabel("Query Number")
-            plt.savefig(
-                f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{model_name}_Prop_{data_name}_H-Prediction_time_kappa_{k}_gamma_{g}_nu_{n}')
-            plt.close()
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -504,8 +483,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
-                n = str(nu).replace('.', ',')
-                e = str(eps).replace('.', ',')
+                n = str(nu).replace('.', '_')
+                e = str(eps).replace('[', '')
+                e = str(e).replace(']', '')
+                e = str(e).replace(' ', '')
+                e = str(e).replace('.', '')
+                e = str(e).replace(',', '_')
 
                 torch.save(master.state_dict(),
                            f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}.pth')
@@ -547,7 +530,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'/Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_dim_{dimension}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}',
+                                 f'Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}',
                                  model_name.lower(), folder_of_the_day, data_name)
 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
