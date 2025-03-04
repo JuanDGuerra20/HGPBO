@@ -7,7 +7,7 @@ def two_pretrained():
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 3
+    nbr_repetition = 30
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
@@ -262,6 +262,7 @@ def two_pretrained_bad():
 
         # Setting up for dataset number 2
         data_name, data_creation_func, eps = get_dataset_info(7, 3)
+        data_name = 'bad_modular_2D'
 
         try:
             func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
@@ -279,6 +280,7 @@ def two_pretrained_bad():
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
         avg_r2_2.append(r2_2)
 
+        avg_r2_c1_2.append(child_1_r2)
         avg_r2_c2_2.append(child_2_r2)
 
         child_11, child_12 = parent_1.sub_models
@@ -291,6 +293,8 @@ def two_pretrained_bad():
         modular_children = [child_21, child_12]
 
         data_name, data_creation_func, eps = get_dataset_info(6)
+        data_name = 'bad_modular_2D'
+
         try:
             func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                           nu_vals, data_name, data_creation_func, eps, h_model, multi,
@@ -310,6 +314,8 @@ def two_pretrained_bad():
         avg_explor_mod.append(np.mean(explor_mod, axis=0))
         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
         avg_r2_mod.append(r2_mod)
+        avg_r2_c1_mod.append(child_1_r2)
+        avg_r2_c2_mod.append(child_2_r2)
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -349,10 +355,9 @@ def two_pretrained_bad():
     plt.plot(avg_explor_2, label='Exploration 2')
     plt.plot(avg_explor_mod, label='Exploration Modular')
     plt.ylim(0, 1.1)
-
+    print(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/')
     plt.xlabel('Query Number')
     plt.ylabel('Performance')
-
     plt.legend()
     plt.title(f'2D BAD Modularity 2 Children Experiment Exploration with {nbr_repetition} repetitions')
     plt.savefig(
@@ -543,4 +548,5 @@ def one_pretrained():
 
 
 if __name__ == '__main__':
+    two_pretrained_bad()
     two_pretrained()

@@ -1,5 +1,6 @@
 import os
 import gpytorch
+import matplotlib.pyplot as plt
 import numpy as np
 
 import synthetic_models as models
@@ -362,7 +363,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         vi.contour_plot_1D(master.sub_models, x_sub1,
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps_{e}',
+                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_init_{nbr_rand_init}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps_{e}',
                         model_name.lower(), folder_of_the_day, data_name)
 
 
@@ -430,9 +431,16 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
-                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
-                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize)
+                        try:
+                            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize)
+                        except:
+                            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                hierarchical_model,
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
+                                children=children, visualize=visualize)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -440,14 +448,16 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         child_1_r2_data.append(child_1_r2)
                         child_2_r2_data.append(child_2_r2)
                         for i, proc in enumerate(processes):
-                            rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = proc.get()
+                            try:
+                                rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = proc.get()
 
-                            better_exploration_score.append(rep_exploration_score)
-                            better_exploitation_score.append(rep_exploitation_score)
-                            heatmap_data.append(heatmap_rep)
-                            child_1_r2_data.append(child_1_r2)
-                            child_2_r2_data.append(child_2_r2)
-
+                                better_exploration_score.append(rep_exploration_score)
+                                better_exploitation_score.append(rep_exploitation_score)
+                                heatmap_data.append(heatmap_rep)
+                                child_1_r2_data.append(child_1_r2)
+                                child_2_r2_data.append(child_2_r2)
+                            except:
+                                continue
 
                 else:
 
@@ -491,7 +501,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 e = str(e).replace(',', '_')
 
                 torch.save(master.state_dict(),
-                           f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}.pth')
+                           f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
                 over_explor.append(y)
@@ -524,9 +534,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.ylabel('Performance')
                 plt.xlabel('Query Number')
 
-                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n}')
+                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}')
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
@@ -538,14 +548,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 re_output = np.reshape(data, y_hier.shape)
                 df = pd.DataFrame(re_output)
                 df.to_csv(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.csv')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
 
-                list_models.append([f"eps_{e}_kappa_{k}_gamma_{g}_nu_{n}", master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
+                list_models.append([f"eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_init_{nbr_rand_init}", master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
 
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
@@ -561,23 +571,72 @@ if __name__ == '__main__':
     nbr_query = 80
     training_iter = 5
     nbr_repetition = 15
-    nbr_rand_init = 10
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]
     multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
+
     for h in h_model:
         for dataset_num in [2, 3]:
+
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-            """if multi:
-                p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                               eps, h, multi,))
-                process.append(p)
-                p.start()
-                print(f"ID of process: {p.pid}")
-            else:"""
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                               eps, h, multi)
-            
+
+            if h == hmodel.Efficient_UCB_Hierarchical_GP:
+                model_name = "Efficient"
+
+            elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+                model_name = "Lossless_Efficient"
+
+            current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+            current_dateday = datetime.now().strftime("%Y-%m-%d")
+            workspace = f"{data_name}/{model_name.lower()}"
+            folder_of_the_day = '/data-' + str(current_dateday)
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
+            nbr_rand_init = [2, 4, 6, 8, 10, 12, 14, 16]
+
+            for rand_init in nbr_rand_init:
+
+                """if multi:
+                    p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+                                   eps, h, multi,))
+                    process.append(p)
+                    p.start()
+                    print(f"ID of process: {p.pid}")
+                else:"""
+                name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = training_procedure(nbr_query, nbr_repetition, rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+                                   eps, h, multi)[0]
+                parent_r2.append(r2)
+                child_1_r2_over.append(child_1_r2)
+                child_2_r2_over.append(child_2_r2)
+                explor.append(np.mean(better_exploration_score, axis=0))
+                exploit.append(np.mean(better_exploitation_score, axis=0))
+
+            scores = [["Parent_R2", np.array(parent_r2)],["Child_1_R2", np.array(child_1_r2_over)],["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)], ["Exploitation", np.array(exploit)]]
+            for j in range(len(scores)):
+                eval_name, evaluation = scores[j]
+                for i in range(len(nbr_rand_init)):
+                    plt.plot(range(nbr_query), evaluation[i], label=f"Init {nbr_rand_init[i]}")
+                plt.title(f"{eval_name} with varying random init")
+                plt.xlabel("Query Number")
+                plt.ylabel(f"{eval_name}")
+                plt.legend()
+                plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_random_init.png")
+                plt.close()
+
+            for eval_name, evaluation in scores:
+                plt.plot(range(len(nbr_rand_init)), evaluation[:,-1], label=eval_name)
+
+            plt.title(f"End Model Scores for different evals")
+            plt.xlabel("Query Number")
+            plt.ylabel(f"Performance")
+            plt.legend()
+            plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_random_init")
+            plt.close()

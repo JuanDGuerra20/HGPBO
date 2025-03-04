@@ -606,7 +606,7 @@ def child_contour_r2(sub_models, test_x, true_y):
             observed_pred = likelihood(model(test_x))
 
         with torch.no_grad():
-            f, ax = plt.subplots(1, 1)
+            #f, ax = plt.subplots(1, 1)
 
             mean = observed_pred.mean.numpy()
             mean = mean / np.max(mean)
