@@ -7,7 +7,7 @@ def two_pretrained():
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 30
+    nbr_repetition = 15
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
@@ -210,7 +210,7 @@ def two_pretrained_bad():
     dimension = 10
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 30
+    nbr_repetition = 15
     nbr_rand_init = 5
     k_vals = [2]
     g_vals = [6]
@@ -548,5 +548,9 @@ def one_pretrained():
 
 
 if __name__ == '__main__':
-    two_pretrained_bad()
-    two_pretrained()
+    with mp.Pool(processes=2) as pool:
+        p1 = pool.apply_async(two_pretrained, ())
+        p2 = pool.apply_async(two_pretrained_bad, ())
+
+        p1.get()
+        p2.get()

@@ -600,7 +600,7 @@ if __name__ == '__main__':
             explor = []
             exploit = []
             names = []
-            nbr_rand_init = [2, 4, 6, 8, 10, 12, 14, 16]
+            nbr_rand_init = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
 
             for rand_init in nbr_rand_init:
 
@@ -632,7 +632,7 @@ if __name__ == '__main__':
                 plt.close()
 
             for eval_name, evaluation in scores:
-                plt.plot(range(len(nbr_rand_init)), evaluation[:,-1], label=eval_name)
+                plt.plot(nbr_rand_init, evaluation[:,-1], label=eval_name)
 
             plt.title(f"End Model Scores for different evals")
             plt.xlabel("Query Number")
