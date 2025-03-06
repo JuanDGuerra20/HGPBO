@@ -583,7 +583,7 @@ if __name__ == '__main__':
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
@@ -592,5 +592,65 @@ if __name__ == '__main__':
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = training_procedure(nbr_query, nbr_repetition, nbr_repetition, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+            if h == hmodel.Efficient_UCB_Hierarchical_GP:
+                model_name = "Efficient"
+
+            elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+                model_name = "Lossless_Efficient"
+
+            current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+            current_dateday = datetime.now().strftime("%Y-%m-%d")
+            workspace = f"{data_name}/{model_name.lower()}"
+            folder_of_the_day = '/data-' + str(current_dateday)
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
+            nbr_rand_init = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+
+            for rand_init in nbr_rand_init:
+                """if multi:
+                    p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+                                   eps, h, multi,))
+                    process.append(p)
+                    p.start()
+                    print(f"ID of process: {p.pid}")
+                else:"""
+                name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+                training_procedure(nbr_query, nbr_repetition, rand_init, dimension, training_iter, k_vals, g_vals,
+                                   nu_vals, data_name, data_creation_func,
                                    eps, h, multi)[0]
+                parent_r2.append(r2)
+                child_1_r2_over.append(child_1_r2)
+                child_2_r2_over.append(child_2_r2)
+                explor.append(np.mean(better_exploration_score, axis=0))
+                exploit.append(np.mean(better_exploitation_score, axis=0))
+
+            scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
+                      ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
+                      ["Exploitation", np.array(exploit)]]
+            for j in range(len(scores)):
+                eval_name, evaluation = scores[j]
+                for i in range(len(nbr_rand_init)):
+                    plt.plot(range(nbr_query), evaluation[i], label=f"Init {nbr_rand_init[i]}")
+                plt.title(f"{eval_name} with varying random init")
+                plt.xlabel("Query Number")
+                plt.ylabel(f"{eval_name}")
+                plt.legend()
+                plt.savefig(
+                    f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_random_init.png")
+                plt.close()
+
+            for eval_name, evaluation in scores:
+                plt.plot(nbr_rand_init, evaluation[:, -1], label=eval_name)
+
+            plt.title(f"End Model Scores for different evals")
+            plt.xlabel("Query Number")
+            plt.ylabel(f"Performance")
+            plt.legend()
+            plt.savefig(
+                f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_random_init")
+            plt.close()

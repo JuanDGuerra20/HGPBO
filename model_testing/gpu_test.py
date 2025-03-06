@@ -60,7 +60,7 @@ test_x = torch.linspace(0, 1, 51).cuda()
 # Get into evaluation (predictive posterior) mode
 model.eval()
 likelihood.eval()
-
+print(time.time() - t0)
 # Test points are regularly spaced along [0,1]
 # Make predictions by feeding model through likelihood
 with torch.no_grad(), gpytorch.settings.fast_pred_var():
@@ -68,4 +68,3 @@ with torch.no_grad(), gpytorch.settings.fast_pred_var():
     mean = observed_pred.mean
     lower, upper = observed_pred.confidence_region()
 
-print(time.time() - t0)
