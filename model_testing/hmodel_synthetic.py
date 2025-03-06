@@ -10,6 +10,7 @@ from torch.cuda import device
 from synthetic_models import *
 from scipy.special import jn
 from scipy.optimize import root_scalar
+from torch import nn
 
 class HashTable:
 
@@ -623,6 +624,14 @@ class Changing_Data_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
             sub_loss.backward(retain_graph=True)
             sub_opt.step()
             sub_opt.zero_grad()
+
+class NN_Hierarchical_Comb(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super().__init__()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"using device: {self.device}")
+
+
 
 def random_initialization(random_sample, emg, trainsC, max_seen_resp, dt):
     """
