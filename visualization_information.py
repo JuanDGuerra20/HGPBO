@@ -11,7 +11,7 @@ import time
 from dataset_actions import NumpyArrayEncoder
 import torch
 from seaborn import heatmap
-from scipy.stats import linregress
+from torcheval.metrics import R2Score
 
 def compute_execution_time(executionTime_repetitions, startTime, nbr_repetition, nbr_query, folder_of_the_day,
                            workspace_folder):
@@ -608,10 +608,12 @@ def child_contour_r2(sub_models, test_x, true_y):
         with torch.no_grad():
             #f, ax = plt.subplots(1, 1)
 
-            mean = observed_pred.mean.numpy()
-            mean = mean / np.max(mean)
+            mean = observed_pred.mean
+            mean = mean / torch.max(mean)
+        metric = R2Score().to(mean.device)
+        metric.update(true_y[i], mean)
 
-        children.append(linregress(true_y[i], mean).rvalue)
+        children.append(metric.compute())
 
     return children
 

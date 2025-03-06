@@ -5,6 +5,8 @@ Easier to separate these files because they have similar uses
 This file contains the hierarchical specific things, anything that is both will be in the models file
 """
 import gpytorch.mlls
+from torch.cuda import device
+
 from synthetic_models import *
 from scipy.special import jn
 from scipy.optimize import root_scalar
@@ -108,15 +110,15 @@ class PriorMean(gpytorch.means.Mean):  # PMF
     point by looking up the prior map passed from the submodules
     """
 
-    def __init__(self, prior_map, test_x):
+    def __init__(self, prior_map, test_x, device="cpu"):
         super().__init__()
-        self.register_parameter('map', torch.nn.Parameter(prior_map, requires_grad=False))
+        self.register_parameter('map', torch.nn.Parameter(prior_map.to(device), requires_grad=False))
         self.hash_map = HashTable(np.prod(test_x.shape[:-1]))
+        self.device = device
 
         for i in range(len(test_x)):
             for j in range(len(test_x)):
-                for k in range(len(test_x)):
-                    self.hash_map.set_val(str(test_x[i][j]), [i, j])
+                self.hash_map.set_val(str(test_x[i][j]), [i, j])
 
     """def forward(self, input):
 
@@ -147,7 +149,7 @@ class PriorMean(gpytorch.means.Mean):  # PMF
 
         return new_prior #.to(self.device)"""
     def forward(self, input):
-        new_prior = torch.zeros(input.shape[0])
+        new_prior = torch.zeros(input.shape[0], device=self.device)
         for i in range(input.shape[0]):
             look_up = self.hash_map.get_val(str(input[i]))
             new_prior[i] = self.map[look_up[0], look_up[1]]
@@ -262,12 +264,12 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
 
 class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
-    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None, device=device):
         super(Efficient_UCB_Hierarchical_GP, self).__init__(train_x, train_y, likelihood)
 
         self.sub_models = sub_models  # This will be useful for creating the training procedure
         self.kernel_op = kernel_op
-        self.mean_module = PriorMean(prior_map, test_x)
+        self.mean_module = PriorMean(prior_map, test_x, device=device).to(device)
         self.mean_module.requires_grad = False
         self.covar_module = hierarchical_kernel
         self.kappa = kappa
@@ -408,8 +410,8 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
         return query_c
 
 class Lossless_Efficient_UCB_Hierarchical_GP(Efficient_UCB_Hierarchical_GP):
-    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
-        super().__init__(train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=query_counter)
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None, device="cpu"):
+        super().__init__(train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=query_counter, device=device)
 
     def Hoptimize(self, likelihood, training_iter, train_x, train_y, verbose=True):
         """
@@ -663,7 +665,7 @@ def get_y_mu_point_value(next_query_pins, y_mu, X):
     return a
 
 
-def make_Hierarchique_prediction(model, x, likelihood, device=torch.device('cpu')):
+def make_Hierarchique_prediction(model, x, likelihood):
     model.eval()
     likelihood.eval()
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
