@@ -19,12 +19,12 @@ def two_pretrained():
     avg_exploit_1 = []
     avg_r2_1 = []
     avg_r2_c1_1 = []
-    avg_r2_c1_2 = []
+    avg_r2_c2_1 = []
 
     avg_explor_2 = []
     avg_exploit_2 = []
     avg_r2_2 = []
-    avg_r2_c2_1 = []
+    avg_r2_c1_2 = []
     avg_r2_c2_2 = []
 
     avg_explor_mod = []
@@ -75,7 +75,7 @@ def two_pretrained():
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
         avg_r2_2.append(r2_2)
 
-        avg_r2_c2_1.append(child_1_r2)
+        avg_r2_c1_2.append(child_1_r2)
         avg_r2_c2_2.append(child_2_r2)
 
         child_11, child_12 = parent_1.sub_models
@@ -108,7 +108,7 @@ def two_pretrained():
         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
         avg_r2_mod.append(r2_mod)
 
-        avg_r2_c2_mod.append(child_1_r2)
+        avg_r2_c1_mod.append(child_1_r2)
         avg_r2_c2_mod.append(child_2_r2)
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
@@ -125,7 +125,7 @@ def two_pretrained():
     k = str(k_vals[0]).replace('.', ',')
     g = str(g_vals[0]).replace('.', ',')
     n = str(nu_vals[0]).replace('.', ',')
-
+    print("reached the mean section")
     avg_explor_1 = np.mean(avg_explor_1, axis=0)
     avg_exploit_1 = np.mean(avg_exploit_1, axis=0)
     avg_r2_1 = np.mean(avg_r2_1, axis=0)
@@ -142,6 +142,7 @@ def two_pretrained():
     avg_r2_c1_2 = np.mean(avg_r2_c1_2, axis=0)
     avg_r2_c2_1 = np.mean(avg_r2_c2_1, axis=0)
     avg_r2_c2_2 = np.mean(avg_r2_c2_2, axis=0)
+
     avg_r2_c1_mod = np.mean(avg_r2_c1_mod, axis=0)
     avg_r2_c2_mod = np.mean(avg_r2_c2_mod, axis=0)
 
@@ -548,9 +549,13 @@ def one_pretrained():
 
 
 if __name__ == '__main__':
-    with mp.Pool(processes=2) as pool:
+    two_pretrained()
+
+    """
+    #with mp.Pool(processes=2) as pool:
         p1 = pool.apply_async(two_pretrained, ())
         p2 = pool.apply_async(two_pretrained_bad, ())
 
         p1.get()
         p2.get()
+    """
