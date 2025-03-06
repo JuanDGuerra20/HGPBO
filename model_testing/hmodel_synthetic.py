@@ -631,6 +631,18 @@ class NN_Hierarchical_Comb(nn.Module):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"using device: {self.device}")
 
+        self.flatten = nn.Flatten()
+        self.linear_stack = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, output_dim),
+        )
+
+    def forward(self, x):
+        x = self.flatten(x)
+        logits = self.linear_stack(x)
+        return logits
+
 
 
 def random_initialization(random_sample, emg, trainsC, max_seen_resp, dt):
