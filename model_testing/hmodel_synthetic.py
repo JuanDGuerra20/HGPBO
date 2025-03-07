@@ -629,6 +629,12 @@ class NN_Hierarchical_Comb(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super().__init__()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
+
+        self.mag_loss = nn.MSELoss()
+
         print(f"using device: {self.device}")
 
         self.flatten = nn.Flatten()
@@ -637,6 +643,45 @@ class NN_Hierarchical_Comb(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim),
         )
+
+    def euclid_derivative(self, y_true, y_pred):
+        x_true_locs, y_true_locs = self.get_x_y_loc(y_true)
+        x_pred_locs, y_pred_locs = self.get_x_y_loc(y_pred)
+        euclid_loss = torch.sub((x_pred_locs + y_pred_locs), (x_true_locs + y_true_locs))
+        euclid_loss = torch.div(euclid_loss,
+                                torch.sqrt((x_true_locs - x_pred_locs) ** 2 + (y_true_locs - y_pred_locs) ** 2))
+        return torch.where(euclid_loss == torch.nan, euclid_loss, 0)
+
+    def euclid_loss(self, y_true, y_pred):
+        x_true_locs, y_true_locs = self.get_x_y_loc(y_true)
+        x_pred_locs, y_pred_locs = self.get_x_y_loc(y_pred)
+
+        x_diff = torch.pow(torch.sub(x_true_locs, x_pred_locs), 2)
+        y_diff = torch.pow(torch.sub(y_true_locs, y_pred_locs), 2)
+
+        loss = torch.sqrt(torch.add(x_diff, y_diff))
+
+        return loss
+
+    def loss_fn(self, y_true, y_pred):
+
+        euclid_loss = self.euclid_loss(y_true, y_pred)
+        y_true_mag = y_true[:,0]
+        y_pred_mag = y_pred[:,0]
+
+        mag = self.mag_loss(y_true_mag, y_pred_mag)
+
+        loss = torch.add(euclid_loss, mag)
+        return torch.mean(loss)
+
+    def get_x_y_loc(self, y):
+        ind_dim = np.sqrt(self.input_dim)
+        y_true_spat = y[:, 1]
+
+        y_true_locs = torch.remainder(y_true_spat, ind_dim)
+        x_true_locs = torch.div(y_true_spat - y_true_locs, ind_dim)
+
+        return x_true_locs, y_true_locs
 
     def forward(self, x):
         x = self.flatten(x)
