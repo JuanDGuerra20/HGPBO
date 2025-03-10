@@ -487,23 +487,34 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                            f'{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
+                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0)
+                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
+
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 y = np.mean(better_exploitation_score, axis=0)
+                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
+
                 over_exploit.append(y)
 
                 std = np.std(better_exploitation_score, axis=0)
+                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
                 plt.plot(y, label='Exploitation')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
+                r2 = np.insert(r2, 0, np.zeros(3*nbr_rand_init))
+
                 plt.plot(r2, label="Heatmap R2")
 
                 child_1_r2 = np.mean(child_1_r2_data, axis=0)
+                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))
+
                 child_2_r2 = np.mean(child_2_r2_data, axis=0)
+                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))
 
                 plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")
@@ -581,12 +592,12 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 15
+    nbr_repetition = 30
     nbr_rand_init = 10
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
@@ -644,6 +655,7 @@ if __name__ == '__main__':
             explor.append(np.mean(better_exploration_score, axis=0))
             exploit.append(np.mean(better_exploitation_score, axis=0))
 
+        print(parent_r2)
         scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]

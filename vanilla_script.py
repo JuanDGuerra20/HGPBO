@@ -223,7 +223,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         std = np.std(exploitation_scores, axis=0)
         plt.plot(y, label='Exploitation')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
-
+        heatmap_data = np.array(heatmap_data)
+        heatmap_data = np.reshape(heatmap_data, (-1, len(y)))
         r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
         plt.plot(r2, label="Parent R2")
 
@@ -278,6 +279,6 @@ if __name__ == '__main__':
     nbr_query = 100
     training_iter = 5
     nbr_repetition = 30
-    nbr_rand_init = 10
-    k_vals = [1, 2, 3, 4, 5]
+    nbr_rand_init = 1
+    k_vals = [2]
     training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals)
