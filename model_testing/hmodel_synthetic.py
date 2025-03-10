@@ -646,6 +646,7 @@ class NN_Hierarchical_Comb(nn.Module):
         for i in range(len(hidden_dims) - 1):
             self.linear_stack.append(nn.Linear(self.hidden_dims[i], self.hidden_dims[i + 1]))
             self.linear_stack.append(nn.ReLU())
+            self.linear_stack.append(nn.Dropout(0.4))
         self.linear_stack.append((nn.Linear(self.hidden_dims[-1], self.output_dim)))
 
     def euclid_derivative(self, y_true, y_pred):

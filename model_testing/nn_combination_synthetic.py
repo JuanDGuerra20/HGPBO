@@ -1,9 +1,12 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
 import hmodel_synthetic as hmodel
 from dataset_actions import *
 from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 
-def nn_pretraining(train_x, train_y, val_x, val_y, model, loss_fn, optimizer, num_epochs):
+def nn_pretraining(train_x, train_y, val_x, val_y, model, loss_fn, optimizer, num_epochs, min_delta):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     #device = torch.device('cpu')
     model = model.to(device)
@@ -12,27 +15,57 @@ def nn_pretraining(train_x, train_y, val_x, val_y, model, loss_fn, optimizer, nu
     val_x = val_x.to(device)
     val_y = val_y.to(device)
 
+    queue = []
+
     torch.cuda.synchronize()
 
     model.train()
+    val_losses = []
+    train_losses = []
+    x_vals = []
 
-    for epoch in range(num_epochs):
-        t = tqdm(enumerate(zip(train_x, train_y)), postfix=[0, 0])
-        for batch, (X,y) in t:
+    epoch_val = []
+    t = tqdm(range(num_epochs))
+    tolerance = 0
+    for epoch in t:
+        batch_val = []
+        for batch, (X,y) in enumerate(zip(train_x, train_y)):
             pred = model(X)
             train_loss = loss_fn(y, pred)
             if batch % 100 == 0:
-                val_pred = model(val_x)
-                val_loss = loss_fn(val_y, val_pred)
-                t.postfix[0] = round(train_loss.item(), 4)
-                t.postfix[1] = round(val_loss.item(), 4)
-                t.update()
+                train_losses.append(train_loss.item())
+                val_loss = loss_fn(val_y, model(val_x))
+                val_losses.append(val_loss.item())
+
+                batch_val.append(val_loss.item())
+
+                x_vals.append(epoch*len(X) + batch)
+                plt.plot(train_losses, label='train')
+                plt.plot(val_losses, label='val')
+                plt.legend()
+                plt.ylabel("Loss")
+                plt.xlabel("Batch")
+                plt.savefig(f"nn_combination/Loss_Graph")
+                plt.close()
 
             train_loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-        print(f"Epoch {epoch}/{num_epochs} complete")
+        batch_val = np.mean(batch_val)
+        epoch_val.append(batch_val)
+        t.postfix = f"Train Loss: {train_loss.item():.2f}, Val Loss: {val_loss.item():.2f}"
+        queue.append(model.state_dict())
+        if len(queue) > 5:
+            queue.pop()
 
+        if batch_val - np.min(epoch_val) > min_delta:
+            tolerance += 1
+        elif tolerance < 0 and batch_val - np.min(epoch_val) < min_delta:
+            tolerance -= 1
+
+        if tolerance >= 5:
+            print(f"Early stopping detected, validation loss increasing over past 5 epochs")
+            return queue[-1]
     return model
 
 def create_parent_distr_from_child(y1, y2):
@@ -74,6 +107,8 @@ def create_data(num_data_points):
     return y1_train, y2_train, xh_train, yh_train
 
 if __name__ == '__main__':
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     dimension = 15
     nbr_query = 80
     training_iter = 5
@@ -82,25 +117,33 @@ if __name__ == '__main__':
     g_vals = [6]
     nu_vals = [0.5]
     multi = True
+    batch_size = 100
+    num_batches = 400
+    y1_train, y2_train, xh_train, yh_train = create_data(num_batches*batch_size)
 
-    y1_train, y2_train, xh_train, yh_train = create_data(200000)
 
-    y1_train = torch.reshape(y1_train, (-1, 200, 15))
-    y2_train = torch.reshape(y2_train, (-1, 200, 15))
-    xh_train = torch.reshape(xh_train, (-1, 200, 15*15))
-    yh_train = torch.reshape(yh_train, (-1, 200, 2))
+    y1_train = torch.reshape(y1_train, (-1, batch_size, 15))
+    y2_train = torch.reshape(y2_train, (-1, batch_size, 15))
+    xh_train = torch.reshape(xh_train, (-1, batch_size, 15*15))
+    yh_train = torch.reshape(yh_train, (-1, batch_size, 2))
 
-    y1_val, y2_val, xh_val, yh_val = create_data(10000)
+    y1_val, y2_val, xh_val, yh_val = create_data(100)
 
-    hidden_dims = [dimension*dimension, dimension*dimension, dimension]
+    hidden_dims = [dimension*dimension, dimension*dimension, dimension*dimension, dimension*dimension, dimension*dimension, 2*dimension, dimension]
     # must pretrain the model before running a repetition, consider saving it to huggingface
     master = hmodel.NN_Hierarchical_Comb(input_dim=dimension*dimension, hidden_dims=hidden_dims, output_dim=2)
 
-    optimizer = torch.optim.Adam(master.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(master.parameters(), lr=1e-6)
 
-    num_epochs = 100
-    master = nn_pretraining(xh_train, yh_train, xh_val, yh_val, master, master.loss_fn, optimizer, num_epochs)
+    num_epochs = 500
+    master = nn_pretraining(xh_train, yh_train, xh_val, yh_val, master, master.loss_fn, optimizer, num_epochs, min_delta=0.5)
 
-    loss = master.loss_fn(yh_train, yh_train)
+    master.eval()
 
-    print(loss)
+    xh_val = xh_val.to(device)
+    master = master.to(device)
+    yh_val = yh_val.to(device)
+    pred = master(xh_val)
+    loss = master.loss_fn(yh_val, pred)
+
+    print(f"Validation Loss after {num_epochs}: {loss}")
