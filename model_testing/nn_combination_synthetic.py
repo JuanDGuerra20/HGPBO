@@ -4,23 +4,34 @@ from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 
 def nn_pretraining(train_x, train_y, val_x, val_y, model, loss_fn, optimizer, num_epochs):
-    model.train()
-    for i in tqdm(range(num_epochs)):
-        for batch, (X,y) in enumerate(zip(train_x, train_y)):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    #device = torch.device('cpu')
+    model = model.to(device)
+    train_x = train_x.to(device)
+    train_y = train_y.to(device)
+    val_x = val_x.to(device)
+    val_y = val_y.to(device)
 
+    torch.cuda.synchronize()
+
+    model.train()
+
+    for epoch in range(num_epochs):
+        t = tqdm(enumerate(zip(train_x, train_y)), postfix=[0, 0])
+        for batch, (X,y) in t:
             pred = model(X)
             train_loss = loss_fn(y, pred)
+            if batch % 100 == 0:
+                val_pred = model(val_x)
+                val_loss = loss_fn(val_y, val_pred)
+                t.postfix[0] = round(train_loss.item(), 4)
+                t.postfix[1] = round(val_loss.item(), 4)
+                t.update()
 
             train_loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-
-            """if batch % 10 == 0:
-                pred = model(val_x)
-                val_loss = loss_fn(val_y, pred)
-                print(f"Training loss: {train_loss}")
-
-                print(f"Validation loss: {val_loss}")"""
+        print(f"Epoch {epoch}/{num_epochs} complete")
 
     return model
 
@@ -72,22 +83,22 @@ if __name__ == '__main__':
     nu_vals = [0.5]
     multi = True
 
-    y1_train, y2_train, xh_train, yh_train = create_data(3000)
+    y1_train, y2_train, xh_train, yh_train = create_data(200000)
 
     y1_train = torch.reshape(y1_train, (-1, 200, 15))
     y2_train = torch.reshape(y2_train, (-1, 200, 15))
     xh_train = torch.reshape(xh_train, (-1, 200, 15*15))
     yh_train = torch.reshape(yh_train, (-1, 200, 2))
 
-    y1_val, y2_val, xh_val, yh_val = create_data(100)
+    y1_val, y2_val, xh_val, yh_val = create_data(10000)
 
-
+    hidden_dims = [dimension*dimension, dimension*dimension, dimension]
     # must pretrain the model before running a repetition, consider saving it to huggingface
-    master = hmodel.NN_Hierarchical_Comb(input_dim=dimension*dimension, hidden_dim=dimension, output_dim=2)
+    master = hmodel.NN_Hierarchical_Comb(input_dim=dimension*dimension, hidden_dims=hidden_dims, output_dim=2)
 
     optimizer = torch.optim.Adam(master.parameters(), lr=0.001)
 
-    num_epochs = 1000
+    num_epochs = 100
     master = nn_pretraining(xh_train, yh_train, xh_val, yh_val, master, master.loss_fn, optimizer, num_epochs)
 
     loss = master.loss_fn(yh_train, yh_train)

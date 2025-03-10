@@ -626,11 +626,12 @@ class Changing_Data_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
             sub_opt.zero_grad()
 
 class NN_Hierarchical_Comb(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim):
+    def __init__(self, input_dim, hidden_dims, output_dim):
         super().__init__()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.input_dim = input_dim
-        self.hidden_dim = hidden_dim
+        self.hidden_dims = hidden_dims
+
         self.output_dim = output_dim
 
         self.mag_loss = nn.MSELoss()
@@ -639,10 +640,13 @@ class NN_Hierarchical_Comb(nn.Module):
 
         self.flatten = nn.Flatten()
         self.linear_stack = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, output_dim),
         )
+        self.linear_stack.append(nn.Linear(self.input_dim, self.hidden_dims[0]))
+        self.linear_stack.append(nn.ReLU())
+        for i in range(len(hidden_dims) - 1):
+            self.linear_stack.append(nn.Linear(self.hidden_dims[i], self.hidden_dims[i + 1]))
+            self.linear_stack.append(nn.ReLU())
+        self.linear_stack.append((nn.Linear(self.hidden_dims[-1], self.output_dim)))
 
     def euclid_derivative(self, y_true, y_pred):
         x_true_locs, y_true_locs = self.get_x_y_loc(y_true)
