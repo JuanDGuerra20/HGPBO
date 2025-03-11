@@ -583,13 +583,13 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
                 #ax.plot(train_x.numpy(), div1.numpy(), 'k*')
                 ax.plot(test_x.numpy(), mean, 'b', label='Predicted Mean')
                 ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5, label='Uncertainty')
-                ax.plot(test_x.numpy(), true_y[i].numpy(), 'r', label='Ground Truth')
+                ax.plot(test_x.numpy(), true_y[i], 'r', label='Ground Truth')
 
             ax.legend()
         plt.xlabel("Input Space")
         plt.ylabel("Output Value")
         plt.title(f"{model_type} SubModel {i} Contour Map for Respective Data")
-        plt.ylim((0,1))
+        plt.ylim((-0.1,1.1))
         plt.tight_layout()
         if save:
             if neural:

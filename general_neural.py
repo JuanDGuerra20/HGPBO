@@ -234,7 +234,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
                                                             sub_models=[sub1, sub2],
                                                             kappa=kappa, query_counter=hier_qc)
             #for i in range(nbr_rand_init):
-            hier_qc = master.increment_q_n(hier_qc, train_x_hier[0], test_x_hier)
+            for i in range(len(train_x_hier)):
+                hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
             
             master.eval()
             likelihood.eval()
