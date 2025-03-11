@@ -543,7 +543,10 @@ def heatmap_r_score(data, z):
 
     return r_scores
 
+
+
 def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True):
+    true_y = (true_y - np.min(true_y)) / (np.max(true_y) - np.min(true_y))
     for i, model in enumerate(sub_models):
         model.eval()
 
@@ -566,6 +569,8 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
             div1[model.env_ind] = div1[model.env_ind]/model.env_max_seen
             div1[model.bif_ind] = div1[model.bif_ind]/model.bif_max_seen
 
+            mean = (mean - np.min(mean))/(np.max(mean) - np.min(mean))
+
             if neural:
                 temp_x = list(range(len(test_x)))
                 new_train = map_neural_to_list(train_x.numpy())
@@ -584,6 +589,7 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
         plt.xlabel("Input Space")
         plt.ylabel("Output Value")
         plt.title(f"{model_type} SubModel {i} Contour Map for Respective Data")
+        plt.ylim((0,1))
         plt.tight_layout()
         if save:
             if neural:
@@ -607,14 +613,12 @@ def child_contour_r2(sub_models, test_x, true_y):
             observed_pred = likelihood(model(test_x))
 
         with torch.no_grad():
-            #f, ax = plt.subplots(1, 1)
+            f, ax = plt.subplots(1, 1)
 
-            mean = observed_pred.mean
-            mean = mean / torch.max(mean)
-        metric = R2Score().to(mean.device)
-        metric.update(true_y[i], mean)
+            mean = observed_pred.mean.numpy()
+            mean = mean / np.max(mean)
 
-        children.append(metric.compute())
+        children.append(linregress(true_y[i], mean).rvalue)
 
     return children
 

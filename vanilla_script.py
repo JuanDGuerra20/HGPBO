@@ -224,7 +224,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         plt.plot(y, label='Exploitation')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
         heatmap_data = np.array(heatmap_data)
-        heatmap_data = np.reshape(heatmap_data, (-1, len(y)))
+        heatmap_data = np.reshape(heatmap_data, (-1, nbr_query, len(test_y_hier)))
         r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
         plt.plot(r2, label="Parent R2")
 
@@ -272,7 +272,7 @@ if __name__ == '__main__':
 
     y_hier = torch.from_numpy(Y_2D[:, 0].copy())
 
-    trainsC.plot_response_matrix()
+    #trainsC.plot_response_matrix()
     test_x_hier = torch.tensor(Xmean_2D)
     test_y_hier = torch.tensor(Ymean_2D)
 

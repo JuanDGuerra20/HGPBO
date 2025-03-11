@@ -148,7 +148,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
 
-            train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier)
+            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier)
             max_seen_resp_2D = torch.max(train_y_hier)
 
 
@@ -578,11 +578,11 @@ if __name__ == '__main__':
     dimension = 15
     nbr_query = 80
     training_iter = 5
-    nbr_repetition = 30
+    nbr_repetition = 15
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
@@ -631,7 +631,7 @@ if __name__ == '__main__':
             for j in range(len(scores)):
                 eval_name, evaluation = scores[j]
                 for i in range(len(nbr_rand_init)):
-                    plt.plot(range(nbr_query + 3 * nbr_rand_init[i]), evaluation[i], label=f"Init {nbr_rand_init[i]}")
+                    plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {nbr_rand_init[i]}")
                 plt.title(f"{eval_name} with varying random init")
                 plt.xlabel("Query Number")
                 plt.ylabel(f"{eval_name}")
@@ -640,7 +640,7 @@ if __name__ == '__main__':
                 plt.close()
 
             for eval_name, evaluation in scores:
-                plt.plot(nbr_rand_init, evaluation[:,-1], label=eval_name)
+                plt.plot(range(len(nbr_rand_init)), evaluation[:,nbr_query], label=eval_name)
 
             plt.title(f"End Model Scores for different evals")
             plt.xlabel("Number Random Initialization")

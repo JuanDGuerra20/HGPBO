@@ -168,7 +168,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
             max_seen_resp_1_1D = torch.max(train_y_sub1)
             max_seen_resp_2_1D = torch.max(train_y_sub2)
             
-            train_x_hier, train_y_hier = hmodel.random_initialization(nbr_rand_init, EMG, trainsC,
+            train_x_hier, train_y_hier = hmodel.random_initialization(1, EMG, trainsC,
                                                                 max_seen_resp_2D, DT)
             train_x_hier = torch.tensor(train_x_hier)
             train_y_hier = torch.tensor(train_y_hier)
@@ -233,8 +233,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
                                                             prior_map / prior_map_max, kernel_op='add_kernel',
                                                             sub_models=[sub1, sub2],
                                                             kappa=kappa, query_counter=hier_qc)
-            for i in range(nbr_rand_init):
-                hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], test_x_hier)
+            #for i in range(nbr_rand_init):
+            hier_qc = master.increment_q_n(hier_qc, train_x_hier[0], test_x_hier)
             
             master.eval()
             likelihood.eval()
@@ -388,10 +388,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     k = str(kappa).replace('.', ',')
     g = str(gamma).replace('.', ',')
     n = str(nu).replace('.', ',')
-
     vi.contour_plot_1D(master.sub_models, test_x_1D,
                         [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
-                        f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}',
+                        f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}_pid_{os.getpid()}',
                         model_name.lower(), folder_of_the_day, "Neural", neural=True)
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
@@ -487,43 +486,43 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                            f'{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
-                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
+                y = np.insert(y, 0, np.zeros(2*nbr_rand_init))
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
+                std = np.insert(std, 0, np.zeros(2*nbr_rand_init))
 
-                plt.plot(y, label='Exploration')
-                plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
+                plt.plot(y[:nbr_query], label='Exploration')
+                plt.fill_between(range(len(y[:nbr_query])), y[:nbr_query] - std[:nbr_query], y[:nbr_query] + std[:nbr_query], alpha=0.4)
 
                 y = np.mean(better_exploitation_score, axis=0)
-                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
+                y = np.insert(y, 0, np.zeros(2*nbr_rand_init))
 
                 over_exploit.append(y)
 
                 std = np.std(better_exploitation_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
-                plt.plot(y, label='Exploitation')
-                plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
+                std = np.insert(std, 0, np.zeros(2*nbr_rand_init))
+                plt.plot(y[:nbr_query], label='Exploitation')
+                plt.fill_between(range(len(y[:nbr_query])), y[:nbr_query] - std[:nbr_query], y[:nbr_query] + std[:nbr_query], alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
-                r2 = np.insert(r2, 0, np.zeros(3*nbr_rand_init))
+                r2 = np.insert(r2, 0, np.zeros(2*nbr_rand_init))
 
-                plt.plot(r2, label="Heatmap R2")
+                plt.plot(r2[:nbr_query], label="Heatmap R2")
 
                 child_1_r2 = np.mean(child_1_r2_data, axis=0)
-                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))
+                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(2*nbr_rand_init))
 
                 child_2_r2 = np.mean(child_2_r2_data, axis=0)
-                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))
+                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(2*nbr_rand_init))
 
-                plt.plot(child_1_r2, label="Child 1 R2")
-                plt.plot(child_2_r2, label="Child 2 R2")
+                plt.plot(child_1_r2[:nbr_query], label="Child 1 R2")
+                plt.plot(child_2_r2[:nbr_query], label="Child 2 R2")
 
                 plt.legend()
                 plt.ylim(0, 1.1)
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with Kappa {k} Gamma {g} Nu {n}')
                 plt.savefig(
-                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}')
+                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_rand_init_{nbr_rand_init}')
                 plt.close()
 
                 """vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
@@ -585,19 +584,19 @@ if __name__ == '__main__':
 
     y_hier = torch.from_numpy(Y_2D[:, 0].copy())
 
-    trainsC.plot_response_matrix()
+    #trainsC.plot_response_matrix()
     test_x_hier = torch.tensor(Xmean_2D)
     test_y_hier = torch.tensor(Ymean_2D)
 
 
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 30
+    nbr_repetition = 10
     nbr_rand_init = 10
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
@@ -609,7 +608,7 @@ if __name__ == '__main__':
             print(f"ID of process: {p.pid}")
         else:"""
 
-        nbr_rand_init = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+        nbr_rand_init = [8]
         parent_r2 = []
         child_1_r2_over = []
         child_2_r2_over = []
@@ -655,14 +654,13 @@ if __name__ == '__main__':
             explor.append(np.mean(better_exploration_score, axis=0))
             exploit.append(np.mean(better_exploitation_score, axis=0))
 
-        print(parent_r2)
         scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
         for j in range(len(scores)):
             eval_name, evaluation = scores[j]
             for i in range(len(nbr_rand_init)):
-                plt.plot(range(nbr_query), evaluation[i], label=f"Init {nbr_rand_init[i]}")
+                plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {nbr_rand_init[i]}")
             plt.title(f"{eval_name} with varying random init")
             plt.xlabel("Query Number")
             plt.ylabel(f"{eval_name}")
@@ -672,7 +670,7 @@ if __name__ == '__main__':
             plt.close()
 
         for eval_name, evaluation in scores:
-            plt.plot(nbr_rand_init, evaluation[:, -1], label=eval_name)
+            plt.plot(range(len(nbr_rand_init)), evaluation[:,nbr_query], label=eval_name)
 
         plt.title(f"End Model Scores for different evals")
         plt.xlabel("Query Number")
