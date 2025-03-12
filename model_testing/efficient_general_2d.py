@@ -577,15 +577,15 @@ if __name__ == '__main__':
 
     dimension = 15
     nbr_query = 80
-    training_iter = 5
-    nbr_repetition = 10
-    k_vals = [2]
-    g_vals = [6]
-    nu_vals = [0.5]
+    training_iter = 10 # Found through HP Testing
+    nbr_repetition = 15
+    k_vals = [2] # Found through HP Testing
+    g_vals = [6] # Found through HP Testing
+    nu_vals = [0.5] # Found through HP Testing
     multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    nbr_rand_init = 6
+    nbr_rand_init = 6 # Found through HP Testing
 
     for h in h_model:
         for dataset_num in [2, 3]:
@@ -609,7 +609,7 @@ if __name__ == '__main__':
             explor = []
             exploit = []
             names = []
-            training_iter_list = np.arange(1,11)
+            training_iter_list = np.arange(2,22, 2)
             for training_iter in training_iter_list:
 
                 """if multi:
@@ -632,19 +632,19 @@ if __name__ == '__main__':
                 eval_name, evaluation = scores[j]
                 for i in range(len(training_iter_list)):
                     plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {training_iter_list[i]}")
-                plt.title(f"{eval_name} with varying number of training iterations")
+                plt.title(f"{eval_name} with varying number of random init size")
                 plt.xlabel("Query Number")
                 plt.ylabel(f"{eval_name}")
                 plt.legend()
-                plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_training_iterations.png")
+                plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_rand_init.svg")
                 plt.close()
 
             for eval_name, evaluation in scores:
-                plt.plot(range(len(training_iter_list)), evaluation[:,nbr_query], label=eval_name)
+                plt.plot(range(len(training_iter_list)), evaluation[:,nbr_query-1], label=eval_name)
 
-            plt.title(f"End Model Scores for different evals")
-            plt.xlabel("Number Training Iterations")
+            plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
+            plt.xlabel("Number Random Init Points for Children")
             plt.ylabel(f"Performance")
             plt.legend()
-            plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_training_iterations")
+            plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_trand_init.svg")
             plt.close()

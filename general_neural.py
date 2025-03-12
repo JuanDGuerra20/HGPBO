@@ -671,7 +671,7 @@ if __name__ == '__main__':
             plt.close()
 
         for eval_name, evaluation in scores:
-            plt.plot(range(len(nbr_rand_init)), evaluation[:,nbr_query], label=eval_name)
+            plt.plot(range(len(nbr_rand_init)), evaluation[:,nbr_query-1], label=eval_name)
 
         plt.title(f"End Model Scores for different evals")
         plt.xlabel("Query Number")
