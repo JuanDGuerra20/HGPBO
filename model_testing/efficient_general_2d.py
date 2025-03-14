@@ -28,7 +28,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploitation Score')
     plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
     for i, nu in enumerate(nu_vals):
@@ -40,7 +40,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploration Score')
     plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
 
@@ -59,7 +59,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploitation Performance over {nbr_repetition} repetitions')
     plt.tight_layout()
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
     fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
@@ -70,7 +70,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploration Performance over {nbr_repetition} repetitions')
     #plt.tight_layout()
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
 
@@ -474,11 +474,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                     children=children, visualize=visualize)
                             except:
-                                master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
-                                    kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
-                                    hierarchical_model,
-                                    data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                    children=children, visualize=visualize)
+                                try:
+                                    master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                        kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                        hierarchical_model,
+                                        data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
+                                        children=children, visualize=visualize)
+                                except:
+                                    continue
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -544,7 +547,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.svg')
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
@@ -573,16 +576,41 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         nbr_repetition, data_name, model_name)
 
     return list_models
+
+def hp_plotting(scores, hp_name, hp_list):
+    for j in range(len(scores)):
+        eval_name, evaluation = scores[j]
+        for i in range(len(hp_list)):
+            plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {hp_list[i]}")
+        plt.title(f"{eval_name} with varying {hp_name}")
+        plt.xlabel("Query Number")
+        plt.ylabel(f"{eval_name}")
+        plt.legend()
+        plt.savefig(
+            f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_{hp_name}.svg")
+        plt.close()
+
+    for eval_name, evaluation in scores:
+        plt.plot(range(len(hp_list)), evaluation[:, nbr_query - 1], label=eval_name)
+
+    plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
+    plt.xlabel(f"{hp_name}")
+    plt.ylabel(f"Performance")
+    plt.legend()
+    plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_{hp_name}.svg")
+    plt.close()
+
+
 if __name__ == '__main__':
 
     dimension = 15
     nbr_query = 80
     training_iter = 10 # Found through HP Testing
-    nbr_repetition = 15
+    nbr_repetition = 10
     k_vals = [2] # Found through HP Testing
     g_vals = [6] # Found through HP Testing
     nu_vals = [0.5] # Found through HP Testing
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6 # Found through HP Testing
@@ -609,8 +637,8 @@ if __name__ == '__main__':
             explor = []
             exploit = []
             names = []
-            training_iter_list = np.arange(2,22, 2)
-            for training_iter in training_iter_list:
+            nbr_rand_init_list = np.arange(2, 22, 2)
+            for nbr_rand_init in nbr_rand_init_list:
 
                 """if multi:
                     p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
@@ -621,30 +649,11 @@ if __name__ == '__main__':
                 else:"""
                 name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
                                    eps, h, multi)[0]
-                parent_r2.append(r2)
-                child_1_r2_over.append(child_1_r2)
-                child_2_r2_over.append(child_2_r2)
-                explor.append(np.mean(better_exploration_score, axis=0))
-                exploit.append(np.mean(better_exploitation_score, axis=0))
+                parent_r2.append(r2[:nbr_query])
+                child_1_r2_over.append(child_1_r2[:nbr_query])
+                child_2_r2_over.append(child_2_r2[:nbr_query])
+                explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
+                exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
 
             scores = [["Parent_R2", np.array(parent_r2)],["Child_1_R2", np.array(child_1_r2_over)],["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)], ["Exploitation", np.array(exploit)]]
-            for j in range(len(scores)):
-                eval_name, evaluation = scores[j]
-                for i in range(len(training_iter_list)):
-                    plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {training_iter_list[i]}")
-                plt.title(f"{eval_name} with varying number of random init size")
-                plt.xlabel("Query Number")
-                plt.ylabel(f"{eval_name}")
-                plt.legend()
-                plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_rand_init.svg")
-                plt.close()
-
-            for eval_name, evaluation in scores:
-                plt.plot(range(len(training_iter_list)), evaluation[:,nbr_query-1], label=eval_name)
-
-            plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
-            plt.xlabel("Number Random Init Points for Children")
-            plt.ylabel(f"Performance")
-            plt.legend()
-            plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_trand_init.svg")
-            plt.close()
+            hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)

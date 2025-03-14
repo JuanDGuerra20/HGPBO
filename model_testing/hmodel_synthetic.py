@@ -5,6 +5,8 @@ Easier to separate these files because they have similar uses
 This file contains the hierarchical specific things, anything that is both will be in the models file
 """
 import gpytorch.mlls
+import torch
+from numpy import dtype
 from torch.cuda import device
 
 from synthetic_models import *
@@ -693,6 +695,134 @@ class NN_Hierarchical_Comb(nn.Module):
         logits = self.linear_stack(x)
         return logits
 
+class NN_Hierarchical_Comb(nn.Module):
+    def __init__(self, input_dim, hidden_dims, output_dim):
+        super().__init__()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.input_dim = input_dim
+        self.hidden_dims = hidden_dims
+
+        self.output_dim = output_dim
+
+        self.mag_loss = nn.MSELoss()
+
+        print(f"using device: {self.device}")
+
+        self.flatten = nn.Flatten()
+        self.linear_stack = nn.Sequential(
+        )
+        self.linear_stack.append(nn.Linear(self.input_dim, self.hidden_dims[0]))
+        self.linear_stack.append(nn.ReLU())
+        for i in range(len(hidden_dims) - 1):
+            self.linear_stack.append(nn.Linear(self.hidden_dims[i], self.hidden_dims[i + 1]))
+            self.linear_stack.append(nn.ReLU())
+            self.linear_stack.append(nn.Dropout(0.4))
+        self.linear_stack.append((nn.Linear(self.hidden_dims[-1], self.output_dim)))
+
+    def euclid_derivative(self, y_true, y_pred):
+        x_true_locs, y_true_locs = self.get_x_y_loc(y_true)
+        x_pred_locs, y_pred_locs = self.get_x_y_loc(y_pred)
+        euclid_loss = torch.sub((x_pred_locs + y_pred_locs), (x_true_locs + y_true_locs))
+        euclid_loss = torch.div(euclid_loss,
+                                torch.sqrt((x_true_locs - x_pred_locs) ** 2 + (y_true_locs - y_pred_locs) ** 2))
+        return torch.where(euclid_loss == torch.nan, euclid_loss, 0)
+
+    def euclid_loss(self, y_true, y_pred):
+        x_true_locs, y_true_locs = self.get_x_y_loc(y_true)
+        x_pred_locs, y_pred_locs = self.get_x_y_loc(y_pred)
+
+        x_diff = torch.pow(torch.sub(x_true_locs, x_pred_locs), 2)
+        y_diff = torch.pow(torch.sub(y_true_locs, y_pred_locs), 2)
+
+        loss = torch.sqrt(torch.add(x_diff, y_diff))
+
+        return loss
+
+    def loss_fn(self, y_true, y_pred):
+
+        euclid_loss = self.euclid_loss(y_true, y_pred)
+        y_true_mag = y_true[:,0]
+        y_pred_mag = y_pred[:,0]
+
+        mag = self.mag_loss(y_true_mag, y_pred_mag)
+
+        loss = torch.add(euclid_loss, mag)
+        return torch.mean(loss)
+
+    def get_x_y_loc(self, y):
+        ind_dim = np.sqrt(self.input_dim)
+        y_true_spat = y[:, 1]
+
+        y_true_locs = torch.remainder(y_true_spat, ind_dim)
+        x_true_locs = torch.div(y_true_spat - y_true_locs, ind_dim)
+
+        return x_true_locs, y_true_locs
+
+    def forward(self, x):
+        x = self.flatten(x)
+        logits = self.linear_stack(x)
+        return logits
+
+class NN_Hierarchical_Comb_NoMag(nn.Module):
+    def __init__(self, input_dim, hidden_dims):
+        super().__init__()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.input_dim = input_dim
+        self.hidden_dims = hidden_dims
+
+        print(f"using device: {self.device}")
+
+        self.flatten = nn.Flatten()
+        self.linear_stack = nn.Sequential(
+        )
+        self.linear_stack.append(nn.Linear(self.input_dim, self.hidden_dims[0]))
+        self.linear_stack.append(nn.ReLU())
+        for i in range(len(hidden_dims) - 1):
+            self.linear_stack.append(nn.Linear(self.hidden_dims[i], self.hidden_dims[i + 1]))
+            self.linear_stack.append(nn.ReLU())
+            self.linear_stack.append(nn.Dropout(0.6))
+        self.linear_stack.append(nn.Linear(self.hidden_dims[-1], int((self.input_dim/2)**2)))
+        self.linear_stack.append(nn.Softmax(dim=1))
+
+    def euclid_derivative(self, y_true, y_pred):
+        x_true_locs, y_true_locs = self.get_x_y_loc(y_true)
+        x_pred_locs, y_pred_locs = self.get_x_y_loc(y_pred)
+        euclid_loss = torch.sub((x_pred_locs + y_pred_locs), (x_true_locs + y_true_locs))
+        euclid_loss = torch.div(euclid_loss,
+                                torch.sqrt((x_true_locs - x_pred_locs) ** 2 + (y_true_locs - y_pred_locs) ** 2))
+        return torch.where(euclid_loss == torch.nan, euclid_loss, 0)
+
+    def euclid_loss(self, y_true, y_pred):
+        x_true_locs, y_true_locs = self.get_x_y_loc(y_true)
+        x_pred_locs, y_pred_locs = self.get_x_y_loc(y_pred)
+
+        x_diff = torch.pow(torch.sub(x_true_locs, x_pred_locs), 2)
+        y_diff = torch.pow(torch.sub(y_true_locs, y_pred_locs), 2)
+
+        loss = torch.sqrt(torch.add(x_diff, y_diff))
+
+        return loss
+
+    def loss_fn(self, y_true, y_pred):
+
+        euclid_loss = self.euclid_loss(y_true, y_pred)
+
+        return torch.mean(euclid_loss)
+
+    def get_x_y_loc(self, y):
+
+        loc = torch.argmax(y, dim=1)
+        ind_dim = self.input_dim/2
+
+        y_locs = torch.remainder(loc, ind_dim).clone().detach().requires_grad_(True)
+        x_locs = torch.div(loc - y_locs, ind_dim).clone().detach().requires_grad_(True)
+
+        return x_locs, y_locs
+
+    def forward(self, x):
+        #x = self.flatten(x)
+        logits = self.linear_stack(x)
+        return logits
 
 
 def random_initialization(random_sample, emg, trainsC, max_seen_resp, dt):

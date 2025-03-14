@@ -526,9 +526,9 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
     fig.suptitle(f"{model_type} Model Heatmap vs True State Space Heatmap")
 
     if neural:
-        plt.savefig(f'{model_type}/{folder_of_the_day}/contour/{file_name}')
+        plt.savefig(f'{model_type}/{folder_of_the_day}/contour/{file_name}.svg')
     else:
-        plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/differentiable_plots/{file_name}')
+        plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/differentiable_plots/{file_name}.svg')
     plt.close()
 
 def heatmap_r_score(data, z):
@@ -593,10 +593,10 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
         plt.tight_layout()
         if save:
             if neural:
-                plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}')
+                plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.svg')
 
             else:
-                plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}')
+                plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.svg')
         else:
             plt.show()
         plt.close()
