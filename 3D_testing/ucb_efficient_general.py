@@ -23,7 +23,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploitation Score')
     plt.title(f'Joint Efficient Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
     for i, nu in enumerate(nu_vals):
@@ -36,7 +36,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploration Score')
     plt.title(f'Joint Efficient Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
 
@@ -55,7 +55,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploitation 3D Performance over {nbr_repetition} repetitions')
     plt.tight_layout()
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_3D_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_3D_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
     fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
@@ -66,7 +66,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploration 3D Performance over {nbr_repetition} repetitions')
     plt.tight_layout()
     plt.savefig(
-        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_3D_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
+        f'{data_name}/{model_name}{folder_of_the_day}/hp_analysis/HP_3D_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
 
@@ -103,7 +103,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
             train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
             train_x_sub3, train_y_sub3 = select_random_queries(nbr_rand_init, x_sub3, y_sub3)
-            train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier)
+            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier)
             max_seen_resp_1_1D = torch.max(train_y_sub1)
             max_seen_resp_2_1D = torch.max(train_y_sub2)
             max_seen_resp_3_1D = torch.max(train_y_sub3)
@@ -175,7 +175,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master = hmodel.Efficient_UCB_Hierarchical_GP(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
                                                             prior_hierarchical_kernel, prior_map / prior_map_max,'add_kernel', [sub1, sub2, sub3], kappa, hier_qc)
 
-            for i in range(nbr_rand_init):
+            for i in range(len(train_x_hier)):
                 hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
 
             master.eval()
@@ -486,24 +486,38 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                    f"{model_name}", folder_of_the_day, data_name)
 
                 y = np.mean(better_exploration_score, axis=0)
+                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0)
+                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
+
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 y = np.mean(better_exploitation_score, axis=0)
+                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
                 over_exploit.append(y)
 
                 std = np.std(better_exploitation_score, axis=0)
+                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
+
                 plt.plot(y, label='Exploitation')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
+                r2 = np.insert(r2, 0, np.zeros(3*nbr_rand_init))
+
                 plt.plot(r2, label="Heatmap R2")
 
                 child_1_r2 = np.mean(c1_r2_data, axis=0)
+                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))
+
                 child_2_r2 = np.mean(c2_r2_data, axis=0)
                 child_3_r2 = np.mean(c3_r2_data, axis=0)
+
+                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))
+                child_3_r2 = np.insert(child_3_r2, 0, np.zeros(3*nbr_rand_init))
+
 
                 plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")
@@ -515,7 +529,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} gamma {g} nu {n}')
                 plt.savefig(
-                    f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}')
+                    f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}.svg')
                 plt.close()
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
@@ -527,9 +541,9 @@ if __name__ == '__main__':
 
     dimension = 10
     nbr_query = 100
-    training_iter = 5
-    nbr_repetition = 10
-    nbr_rand_init = 10
+    training_iter = 10
+    nbr_repetition = 30
+    nbr_rand_init = 6
     k_vals = [2]
     g_vals = [8]
     nu_vals = [1.5]

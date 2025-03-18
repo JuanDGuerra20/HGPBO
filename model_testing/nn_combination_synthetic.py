@@ -100,7 +100,7 @@ def create_parent_distr_from_child_no_mag(y1, y2):
     denominator = torch.abs(torch.sub(coord1, coord2)/torch.max(coord2))
     denominator = torch.sqrt(denominator) + 1
     yh = torch.div(denominator, numerator)
-    yh = torch.where(yh == torch.max(yh), torch.tensor(1, dtype=torch.float), 0).requires_grad_(True)
+    #yh = torch.where(yh == torch.max(yh), torch.tensor(1, dtype=torch.float), 0).requires_grad_(True)
     return torch.reshape(yh, (-1,))
 
 def create_data(num_data_points):
@@ -154,12 +154,12 @@ if __name__ == '__main__':
     xh_val = torch.reshape(xh_val, (-1, 2 * 15))
     yh_val = torch.reshape(yh_val, (-1, 15*15))
 
-    hidden_dims = [dimension*dimension, 2*dimension, dimension]
+    hidden_dims = [dimension*dimension*dimension, dimension*dimension*dimension, dimension*dimension*dimension*dimension, dimension*dimension, dimension*dimension]
     # must pretrain the model before running a repetition, consider saving it to huggingface
     master = hmodel.NN_Hierarchical_Comb_NoMag(input_dim=2*dimension, hidden_dims=hidden_dims)
 
-    optimizer = torch.optim.Adam(master.parameters(), lr=1e-3)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=4)
+    optimizer = torch.optim.Adam(master.parameters(), lr=1e-7)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10)
 
     num_epochs = 500
     master = nn_pretraining(xh_train, yh_train, xh_val, yh_val, master, master.loss_fn, optimizer, scheduler, num_epochs, min_delta=0.5)

@@ -782,7 +782,6 @@ class NN_Hierarchical_Comb_NoMag(nn.Module):
             self.linear_stack.append(nn.ReLU())
             self.linear_stack.append(nn.Dropout(0.6))
         self.linear_stack.append(nn.Linear(self.hidden_dims[-1], int((self.input_dim/2)**2)))
-        self.linear_stack.append(nn.Softmax(dim=1))
 
     def euclid_derivative(self, y_true, y_pred):
         x_true_locs, y_true_locs = self.get_x_y_loc(y_true)

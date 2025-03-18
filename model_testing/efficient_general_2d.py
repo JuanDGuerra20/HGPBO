@@ -507,30 +507,30 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                            f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
-                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
+                y = np.insert(y, 0, np.zeros(2*nbr_rand_init))
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
+                std = np.insert(std, 0, np.zeros(2*nbr_rand_init))
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 y = np.mean(better_exploitation_score, axis=0)
-                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
+                y = np.insert(y, 0, np.zeros(2*nbr_rand_init))
 
                 over_exploit.append(y)
                 std = np.std(better_exploitation_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
+                std = np.insert(std, 0, np.zeros(2*nbr_rand_init))
                 plt.plot(y, label='Exploitation')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-                r2 = np.insert(r2, 0, np.zeros(3*nbr_rand_init))
+                r2 = np.insert(r2, 0, np.zeros(2*nbr_rand_init))
                 plt.plot(r2, label="Parent R2")
 
                 child_1_r2 = np.mean(child_1_r2_data, axis=0)
-                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))
+                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(2*nbr_rand_init))
                 child_2_r2 = np.mean(child_2_r2_data, axis=0)
-                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))
+                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(2*nbr_rand_init))
 
                 plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")
