@@ -486,37 +486,37 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                    f"{model_name}", folder_of_the_day, data_name)
 
                 y = np.mean(better_exploration_score, axis=0)
-                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
+                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
+                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 y = np.mean(better_exploitation_score, axis=0)
-                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))
+                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
                 over_exploit.append(y)
 
                 std = np.std(better_exploitation_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))
+                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
                 plt.plot(y, label='Exploitation')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-                r2 = np.insert(r2, 0, np.zeros(3*nbr_rand_init))
+                r2 = np.insert(r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
                 plt.plot(r2, label="Heatmap R2")
 
                 child_1_r2 = np.mean(c1_r2_data, axis=0)
-                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))
+                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
                 child_2_r2 = np.mean(c2_r2_data, axis=0)
                 child_3_r2 = np.mean(c3_r2_data, axis=0)
 
-                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))
-                child_3_r2 = np.insert(child_3_r2, 0, np.zeros(3*nbr_rand_init))
+                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
+                child_3_r2 = np.insert(child_3_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
 
                 plt.plot(child_1_r2, label="Child 1 R2")
@@ -544,9 +544,9 @@ if __name__ == '__main__':
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 6
-    k_vals = [2]
-    g_vals = [8]
-    nu_vals = [1.5]
+    k_vals = np.linspace(0.5, 10, 20)  # Found through HP Testing
+    g_vals = np.linspace(0.5, 10, 20)  # Found through HP Testing
+    nu_vals = [0.5,1.5,2.5]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
@@ -562,7 +562,11 @@ if __name__ == '__main__':
                 p.start()
                 print(f"ID of process: {p.pid}")
             else:"""
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)
+            nbr_rand_init_list = np.arange(1,21)
+            training_iter_list = np.arange(1,21)
+            for nbr_rand_init in nbr_rand_init_list:
+                for training_iter in training_iter_list:
+                    training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)
 
             """cProfile.run("training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)", "output.prof")
             stats = pstats.Stats('output.prof')

@@ -523,7 +523,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 plt.ylim(0, 1.1)
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with Kappa {k} Gamma {g} Nu {n}')
                 plt.savefig(
-                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_rand_init_{nbr_rand_init}')
+                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_rand_init_{nbr_rand_init}_train_iter_{training_iter}.svg',)
+                plt.savefig(
+                    f'{model_name.lower()}{folder_of_the_day}/png/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_rand_init_{nbr_rand_init}_train_iter_{training_iter}.png', )
+
                 plt.close()
 
                 """vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
@@ -542,16 +545,47 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
 
                 list_models.append([f"kappa_{k}_gamma_{g}_nu_{n}_init_{nbr_rand_init}", master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
+                df = pd.DataFrame([
+                                      f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+                                      master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
+                                      child_2_r2])
+                df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
+                            'child2_r2']
 
+                df.to_csv(
+                    f'{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
 
             # Joint Section
 
-            joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
+            """joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
                               nbr_repetition, model_name)
 
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
-                              nbr_repetition, model_name)
+                              nbr_repetition, model_name)"""
     return list_models
+
+def hp_plotting(scores, hp_name, hp_list):
+    for j in range(len(scores)):
+        eval_name, evaluation = scores[j]
+        for i in range(len(hp_list)):
+            plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {hp_list[i]}")
+        plt.title(f"{eval_name} with varying {hp_name}")
+        plt.xlabel("Query Number")
+        plt.ylabel(f"{eval_name}")
+        plt.legend()
+        plt.savefig(
+            f"{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_{hp_name}.svg")
+        plt.close()
+
+    for eval_name, evaluation in scores:
+        plt.plot(range(len(hp_list)), evaluation[:, nbr_query - 1], label=eval_name)
+
+    plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
+    plt.xlabel(f"{hp_name}")
+    plt.ylabel(f"Performance")
+    plt.legend()
+    plt.savefig(f"{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_{hp_name}.svg")
+    plt.close()
 
 if __name__ == '__main__':
 
@@ -592,10 +626,10 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 10
+    nbr_repetition = 30
     nbr_rand_init = 10
-    k_vals = [2]
-    g_vals = [6]
+    k_vals = [2]  # Found through HP Testing
+    g_vals = [6]  # Found through HP Testing
     nu_vals = [0.5]
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
@@ -609,7 +643,8 @@ if __name__ == '__main__':
             print(f"ID of process: {p.pid}")
         else:"""
 
-        nbr_rand_init = [8]
+        nbr_rand_init = np.arange(1,20)
+        training_iter_list = np.arange(1,20)
         parent_r2 = []
         child_1_r2_over = []
         child_2_r2_over = []
@@ -638,8 +673,38 @@ if __name__ == '__main__':
             os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
             print("Model folder created")
             os.mkdir(workspace + folder_of_the_day + '/models')
+            print("Model folder created")
+            os.mkdir(workspace + folder_of_the_day + '/png')
 
-        for rand_init in nbr_rand_init:
+
+
+        nbr_rand_init_list = np.arange(2, 22, 2)
+        parent_r2 = []
+        child_1_r2_over = []
+        child_2_r2_over = []
+        explor = []
+        exploit = []
+        names = []
+        for nbr_rand_init in nbr_rand_init_list:
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                               h, multi)[0]
+            parent_r2.append(r2[:nbr_query])
+            child_1_r2_over.append(child_1_r2[:nbr_query])
+            child_2_r2_over.append(child_2_r2[:nbr_query])
+            explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
+            exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
+
+        scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
+                  ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
+                  ["Exploitation", np.array(exploit)]]
+        hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
+        nbr_rand_init = 6
+
+        # Doing Training Iteration Hyper Parameter
+        training_iter_list = np.arange(2, 22, 2)
+
+        for training_iter in training_iter_list:
             """if multi:
                 p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
                                eps, h, multi,))
@@ -647,35 +712,56 @@ if __name__ == '__main__':
                 p.start()
                 print(f"ID of process: {p.pid}")
             else:"""
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = training_procedure(nbr_query, nbr_repetition, rand_init, training_iter, k_vals, g_vals, nu_vals,
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
                                h, multi)[0]
-            parent_r2.append(r2)
-            child_1_r2_over.append(child_1_r2)
-            child_2_r2_over.append(child_2_r2)
-            explor.append(np.mean(better_exploration_score, axis=0))
-            exploit.append(np.mean(better_exploitation_score, axis=0))
+            parent_r2.append(r2[:nbr_query])
+            child_1_r2_over.append(child_1_r2[:nbr_query])
+            child_2_r2_over.append(child_2_r2[:nbr_query])
+            explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
+            exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
 
         scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        for j in range(len(scores)):
-            eval_name, evaluation = scores[j]
-            for i in range(len(nbr_rand_init)):
-                plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {nbr_rand_init[i]}")
-            plt.title(f"{eval_name} with varying random init")
-            plt.xlabel("Query Number")
-            plt.ylabel(f"{eval_name}")
-            plt.legend()
-            plt.savefig(
-                f"{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_random_init.png")
-            plt.close()
+        hp_plotting(scores, "training_iter", training_iter_list)
+        training_iter = 10
 
-        for eval_name, evaluation in scores:
-            plt.plot(range(len(nbr_rand_init)), evaluation[:,nbr_query-1], label=eval_name)
+        # HP search for kappa values
 
-        plt.title(f"End Model Scores for different evals")
-        plt.xlabel("Query Number")
-        plt.ylabel(f"Performance")
-        plt.legend()
-        plt.savefig(f"{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_random_init")
-        plt.close()
+        k_vals_list = np.linspace(0.5, 10, 20)
+        for k_vals in k_vals_list:
+            k_vals = [k_vals]
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                               h, multi)[0]
+            parent_r2.append(r2[:nbr_query])
+            child_1_r2_over.append(child_1_r2[:nbr_query])
+            child_2_r2_over.append(child_2_r2[:nbr_query])
+            explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
+            exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
+
+        scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
+                  ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
+                  ["Exploitation", np.array(exploit)]]
+        hp_plotting(scores, "k_vals", k_vals_list)
+        k_vals = [2]
+        # HP search for Gamma values
+
+        g_vals_list = np.linspace(0.5, 10, 20)
+        for g_vals in g_vals_list:
+            g_vals = [g_vals]
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                               h, multi)[0]
+            parent_r2.append(r2[:nbr_query])
+            child_1_r2_over.append(child_1_r2[:nbr_query])
+            child_2_r2_over.append(child_2_r2[:nbr_query])
+            explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
+            exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
+
+        scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
+                  ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
+                  ["Exploitation", np.array(exploit)]]
+        hp_plotting(scores, "g_vals", g_vals_list)
+        g_vals = [6]

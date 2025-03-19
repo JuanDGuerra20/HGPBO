@@ -535,7 +535,7 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 5
-    nbr_repetition = 5
+    nbr_repetition = 30
     nbr_rand_init = 15
     k_vals = [2]
     g_vals = [6]

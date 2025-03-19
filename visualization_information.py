@@ -527,8 +527,12 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
 
     if neural:
         plt.savefig(f'{model_type}/{folder_of_the_day}/contour/{file_name}.svg')
+        plt.savefig(f'{model_type}/{folder_of_the_day}/png/{file_name}.png')
+
     else:
         plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/differentiable_plots/{file_name}.svg')
+        plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/png/{file_name}.png')
+
     plt.close()
 
 def heatmap_r_score(data, z):
@@ -578,7 +582,7 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
                 ax.plot(temp_x, mean, 'b', label='Predicted Mean')
                 #ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 
-                ax.plot(temp_x, true_y[i].numpy(), 'r', label='Ground Truth')
+                ax.plot(temp_x, true_y[i], 'r', label='Ground Truth')
             else:
                 #ax.plot(train_x.numpy(), div1.numpy(), 'k*')
                 ax.plot(test_x.numpy(), mean, 'b', label='Predicted Mean')

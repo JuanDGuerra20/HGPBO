@@ -1,6 +1,5 @@
 import gpytorch
 
-
 import synthetic_models as models
 import hmodel_synthetic as hmodel
 from dataset_actions import *
@@ -11,7 +10,7 @@ import multiprocessing as mp
 import pandas as pd
 from seaborn import heatmap
 
-from model_testing.efficient_synthetic_script import joint_performance
+
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
                 data_name, model_name):
@@ -73,6 +72,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                    data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True):
+
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     prior_map = torch.zeros(dimension, dimension)
@@ -95,58 +95,22 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     heatmap_rep = []
     h_opt_time = []
     h_pred_time = []
+
     for q in tqdm(range(nbr_query)):
 
         if q == 0:
-            if children == []:
-                # Need to initialize the model - Will be random in this method
-                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
-                max_seen_resp_1_1D = torch.max(train_y_sub1)
-                max_seen_resp_2_1D = torch.max(train_y_sub2)
-                sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like,
-                                           query_counter=sub1_qc, nu=nu)
+            # Need to initialize the model - Will be random in this method
+            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
+            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
+            max_seen_resp_1_1D = torch.max(train_y_sub1)
+            max_seen_resp_2_1D = torch.max(train_y_sub2)
+            sub1_like = gpytorch.likelihoods.GaussianLikelihood()
+            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like,
+                                       query_counter=sub1_qc, nu=nu)
 
-                sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like,
-                                           query_counter=sub2_qc, nu=nu)
-
-            elif len(children) == 1:
-                sub1 = children[0]
-
-                sub1_like = sub1.likelihood
-
-                train_x_sub1 = sub1.train_inputs[0][:,0]
-                train_y_sub1 = sub1.train_targets
-                max_seen_resp_1_1D = torch.max(train_y_sub1)
-
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
-                max_seen_resp_2_1D = torch.max(train_y_sub2)
-                sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like,
-                                           query_counter=sub2_qc, nu=nu)
-
-            elif len(children) == 2:
-                sub1 = children[0]
-                sub2 = children[1]
-
-                sub1_like = sub1.likelihood
-                sub2_like = sub2.likelihood
-
-                train_x_sub1 = sub1.train_inputs[0][:,0]
-                train_y_sub1 = sub1.train_targets
-
-                train_x_sub2 = sub2.train_inputs[0][:,0]
-                train_y_sub2 = sub2.train_targets
-
-                max_seen_resp_1_1D = torch.max(train_y_sub1)
-                max_seen_resp_2_1D = torch.max(train_y_sub2)
-
-
-            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier)
-            max_seen_resp_2D = torch.max(train_y_hier)
-
+            sub2_like = gpytorch.likelihoods.GaussianLikelihood()
+            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like,
+                                       query_counter=sub2_qc, nu=nu)
 
             sub1.eval()
             sub2.eval()
@@ -154,6 +118,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub1_like.eval()
             sub2_like.eval()
 
+            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier)
+            max_seen_resp_2D = torch.max(train_y_hier)
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
@@ -180,83 +146,24 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)
-
-            for i in range(len(train_x_hier)):
-                hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
+            # for i in range(nbr_rand_init):
 
             master.eval()
             likelihood.eval()
-
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
+
+
 
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
-        next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
-                                                                                     test_x_hier,
+        next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins, test_x_hier,
                                                                                      y_hier)
-
-        y_mu_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_mu1, x_sub1)
-        y_mu_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_mu2, x_sub2)
-
-        y_conf_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_conf1, x_sub1)
-        y_conf_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_conf2, x_sub2)
-
-        y_qc_a = hmodel.get_y_mu_point_value(next_query_pins[0], sub1_qc, x_sub1)
-        y_qc_b = hmodel.get_y_mu_point_value(next_query_pins[1], sub2_qc, x_sub2)
-
-        next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
-                                                                                            max_seen_resp_2D)
 
         response = torch.tensor(next_query_value_random)
 
-        cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
-        cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
-
-        div = torch.exp(cont1) + torch.exp(cont2)
-
-        contribution1 = torch.nan_to_num(response * torch.exp(cont1) / div)
-        contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
-
-        response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
-        response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
-
-        # Potentially could make this more efficient by incorporating it into the next finder
-        sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[0], x_sub1)
-        sub2_qc = sub2.increment_q_n(sub2_qc, next_query_pins[1], x_sub2)
-        hier_qc = master.increment_q_n(hier_qc, next_query_pins, x_hier)
-
-        # next_query_pins = next_query_pins.to(torch.int)
-        flag = True
-        for x in range(len(x_hier)):
-            for y in range(len(x_hier[x])):
-                if x_hier[x][y][0] == next_query_pins[0] and x_hier[x][y][1] == next_query_pins[1]:
-                    next_query_indices = [x, y]
-                    flag = False
-                if x == dimension - 1 and y == dimension - 1 and flag:
-                    raise Exception("Could not find pins in X hier for indices")
-
-        sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
-                                                                                       train_y_sub1,
-                                                                                       x_sub1[next_query_indices[0]],
-                                                                                       contribution1,
-                                                                                       max_seen_resp_1_1D,
-                                                                                       training_iter=training_iter)
-
-        sub2, sub2_like, train_x_sub2, train_y_sub2 = hmodel.update_model1_1D_max_seen(sub2, sub2_like, train_x_sub2,
-                                                                                       train_y_sub2,
-                                                                                       x_sub2[next_query_indices[1]],
-                                                                                       contribution2,
-                                                                                       max_seen_resp_2_1D,
-                                                                                       training_iter=training_iter)
-
-        sub1.eval()
-        sub1_like.eval()
-
-        sub2.eval()
-        sub2_like.eval()
 
         # Make a prediction, observed_pred = likelihood
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
@@ -286,9 +193,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                           response)
         master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
 
-        """
-        train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
-
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             # Find optimal model hyperparameters
             master.train()
@@ -300,30 +204,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                   train_y_hier / max_seen_resp_2D,
                                                   verbose=False)
 
-            """t = time.time() - start
-            h_opt_time.append(t)
-            print(f"Hoptimize time: {t}")"""
-
+            # Get into evaluation (predictive posterior) mode
             master.eval()
             likelihood.eval()
-            sub1.eval()
-            sub1_like.eval()
-
-            sub2.eval()
-            sub2_like.eval()
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
-            # start = time.time()
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-            """t = time.time() - start
-            h_pred_time.append(t)
-            print(f"Hierarchical pred time: {t}")"""
-
             c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
 
-        child_1_r2.append(c1_r2)
-        child_2_r2.append(c2_r2)
+            child_1_r2.append(c1_r2)
+            child_2_r2.append(c2_r2)
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -332,18 +223,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                             test_x_hier,
                                                                                             x_hier, y_hier)
         exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_hier)
-        """print(f'\nQuery Number: {q}')
-        print(f'Next Query Pins: {next_query_pins_exploration_2D}')
-        print(f'Next Query Value: {next_query_value_mean}')
-        print(f'Exploration_Score: {torch.round(exploration_score_2D, decimals=4)}')
-        print(f'Exploitation_Score: {torch.round(exploitation_score_2D, decimals=4)}')"""
 
         better_exploration_score.append(exploration_score_2D)
         better_exploitation_score.append(exploitation_score_2D)
 
         heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
-
-
 
     if visualize:
         k = str(kappa).replace('.', ',')
@@ -361,9 +245,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
                         f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_init_{nbr_rand_init}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps_{e}',
                         model_name.lower(), folder_of_the_day, data_name)
-
-
-
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
     else:
@@ -372,11 +253,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals,
                        data_name, data_creation_func, eps, hierarchical_model, multi, children=[], visualize=True):
-    if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
-        model_name = "Efficient"
-
-    elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-        model_name = "Lossless_Efficient"
+    model_name = "laferriere_model"
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -424,15 +301,19 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         # running the repetitions in parallel except for the last one
                         for i in range(nbr_repetition - 1):
                             p = pool.apply_async(run_repetition, (
-                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, visualize, ))
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                hierarchical_model,
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children,
+                                visualize,))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
                         try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
-                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize)
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                hierarchical_model,
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
+                                children=children, visualize=visualize)
                         except:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
@@ -462,8 +343,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     for i in range(nbr_repetition):
                         try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
-                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize)
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                hierarchical_model,
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
+                                children=children, visualize=visualize)
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
@@ -505,34 +388,33 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                            f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
-                y = np.insert(y, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                y = np.insert(y, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0)
-                std = np.insert(std, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                std = np.insert(std, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 y = np.mean(better_exploitation_score, axis=0)
-                y = np.insert(y, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                y = np.insert(y, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
 
                 over_exploit.append(y)
                 std = np.std(better_exploitation_score, axis=0)
-                std = np.insert(std, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                std = np.insert(std, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
                 plt.plot(y, label='Exploitation')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-                r2 = np.insert(r2, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                r2 = np.insert(r2, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
                 plt.plot(r2, label="Parent R2")
 
                 child_1_r2 = np.mean(child_1_r2_data, axis=0)
-                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
                 child_2_r2 = np.mean(child_2_r2_data, axis=0)
-                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
 
                 plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")
-
 
                 """rand = np.random.rand(*heatmap_data.shape)
                 random_r2 = vi.heatmap_r_score(rand, y_hier)
@@ -543,7 +425,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.ylabel('Performance')
                 plt.xlabel('Query Number')
 
-                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
+                plt.title(
+                    f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.svg')
                 plt.savefig(
@@ -567,12 +450,19 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
 
-                df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
+                df = pd.DataFrame([
+                                      f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',
+                                      master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
+                                      child_2_r2])
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
                             'child2_r2']
 
-                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
-                list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
+                df.to_csv(
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
+                list_models.append([
+                                       f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',
+                                       master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
+                                       child_2_r2])
 
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
@@ -583,46 +473,24 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     return list_models
 
-def hp_plotting(scores, hp_name, hp_list):
-    for j in range(len(scores)):
-        eval_name, evaluation = scores[j]
-        for i in range(len(hp_list)):
-            plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {hp_list[i]}")
-        plt.title(f"{eval_name} with varying {hp_name}")
-        plt.xlabel("Query Number")
-        plt.ylabel(f"{eval_name}")
-        plt.legend()
-        plt.savefig(
-            f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_{hp_name}.svg")
-        plt.close()
-
-    for eval_name, evaluation in scores:
-        plt.plot(range(len(hp_list)), evaluation[:, nbr_query - 1], label=eval_name)
-
-    plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
-    plt.xlabel(f"{hp_name}")
-    plt.ylabel(f"Performance")
-    plt.legend()
-    plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_{hp_name}.svg")
-    plt.close()
-
 
 if __name__ == '__main__':
+
     import warnings
 
     warnings.filterwarnings('ignore')
 
     dimension = 15
     nbr_query = 80
-    training_iter = 10 # Found through HP Testing
+    training_iter = 10  # Found through HP Testing
     nbr_repetition = 30
     k_vals = [2]
     g_vals = [6]
-    nu_vals = [0.5] # Found through HP Testing
+    nu_vals = [0.5]  # Found through HP Testing
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    nbr_rand_init = 6 # Found through HP Testing
+    nbr_rand_init = 15  # Found through HP Testing
     nbr_training_iter = 10
     for h in h_model:
         for dataset_num in [2, 3]:
@@ -640,7 +508,6 @@ if __name__ == '__main__':
             workspace = f"{data_name}/{model_name.lower()}"
             folder_of_the_day = '/data-' + str(current_dateday)
 
-
             nbr_rand_init_list = np.arange(2, 22, 2)
             parent_r2 = []
             child_1_r2_over = []
@@ -650,83 +517,5 @@ if __name__ == '__main__':
             names = []
             for nbr_rand_init in nbr_rand_init_list:
                 name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                   nu_vals, data_name, data_creation_func,
-                                   eps, h, multi)[0]
-                parent_r2.append(r2[:nbr_query])
-                child_1_r2_over.append(child_1_r2[:nbr_query])
-                child_2_r2_over.append(child_2_r2[:nbr_query])
-                explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
-                exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
-
-            scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
-                      ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
-                      ["Exploitation", np.array(exploit)]]
-            hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
-            nbr_rand_init = 6
-
-            # Doing Training Iteration Hyper Parameter
-            training_iter_list = np.arange(2, 22, 2)
-
-            for training_iter in training_iter_list:
-
-                """if multi:
-                    p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                                   eps, h, multi,))
-                    process.append(p)
-                    p.start()
-                    print(f"ID of process: {p.pid}")
-                else:"""
-                name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                                   eps, h, multi)[0]
-                parent_r2.append(r2[:nbr_query])
-                child_1_r2_over.append(child_1_r2[:nbr_query])
-                child_2_r2_over.append(child_2_r2[:nbr_query])
-                explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
-                exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
-
-            scores = [["Parent_R2", np.array(parent_r2)],["Child_1_R2", np.array(child_1_r2_over)],["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)], ["Exploitation", np.array(exploit)]]
-            hp_plotting(scores, "training_iter", training_iter_list)
-            training_iter = 10
-
-            # HP search for kappa values
-
-            k_vals_list = np.linspace(0.5, 10, 20)
-            for k_vals in k_vals_list:
-                k_vals = [k_vals]
-                name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                   nu_vals, data_name, data_creation_func,
-                                   eps, h, multi)[0]
-                parent_r2.append(r2[:nbr_query])
-                child_1_r2_over.append(child_1_r2[:nbr_query])
-                child_2_r2_over.append(child_2_r2[:nbr_query])
-                explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
-                exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
-
-            scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
-                      ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
-                      ["Exploitation", np.array(exploit)]]
-            hp_plotting(scores, "k_vals", k_vals_list)
-            k_vals = [2]
-            # HP search for Gamma values
-
-            g_vals_list = np.linspace(0.5, 10, 20)
-            for g_vals in g_vals_list:
-                g_vals = [g_vals]
-                name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                     training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                       g_vals,
-                                       nu_vals, data_name, data_creation_func,
-                                       eps, h, multi)[0]
-                parent_r2.append(r2[:nbr_query])
-                child_1_r2_over.append(child_1_r2[:nbr_query])
-                child_2_r2_over.append(child_2_r2[:nbr_query])
-                explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
-                exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
-
-            scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
-                      ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
-                      ["Exploitation", np.array(exploit)]]
-            hp_plotting(scores, "g_vals", g_vals_list)
-            g_vals = [6]
+                                       g_vals,nu_vals, data_name, data_creation_func, eps, h, multi)[0]
