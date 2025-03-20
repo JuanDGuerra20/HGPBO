@@ -597,7 +597,7 @@ def hp_plotting(scores, hp_name, hp_list):
         plt.close()
 
     for eval_name, evaluation in scores:
-        plt.plot(range(len(hp_list)), evaluation[:, nbr_query - 1], label=eval_name)
+        plt.plot(range(len(evaluation[:, nbr_query - 1])), evaluation[:, nbr_query - 1], label=eval_name)
 
     plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
     plt.xlabel(f"{hp_name}")
@@ -615,7 +615,7 @@ if __name__ == '__main__':
     dimension = 15
     nbr_query = 80
     training_iter = 10 # Found through HP Testing
-    nbr_repetition = 30
+    nbr_repetition = 10
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5] # Found through HP Testing
@@ -641,13 +641,15 @@ if __name__ == '__main__':
             folder_of_the_day = '/data-' + str(current_dateday)
 
 
-            nbr_rand_init_list = np.arange(2, 22, 2)
             parent_r2 = []
             child_1_r2_over = []
             child_2_r2_over = []
             explor = []
             exploit = []
             names = []
+            """
+            nbr_rand_init_list = np.arange(2, 22, 2)
+
             for nbr_rand_init in nbr_rand_init_list:
                 name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
@@ -663,10 +665,10 @@ if __name__ == '__main__':
                       ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                       ["Exploitation", np.array(exploit)]]
             hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
-            nbr_rand_init = 6
+            nbr_rand_init = 6"""
 
             # Doing Training Iteration Hyper Parameter
-            training_iter_list = np.arange(2, 22, 2)
+            training_iter_list = np.arange(2, 12, 2)
 
             for training_iter in training_iter_list:
 

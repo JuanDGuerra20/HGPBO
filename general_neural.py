@@ -422,6 +422,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
         print("Model folder created")
         os.mkdir(workspace + folder_of_the_day + '/models')
+        print("PNG folder created")
+        os.mkdir(workspace + folder_of_the_day + '/png')
 
 
     child_1_r2_data = []

@@ -508,14 +508,12 @@ if __name__ == '__main__':
             workspace = f"{data_name}/{model_name.lower()}"
             folder_of_the_day = '/data-' + str(current_dateday)
 
-            nbr_rand_init_list = np.arange(2, 22, 2)
             parent_r2 = []
             child_1_r2_over = []
             child_2_r2_over = []
             explor = []
             exploit = []
             names = []
-            for nbr_rand_init in nbr_rand_init_list:
-                name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                    training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                       g_vals,nu_vals, data_name, data_creation_func, eps, h, multi)[0]
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                   g_vals,nu_vals, data_name, data_creation_func, eps, h, multi)[0]
