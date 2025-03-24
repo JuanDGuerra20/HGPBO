@@ -544,9 +544,9 @@ if __name__ == '__main__':
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 6
-    k_vals = np.linspace(0.5, 10, 20)  # Found through HP Testing
-    g_vals = np.linspace(0.5, 10, 20)  # Found through HP Testing
-    nu_vals = [0.5,1.5,2.5]
+    k_vals = [2] # Found through HP Testing
+    g_vals = [8]  # Found through HP Testing
+    nu_vals = [0.5]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
@@ -556,18 +556,21 @@ if __name__ == '__main__':
     for h in h_model:
         for dataset_num in [5]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+                               nu_vals, data_name, data_creation_func, eps, h, multi)
+
             """if multi:
                 p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, ))
                 process.append(p)
                 p.start()
                 print(f"ID of process: {p.pid}")
-            else:"""
+            else:
             nbr_rand_init_list = np.arange(1,21)
             training_iter_list = np.arange(1,21)
             for nbr_rand_init in nbr_rand_init_list:
                 for training_iter in training_iter_list:
                     training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)
 
-            """cProfile.run("training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)", "output.prof")
+            cProfile.run("training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)", "output.prof")
             stats = pstats.Stats('output.prof')
             stats.sort_stats("percall").print_stats(20)"""

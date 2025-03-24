@@ -687,7 +687,7 @@ if __name__ == '__main__':
         explor = []
         exploit = []
         names = []
-        for nbr_rand_init in nbr_rand_init_list:
+        """for nbr_rand_init in nbr_rand_init_list:
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
             training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
                                h, multi)[0]
@@ -700,20 +700,13 @@ if __name__ == '__main__':
         scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
+        hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)"""
         nbr_rand_init = 6
 
         # Doing Training Iteration Hyper Parameter
-        training_iter_list = np.arange(2, 22, 2)
+        """training_iter_list = np.arange(2, 22, 2)
 
         for training_iter in training_iter_list:
-            """if multi:
-                p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                               eps, h, multi,))
-                process.append(p)
-                p.start()
-                print(f"ID of process: {p.pid}")
-            else:"""
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
             training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
                                h, multi)[0]
@@ -726,7 +719,7 @@ if __name__ == '__main__':
         scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        hp_plotting(scores, "training_iter", training_iter_list)
+        hp_plotting(scores, "training_iter", training_iter_list)"""
         training_iter = 10
 
         # HP search for kappa values
@@ -743,10 +736,10 @@ if __name__ == '__main__':
             explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
             exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
 
-        scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
+        """scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        hp_plotting(scores, "k_vals", k_vals_list)
+        hp_plotting(scores, "k_vals", k_vals_list)"""
         k_vals = [2]
         # HP search for Gamma values
 
@@ -762,8 +755,8 @@ if __name__ == '__main__':
             explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
             exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
 
-        scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
+        """scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        hp_plotting(scores, "g_vals", g_vals_list)
+        hp_plotting(scores, "g_vals", g_vals_list)"""
         g_vals = [6]

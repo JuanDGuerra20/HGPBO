@@ -2,11 +2,11 @@ import math
 import torch
 import numpy as np
 import gpytorch
-import synthetic_models as models
+import models_3d as models
 from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
-import hmodel_synthetic as hmodel
-from dataset_actions import *
+import hmodel_3d as hmodel
+from dataset_actions_3d import *
 from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 import visualization_information as vi
@@ -75,12 +75,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         print("CSV folder created")
         os.mkdir(workspace + folder_of_the_day + '/csv')
 
-    x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
+    x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     ground_truth_max_hier = torch.max(y_hier)
     sub1_qc = torch.ones(x_sub1.shape)
     sub2_qc = torch.ones(x_sub2.shape)
-    hier_qc = torch.ones(len(x_sub1) * len(x_sub2))
+    sub3_qc = torch.ones(x_sub3.shape)
+    hier_qc = torch.ones(len(x_sub1) * len(x_sub2) * len(x_sub3))
 
     over_exploit = []
     over_explor = []
@@ -208,12 +209,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             f'{data_name}/vanilla{folder_of_the_day}/png/vanilla_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}.png')
         plt.close()
 
-        vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
+        """vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
                          f'/Heatmap_{data_name}_vanilla_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
-                         "vanilla", folder_of_the_day, data_name)
+                         "vanilla", folder_of_the_day, data_name)"""
 
-        df = pd.DataFrame([
-                              f'kappa_{k}_model_state_{nbr_query}_queries_eps_init_{nbr_rand_init}_train_iter_{training_iter}',
+        df = pd.DataFrame([f'kappa_{k}_model_state_{nbr_query}_queries_eps_init_{nbr_rand_init}_train_iter_{training_iter}',
                               master, better_exploration_score, better_exploitation_score, r2])
         df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2']
 
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     nbr_rand_init = 1
     k_vals = [2]
 
-    for dataset_num in [2, 3]:
+    for dataset_num in [5]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

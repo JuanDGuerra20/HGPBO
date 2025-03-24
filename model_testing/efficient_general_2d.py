@@ -615,7 +615,7 @@ if __name__ == '__main__':
     dimension = 15
     nbr_query = 80
     training_iter = 10 # Found through HP Testing
-    nbr_repetition = 10
+    nbr_repetition = 20
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5] # Found through HP Testing
@@ -647,7 +647,7 @@ if __name__ == '__main__':
             explor = []
             exploit = []
             names = []
-            """
+
             nbr_rand_init_list = np.arange(2, 22, 2)
 
             for nbr_rand_init in nbr_rand_init_list:
@@ -665,10 +665,10 @@ if __name__ == '__main__':
                       ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                       ["Exploitation", np.array(exploit)]]
             hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
-            nbr_rand_init = 6"""
+            nbr_rand_init = 6
 
             # Doing Training Iteration Hyper Parameter
-            training_iter_list = np.arange(2, 12, 2)
+            training_iter_list = np.arange(2, 22, 2)
 
             for training_iter in training_iter_list:
 
