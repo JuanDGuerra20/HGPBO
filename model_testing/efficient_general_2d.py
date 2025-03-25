@@ -431,14 +431,26 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         # must run the final block manually to allow return of the models
                         try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
-                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize)
-                        except:
-                            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                 children=children, visualize=visualize)
+                        except:
+                            try:
+                                master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                    kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                    hierarchical_model,
+                                    data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
+                                    children=children, visualize=visualize)
+                            except:
+                                try:
+                                    master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                        kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                        hierarchical_model,
+                                        data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
+                                        children=children, visualize=visualize)
+                                except:
+                                    continue
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -619,7 +631,7 @@ if __name__ == '__main__':
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5] # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6 # Found through HP Testing
