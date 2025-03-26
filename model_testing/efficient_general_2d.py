@@ -609,7 +609,7 @@ def hp_plotting(scores, hp_name, hp_list):
         plt.close()
 
     for eval_name, evaluation in scores:
-        plt.plot(range(len(evaluation[:, nbr_query - 1])), evaluation[:, nbr_query - 1], label=eval_name)
+        plt.plot(hp_list, evaluation[:, nbr_query - 1], label=eval_name)
 
     plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
     plt.xlabel(f"{hp_name}")
@@ -678,6 +678,15 @@ if __name__ == '__main__':
                       ["Exploitation", np.array(exploit)]]
             hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
             nbr_rand_init = 6
+            print("==============================================================")
+            print("Done Rand Init HP")
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
 
             # Doing Training Iteration Hyper Parameter
             training_iter_list = np.arange(2, 22, 2)
@@ -702,7 +711,16 @@ if __name__ == '__main__':
             scores = [["Parent_R2", np.array(parent_r2)],["Child_1_R2", np.array(child_1_r2_over)],["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)], ["Exploitation", np.array(exploit)]]
             hp_plotting(scores, "training_iter", training_iter_list)
             training_iter = 10
+            print("==============================================================")
+            print("Done Training Iter HP")
 
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
             # HP search for kappa values
 
             k_vals_list = np.linspace(0.5, 10, 20)
@@ -723,7 +741,17 @@ if __name__ == '__main__':
                       ["Exploitation", np.array(exploit)]]
             hp_plotting(scores, "k_vals", k_vals_list)
             k_vals = [2]
+
+            print("==============================================================")
+            print("Done Kappa HP")
             # HP search for Gamma values
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
 
             g_vals_list = np.linspace(0.5, 10, 20)
             for g_vals in g_vals_list:
@@ -744,3 +772,6 @@ if __name__ == '__main__':
                       ["Exploitation", np.array(exploit)]]
             hp_plotting(scores, "g_vals", g_vals_list)
             g_vals = [6]
+
+            print("==============================================================")
+            print("Done Gamma HP")

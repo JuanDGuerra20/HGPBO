@@ -389,10 +389,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     k = str(kappa).replace('.', ',')
     g = str(gamma).replace('.', ',')
     n = str(nu).replace('.', ',')
-    vi.contour_plot_1D(master.sub_models, test_x_1D,
-                        [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
-                        f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}_pid_{os.getpid()}',
-                        model_name.lower(), folder_of_the_day, "Neural", neural=True)
+    if multi:
+        vi.contour_plot_1D(master.sub_models, test_x_1D,
+                            [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
+                            f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}_pid_{os.getpid()}',
+                            model_name.lower(), folder_of_the_day, "Neural", neural=True)
+    else:
+        rand_id = np.random.randint(99999)
+        vi.contour_plot_1D(master.sub_models, test_x_1D,
+                           [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
+                           f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}_pid_{rand_id}',
+                           model_name.lower(), folder_of_the_day, "Neural", neural=True)
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
     else:
@@ -580,7 +587,7 @@ def hp_plotting(scores, hp_name, hp_list):
         plt.close()
 
     for eval_name, evaluation in scores:
-        plt.plot(range(len(hp_list)), evaluation[:, nbr_query - 1], label=eval_name)
+        plt.plot(hp_list, evaluation[:, nbr_query - 1], label=eval_name)
 
     plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
     plt.xlabel(f"{hp_name}")
@@ -627,13 +634,13 @@ if __name__ == '__main__':
 
 
     nbr_query = 100
-    training_iter = 5
-    nbr_repetition = 30
-    nbr_rand_init = 10
+    training_iter = 10
+    nbr_repetition = 20
+    nbr_rand_init = 8
     k_vals = [2]  # Found through HP Testing
     g_vals = [6]  # Found through HP Testing
     nu_vals = [0.5]
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
@@ -645,52 +652,30 @@ if __name__ == '__main__':
             print(f"ID of process: {p.pid}")
         else:"""
 
-        nbr_rand_init = np.arange(1,20)
-        training_iter_list = np.arange(1,20)
-        parent_r2 = []
-        child_1_r2_over = []
-        child_2_r2_over = []
-        explor = []
-        exploit = []
         if h == hmodel.Efficient_UCB_Hierarchical_GP:
             model_name = "Efficient"
 
         elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
             model_name = "Lossless_Efficient"
+
         current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
         current_dateday = datetime.now().strftime("%Y-%m-%d")
-        workspace = f"C:/Users/preda/PycharmProjects/HGPBO/{model_name.lower()}"
+        workspace = f"{model_name.lower()}"
         folder_of_the_day = '/data-' + str(current_dateday)
-        if os.path.exists(workspace + folder_of_the_day):
-            print('Data folder is ready')
-        else:
-            os.mkdir(workspace + folder_of_the_day)
-            print('Data folder created')
-            os.mkdir(workspace + folder_of_the_day + '/contour')
-            print("Contour folder created")
-            os.mkdir(workspace + folder_of_the_day + '/differentiable_plots')
-            print("CSV folder created")
-            os.mkdir(workspace + folder_of_the_day + '/csv')
-            print("HP folder created")
-            os.mkdir(workspace + folder_of_the_day + '/hp_analysis')
-            print("Model folder created")
-            os.mkdir(workspace + folder_of_the_day + '/models')
-            print("Model folder created")
-            os.mkdir(workspace + folder_of_the_day + '/png')
 
-
-
-        nbr_rand_init_list = np.arange(2, 22, 2)
         parent_r2 = []
         child_1_r2_over = []
         child_2_r2_over = []
         explor = []
         exploit = []
         names = []
-        """for nbr_rand_init in nbr_rand_init_list:
+
+        nbr_rand_init_list = np.arange(2, 22, 2)
+
+        for nbr_rand_init in nbr_rand_init_list:
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
-                               h, multi)[0]
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                                   h, multi)[0]
             parent_r2.append(r2[:nbr_query])
             child_1_r2_over.append(child_1_r2[:nbr_query])
             child_2_r2_over.append(child_2_r2[:nbr_query])
@@ -700,16 +685,30 @@ if __name__ == '__main__':
         scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)"""
+        hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
         nbr_rand_init = 6
 
+        parent_r2 = []
+        child_1_r2_over = []
+        child_2_r2_over = []
+        explor = []
+        exploit = []
+        names = []
+
         # Doing Training Iteration Hyper Parameter
-        """training_iter_list = np.arange(2, 22, 2)
+        training_iter_list = np.arange(2, 22, 2)
 
         for training_iter in training_iter_list:
+            """if multi:
+                p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
+                               eps, h, multi,))
+                process.append(p)
+                p.start()
+                print(f"ID of process: {p.pid}")
+            else:"""
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
-                               h, multi)[0]
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                                   h, multi)[0]
             parent_r2.append(r2[:nbr_query])
             child_1_r2_over.append(child_1_r2[:nbr_query])
             child_2_r2_over.append(child_2_r2[:nbr_query])
@@ -719,44 +718,56 @@ if __name__ == '__main__':
         scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        hp_plotting(scores, "training_iter", training_iter_list)"""
+        hp_plotting(scores, "training_iter", training_iter_list)
         training_iter = 10
 
         # HP search for kappa values
+        parent_r2 = []
+        child_1_r2_over = []
+        child_2_r2_over = []
+        explor = []
+        exploit = []
+        names = []
 
         k_vals_list = np.linspace(0.5, 10, 20)
         for k_vals in k_vals_list:
             k_vals = [k_vals]
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
-                               h, multi)[0]
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                                   h, multi)[0]
             parent_r2.append(r2[:nbr_query])
             child_1_r2_over.append(child_1_r2[:nbr_query])
             child_2_r2_over.append(child_2_r2[:nbr_query])
             explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
             exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
 
-        """scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
+        scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        hp_plotting(scores, "k_vals", k_vals_list)"""
+        hp_plotting(scores, "k_vals", k_vals_list)
         k_vals = [2]
         # HP search for Gamma values
+        parent_r2 = []
+        child_1_r2_over = []
+        child_2_r2_over = []
+        explor = []
+        exploit = []
+        names = []
 
         g_vals_list = np.linspace(0.5, 10, 20)
         for g_vals in g_vals_list:
             g_vals = [g_vals]
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
-                               h, multi)[0]
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                                   h, multi)[0]
             parent_r2.append(r2[:nbr_query])
             child_1_r2_over.append(child_1_r2[:nbr_query])
             child_2_r2_over.append(child_2_r2[:nbr_query])
             explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
             exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
 
-        """scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
+        scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                   ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                   ["Exploitation", np.array(exploit)]]
-        hp_plotting(scores, "g_vals", g_vals_list)"""
+        hp_plotting(scores, "g_vals", g_vals_list)
         g_vals = [6]
