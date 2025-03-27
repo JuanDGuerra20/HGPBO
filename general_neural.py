@@ -688,6 +688,9 @@ if __name__ == '__main__':
         hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
         nbr_rand_init = 6
 
+        print("============================================================")
+        print("Done Rand Init")
+
         parent_r2 = []
         child_1_r2_over = []
         child_2_r2_over = []
@@ -720,6 +723,9 @@ if __name__ == '__main__':
                   ["Exploitation", np.array(exploit)]]
         hp_plotting(scores, "training_iter", training_iter_list)
         training_iter = 10
+
+        print("============================================================")
+        print("Done Training Iter")
 
         # HP search for kappa values
         parent_r2 = []
@@ -754,6 +760,9 @@ if __name__ == '__main__':
         exploit = []
         names = []
 
+        print("============================================================")
+        print("Done Kappa")
+
         g_vals_list = np.linspace(0.5, 10, 20)
         for g_vals in g_vals_list:
             g_vals = [g_vals]
@@ -771,3 +780,6 @@ if __name__ == '__main__':
                   ["Exploitation", np.array(exploit)]]
         hp_plotting(scores, "g_vals", g_vals_list)
         g_vals = [6]
+
+        print("============================================================")
+        print("Done Gamma")
