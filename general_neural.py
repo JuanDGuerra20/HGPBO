@@ -241,7 +241,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
             list_objective_mean_map.append(np.array(np.reshape(observed_pred.mean, (10, 10))))
 
-        vi.comparison(list_prior_map, list_objective_mean_map, q, Xmean_1D)
+        #vi.comparison(list_prior_map, list_objective_mean_map, q, Xmean_1D)
 
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
         list_acquisition_map.append(list_acquisition_map)
@@ -527,11 +527,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 plt.legend()
                 plt.ylim(0, 1.1)
-                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with Kappa {k} Gamma {g} Nu {n}')
+                plt.title(
+                    f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_rand_init_{nbr_rand_init}_train_iter_{training_iter}.svg',)
+                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.svg')
                 plt.savefig(
-                    f'{model_name.lower()}{folder_of_the_day}/png/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_rand_init_{nbr_rand_init}_train_iter_{training_iter}.png', )
+                    f'{model_name.lower()}{folder_of_the_day}/png/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.png')
 
                 plt.close()
 
@@ -543,7 +544,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 re_output = np.reshape(data, test_y_hier.shape)
                 df = pd.DataFrame(re_output)
                 df.to_csv(
-                    f'{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}.csv')
+                    f'{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
