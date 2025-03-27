@@ -43,9 +43,6 @@ name_code = 'HGP_BO-test6-priorMAP-1model1D'
 current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
 current_dateday = datetime.now().strftime("%Y-%m-%d")
 
-workspace_folder = (r'C:\Users\preda\PycharmProjects\HGPBO') #path to folder
-
-os.chdir(workspace_folder)
 
 kern_op = 'add_kernel'
 
@@ -413,7 +410,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         model_name = "Lossless_Efficient"
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/{model_name.lower()}"
+    workspace = f"{model_name.lower()}"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
