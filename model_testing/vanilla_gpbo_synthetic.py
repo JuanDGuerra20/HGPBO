@@ -227,7 +227,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
 if __name__ == '__main__':
 
-    dimension = 10
+    dimension = 15
     nbr_query = 80
     training_iter = 10
     nbr_repetition = 30
