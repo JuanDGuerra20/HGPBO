@@ -14,8 +14,7 @@ from tqdm import tqdm
 from seaborn import heatmap
 import multiprocessing as mp
 import pandas as pd
-
-
+import warnings
 
 xy2ch = [[2,6,10,14,9],
          [13,17,21,18,22]]
@@ -103,7 +102,9 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.close()
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False):
-    # Setting up the data
+
+
+    warnings.filterwarnings('ignore')    # Setting up the data
     trainsC = Trains(clean_thresh=0.06)
     X_1D, Y_1D, Xmean_1D, Ymean_1D = make_dataset_1d(trainsC)
     test_x_1D = torch.tensor(Xmean_1D)
@@ -461,17 +462,16 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                         child_1_r2_data.append(child_1_r2)
                         child_2_r2_data.append(child_2_r2)
                         for i, proc in enumerate(processes):
-                            try:
-                                rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = proc.get()
+                            print(f"Getting process {i}")
+                            rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = proc.get()
 
-                                better_exploration_score.append(rep_exploration_score)
-                                better_exploitation_score.append(rep_exploitation_score)
-                                heatmap_data.append(heatmap_rep)
-                                child_1_r2_data.append(child_1_r2)
-                                child_2_r2_data.append(child_2_r2)
-                            except:
-                                continue
+                            better_exploration_score.append(rep_exploration_score)
+                            better_exploitation_score.append(rep_exploitation_score)
+                            heatmap_data.append(heatmap_rep)
+                            child_1_r2_data.append(child_1_r2)
+                            child_2_r2_data.append(child_2_r2)
 
+                    print(len(heatmap_data))
                 else:
 
                     for i in range(nbr_repetition ):
@@ -530,9 +530,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 plt.title(
                     f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.svg')
+                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_kappa_{k}_gamma_{g}_nu_{n}.svg')
                 plt.savefig(
-                    f'{model_name.lower()}{folder_of_the_day}/png/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.png')
+                    f'{model_name.lower()}{folder_of_the_day}/png/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_kappa_{k}_gamma_{g}_nu_{n}.png')
 
                 plt.close()
 
@@ -544,7 +544,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 re_output = np.reshape(data, test_y_hier.shape)
                 df = pd.DataFrame(re_output)
                 df.to_csv(
-                    f'{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}.csv')
+                    f'{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_kappa_{k}_gamma_{g}_nu_{n}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
@@ -596,9 +596,6 @@ def hp_plotting(scores, hp_name, hp_list):
 
 if __name__ == '__main__':
 
-    import warnings
-
-    warnings.filterwarnings('ignore')
 
     max_seen_resp_2D = 0
     max_seen_resp_1_1D = 0
