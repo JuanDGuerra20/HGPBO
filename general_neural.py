@@ -101,7 +101,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
         f'{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
-def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False):
+def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False, multi=False):
 
 
     warnings.filterwarnings('ignore')    # Setting up the data
@@ -450,7 +450,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                         # running the repetitions in parallel except for the last one
                         for i in range(nbr_repetition - 1):
-                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day,))
+                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, False, multi))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
@@ -462,16 +462,16 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                         child_1_r2_data.append(child_1_r2)
                         child_2_r2_data.append(child_2_r2)
                         for i, proc in enumerate(processes):
-                            print(f"Getting process {i}")
-                            rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = proc.get()
+                            try:
+                                rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = proc.get()
 
-                            better_exploration_score.append(rep_exploration_score)
-                            better_exploitation_score.append(rep_exploitation_score)
-                            heatmap_data.append(heatmap_rep)
-                            child_1_r2_data.append(child_1_r2)
-                            child_2_r2_data.append(child_2_r2)
-
-                    print(len(heatmap_data))
+                                better_exploration_score.append(rep_exploration_score)
+                                better_exploitation_score.append(rep_exploitation_score)
+                                heatmap_data.append(heatmap_rep)
+                                child_1_r2_data.append(child_1_r2)
+                                child_2_r2_data.append(child_2_r2)
+                            except:
+                                continue
                 else:
 
                     for i in range(nbr_repetition ):
