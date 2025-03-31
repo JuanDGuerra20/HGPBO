@@ -162,6 +162,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins, test_x_hier,
                                                                                      y_hier)
 
+        next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
+                                                                                            max_seen_resp_2D)
+
         response = torch.tensor(next_query_value_random)
 
 
