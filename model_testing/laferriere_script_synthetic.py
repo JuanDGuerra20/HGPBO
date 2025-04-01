@@ -9,7 +9,7 @@ from tqdm import tqdm
 import multiprocessing as mp
 import pandas as pd
 from seaborn import heatmap
-
+import warnings
 
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
@@ -479,7 +479,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
 if __name__ == '__main__':
 
-    import warnings
 
     warnings.filterwarnings('ignore')
 
