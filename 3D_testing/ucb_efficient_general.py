@@ -414,6 +414,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
     final_exploitation_metric = []
     final_exploration_metric = []
 
+    list_models = []
+
     for kappa in k_vals:
         over_exploit = []
         over_explor = []
@@ -531,10 +533,48 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.savefig(
                     f'{data_name}/{model_name}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}.svg')
                 plt.close()
+
+                df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',
+                                      master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
+                                      child_2_r2])
+                df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
+                            'child2_r2']
+
+                df.to_csv(
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
+                list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',
+                                       master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
+                                       child_2_r2])
+
             # Joint Section
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
 
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
+
+
+def hp_plotting(scores, hp_name, hp_list):
+    for j in range(len(scores)):
+        eval_name, evaluation = scores[j]
+        for i in range(len(hp_list)):
+            plt.plot(range(nbr_query), evaluation[i][:nbr_query], label=f"Init {hp_list[i]}")
+        plt.title(f"{eval_name} with varying {hp_name}")
+        plt.xlabel("Query Number")
+        plt.ylabel(f"{eval_name}")
+        plt.legend()
+        plt.savefig(
+            f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/{eval_name}_varying_{hp_name}.svg")
+        plt.close()
+
+    for eval_name, evaluation in scores:
+        plt.plot(hp_list, evaluation[:, nbr_query - 1], label=eval_name)
+
+    plt.title(f"End Model Scores for different evals at {nbr_query} Queries")
+    plt.xlabel(f"{hp_name}")
+    plt.ylabel(f"Performance")
+    plt.legend()
+    plt.savefig(f"{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/final_scores_varying_{hp_name}.svg")
+    plt.close()
+
 
 if __name__ == '__main__':
 
@@ -551,26 +591,93 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = False
+    multi = True
 
     for h in h_model:
         for dataset_num in [5]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                               nu_vals, data_name, data_creation_func, eps, h, multi)
+            if h == hmodel.Efficient_UCB_Hierarchical_GP:
+                model_name = "Efficient"
 
-            """if multi:
-                p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, ))
-                process.append(p)
-                p.start()
-                print(f"ID of process: {p.pid}")
-            else:
-            nbr_rand_init_list = np.arange(1,21)
-            training_iter_list = np.arange(1,21)
+            elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+                model_name = "Lossless_Efficient"
+
+            current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+            current_dateday = datetime.now().strftime("%Y-%m-%d")
+            workspace = f"{data_name}/{model_name.lower()}"
+            folder_of_the_day = '/data-' + str(current_dateday)
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
+
+            nbr_rand_init_list = np.arange(2, 22, 2)
+
             for nbr_rand_init in nbr_rand_init_list:
-                for training_iter in training_iter_list:
-                    training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                   g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)[0]
 
-            cProfile.run("training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)", "output.prof")
-            stats = pstats.Stats('output.prof')
-            stats.sort_stats("percall").print_stats(20)"""
+            nbr_rand_init = 6
+            print("==============================================================")
+            print("Done Rand Init HP")
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
+
+            # Doing Training Iteration Hyper Parameter
+            training_iter_list = np.arange(2, 22, 2)
+
+            for training_iter in training_iter_list:
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+                                   nu_vals, data_name, data_creation_func, eps, h, multi)[0]
+
+            training_iter = 10
+            print("==============================================================")
+            print("Done Training Iter HP")
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
+            # HP search for kappa values
+
+            k_vals_list = np.linspace(0.5, 10, 20)
+            for k_vals in k_vals_list:
+                k_vals = [k_vals]
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                   g_vals,
+                                   nu_vals, data_name, data_creation_func,
+                                   eps, h, multi)[0]
+
+            k_vals = [2]
+
+            print("==============================================================")
+            print("Done Kappa HP")
+            # HP search for Gamma values
+
+            parent_r2 = []
+            child_1_r2_over = []
+            child_2_r2_over = []
+            explor = []
+            exploit = []
+            names = []
+
+            g_vals_list = np.linspace(0.5, 10, 20)
+            for g_vals in g_vals_list:
+                g_vals = [g_vals]
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                   g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)[0]
+
+            g_vals = [6]
+
+            print("==============================================================")
+            print("Done Gamma HP")
