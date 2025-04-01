@@ -583,7 +583,7 @@ if __name__ == '__main__':
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 30
-    nbr_rand_init = 6
+    nbr_rand_init = 10
     k_vals = [2] # Found through HP Testing
     g_vals = [8]  # Found through HP Testing
     nu_vals = [0.5]
@@ -620,7 +620,7 @@ if __name__ == '__main__':
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                    g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)[0]
 
-            nbr_rand_init = 6
+            nbr_rand_init = 10
             print("==============================================================")
             print("Done Rand Init HP")
 
@@ -677,7 +677,7 @@ if __name__ == '__main__':
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                    g_vals, nu_vals, data_name, data_creation_func, eps, h, multi)[0]
 
-            g_vals = [6]
+            g_vals = [8]
 
             print("==============================================================")
             print("Done Gamma HP")
