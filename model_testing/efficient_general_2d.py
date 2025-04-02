@@ -629,7 +629,7 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     dimension = 15
-    nbr_query = 2
+    nbr_query = 80
     training_iter = 10 # Found through HP Testing
     nbr_repetition = 10
     k_vals = [9.5]
