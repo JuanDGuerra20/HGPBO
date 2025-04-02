@@ -11,6 +11,7 @@ import time
 import cProfile
 import pstats
 
+import warnings
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
                 data_name, model_name):
@@ -71,7 +72,8 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False):
-    
+    warnings.filterwarnings('ignore')
+
     x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
     prior_map = torch.zeros(dimension, dimension, dimension)
 
