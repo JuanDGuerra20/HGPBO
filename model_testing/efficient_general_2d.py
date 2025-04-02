@@ -72,7 +72,8 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True):
+                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=True):
+
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     prior_map = torch.zeros(dimension, dimension)
@@ -100,8 +101,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         if q == 0:
             if children == []:
                 # Need to initialize the model - Will be random in this method
-                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
+                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed)
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed)
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub1_like = gpytorch.likelihoods.GaussianLikelihood()
@@ -121,7 +122,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 train_y_sub1 = sub1.train_targets
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
 
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
                 sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like,
@@ -144,10 +145,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
 
-            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier)
+            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed)
             max_seen_resp_2D = torch.max(train_y_hier)
-
-
             sub1.eval()
             sub2.eval()
 
@@ -371,7 +370,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals,
-                       data_name, data_creation_func, eps, hierarchical_model, multi, children=[], visualize=True):
+                       data_name, data_creation_func, eps, hierarchical_model, multi, children=[], visualize=True, seed=False):
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
 
@@ -418,6 +417,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 child_1_r2_data = []
                 child_2_r2_data = []
 
+                if seed:
+                    seeding = np.arange(nbr_repetition)
+                else:
+                    seed = [False]*nbr_repetition
+
                 if multi:
                     with mp.Pool(processes=nbr_repetition - 1) as pool:
 
@@ -425,7 +429,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         for i in range(nbr_repetition - 1):
                             p = pool.apply_async(run_repetition, (
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, visualize, ))
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, visualize, seeding[i]))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
@@ -434,21 +438,21 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize)
+                                children=children, visualize=visualize, seed=seeding[-1])
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                     hierarchical_model,
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                    children=children, visualize=visualize)
+                                    children=children, visualize=visualize, seed=seeding[-1])
                             except:
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                        children=children, visualize=visualize)
+                                        children=children, visualize=visualize, seed=seeding[-1])
                                 except:
                                     continue
 
@@ -475,21 +479,21 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize)
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize, seed=seeding[i])
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                     hierarchical_model,
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                    children=children, visualize=visualize)
+                                    children=children, visualize=visualize, seed=seeding[i])
                             except:
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                        children=children, visualize=visualize)
+                                        children=children, visualize=visualize, seed=seeding[i])
                                 except:
                                     continue
 
@@ -625,13 +629,13 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     dimension = 15
-    nbr_query = 80
+    nbr_query = 2
     training_iter = 10 # Found through HP Testing
-    nbr_repetition = 20
-    k_vals = [2]
-    g_vals = [6]
+    nbr_repetition = 10
+    k_vals = [9.5]
+    g_vals = [10]
     nu_vals = [0.5] # Found through HP Testing
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6 # Found through HP Testing
@@ -652,8 +656,11 @@ if __name__ == '__main__':
             workspace = f"{data_name}/{model_name.lower()}"
             folder_of_the_day = '/data-' + str(current_dateday)
 
-
-            parent_r2 = []
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+                                   nu_vals, data_name, data_creation_func,
+                                   eps, h, multi, seed=True)[0]
+            """parent_r2 = []
             child_1_r2_over = []
             child_2_r2_over = []
             explor = []
@@ -693,13 +700,7 @@ if __name__ == '__main__':
 
             for training_iter in training_iter_list:
 
-                """if multi:
-                    p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                                   eps, h, multi,))
-                    process.append(p)
-                    p.start()
-                    print(f"ID of process: {p.pid}")
-                else:"""
+
                 name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
                                    eps, h, multi)[0]
                 parent_r2.append(r2[:nbr_query])
@@ -774,4 +775,4 @@ if __name__ == '__main__':
             g_vals = [6]
 
             print("==============================================================")
-            print("Done Gamma HP")
+            print("Done Gamma HP")"""

@@ -101,8 +101,9 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
         f'{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
-def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False, multi=False):
-
+def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False, multi=False, seed=False):
+    if type(seed) != bool:
+        np.random.seed(seed)
 
     warnings.filterwarnings('ignore')    # Setting up the data
     trainsC = Trains(clean_thresh=0.06)

@@ -71,7 +71,8 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True):
+                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=False):
+
 
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
@@ -100,8 +101,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         if q == 0:
             # Need to initialize the model - Will be random in this method
-            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1)
-            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2)
+            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed)
+            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed)
             max_seen_resp_1_1D = torch.max(train_y_sub1)
             max_seen_resp_2_1D = torch.max(train_y_sub2)
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
@@ -118,8 +119,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub1_like.eval()
             sub2_like.eval()
 
-            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier)
+            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed)
             max_seen_resp_2D = torch.max(train_y_hier)
+
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
@@ -255,7 +257,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals,
-                       data_name, data_creation_func, eps, hierarchical_model, multi, children=[], visualize=True):
+                       data_name, data_creation_func, eps, hierarchical_model, multi, children=[], visualize=True, seed=False):
     model_name = "laferriere_model"
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
@@ -297,6 +299,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 processes = []
                 child_1_r2_data = []
                 child_2_r2_data = []
+                if seed:
+                    seeding = np.arange(nbr_repetition)
+                else:
+                    seed = [False]*nbr_repetition
 
                 if multi:
                     with mp.Pool(processes=nbr_repetition - 1) as pool:
@@ -307,7 +313,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children,
-                                visualize,))
+                                visualize, seeding[i]))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
@@ -316,13 +322,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize)
+                                children=children, visualize=visualize, seed=seeding[-1])
                         except:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize)
+                                children=children, visualize=visualize, seed=seeding[-1])
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -349,21 +355,21 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize)
+                                children=children, visualize=visualize, seed=seeding[i])
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                     hierarchical_model,
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                    children=children, visualize=visualize)
+                                    children=children, visualize=visualize, seed=seeding[i])
                             except:
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                        children=children, visualize=visualize)
+                                        children=children, visualize=visualize, seed=seeding[i])
                                 except:
                                     continue
 
@@ -483,7 +489,7 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     dimension = 15
-    nbr_query = 80
+    nbr_query = 2
     training_iter = 10  # Found through HP Testing
     nbr_repetition = 30
     k_vals = [2]
@@ -518,4 +524,4 @@ if __name__ == '__main__':
             names = []
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                   g_vals,nu_vals, data_name, data_creation_func, eps, h, multi)[0]
+                                   g_vals,nu_vals, data_name, data_creation_func, eps, h, multi, seed=True)[0]
