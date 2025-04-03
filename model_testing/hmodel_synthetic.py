@@ -991,7 +991,7 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
     """
 
     # Update training data by adding next_query_value to the train dataset
-    train_x, train_y = model.update_training_data(train_x, train_y, next_query_pin, env)  # has to be 1D dataset
+    train_x, train_y = model.update_training_data(train_x, train_y, next_query_pin, response1, env)  # has to be 1D dataset
     # Update the model with the new training data
 
     div_y = train_y.clone()

@@ -227,17 +227,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
         cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
 
-        div = torch.exp(cont1) + torch.exp(cont2)
-
-        contribution1 = torch.nan_to_num(response * torch.exp(cont1) / div)
-        contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
-
-        response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
-        response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
-
         # Potentially could make this more efficient by incorporating it into the next finder
-        sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[0], x_sub1)
-        sub2_qc = sub2.increment_q_n(sub2_qc, next_query_pins[1], x_sub2)
         hier_qc = master.increment_q_n(hier_qc, next_query_pins, x_hier)
 
         # next_query_pins = next_query_pins.to(torch.int)
@@ -249,20 +239,32 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                     flag = False
                 if x == dimension - 1 and y == dimension - 1 and flag:
                     raise Exception("Could not find pins in X hier for indices")
+        if cont1 > cont2:
+            response_1 = response/max_seen_resp_2D
+            response_1 = response_1 * sub1.env_max_seen
+            response_1 = sub1.update_max_seen_response_no_norm(response_1, max_seen_resp_1_1D)
 
-        sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
-                                                                                       train_y_sub1,
-                                                                                       x_sub1[next_query_indices[0]],
-                                                                                       contribution1,
-                                                                                       False,
-                                                                                       training_iter=training_iter)
+            sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
+                                                                                           train_y_sub1,
+                                                                                           x_sub1[next_query_indices[0]],
+                                                                                           response_1,
+                                                                                           True,
+                                                                                           training_iter=training_iter)
+            sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[0], x_sub1)
 
-        sub2, sub2_like, train_x_sub2, train_y_sub2 = hmodel.update_model1_1D_max_seen(sub2, sub2_like, train_x_sub2,
-                                                                                       train_y_sub2,
-                                                                                       x_sub2[next_query_indices[1]],
-                                                                                       contribution2,
-                                                                                       False,
-                                                                                       training_iter=training_iter)
+        else:
+            response_2 = response / max_seen_resp_2D
+            response_2 = response_2 * sub1.env_max_seen
+
+            response_2 = sub2.update_max_seen_response_no_norm(response_2, max_seen_resp_2_1D)
+
+            sub2, sub2_like, train_x_sub2, train_y_sub2 = hmodel.update_model1_1D_max_seen(sub2, sub2_like, train_x_sub2,
+                                                                                           train_y_sub2,
+                                                                                           x_sub2[next_query_indices[1]],
+                                                                                           response_2,
+                                                                                           True,
+                                                                                           training_iter=training_iter)
+            sub2_qc = sub2.increment_q_n(sub2_qc, next_query_pins[1], x_sub2)
 
         sub1.eval()
         sub1_like.eval()
@@ -385,7 +387,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         model_name = "Efficient"
 
     elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-        model_name = "Lossless_Efficient"
+        model_name = "Attribution"
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -635,7 +637,7 @@ if __name__ == '__main__':
 
     warnings.filterwarnings('ignore')
 
-    dimension = 30
+    dimension = 15
     nbr_query = 80
     training_iter = 10 # Found through HP Testing
     nbr_repetition = 10

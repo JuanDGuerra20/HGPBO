@@ -530,8 +530,8 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
         plt.savefig(f'{model_type}/{folder_of_the_day}/png/{file_name}.png')
 
     else:
-        plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/differentiable_plots/{file_name}.svg')
-        plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/png/{file_name}.png')
+        plt.savefig(f'{data_name}/{model_type}{folder_of_the_day}/differentiable_plots/{file_name}.svg')
+        plt.savefig(f'{data_name}/{model_type}{folder_of_the_day}/png/{file_name}.png')
 
     plt.close()
 

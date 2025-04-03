@@ -100,7 +100,6 @@ class ExactGPModel(gpytorch.models.ExactGP):
         train_x = torch.cat((train_x, next_query_pins))
         train_y = torch.cat((train_y, next_query_value))
         
-        
         next_q_val = len(self.env_ind) + len(self.bif_ind)
         if env:
             self.env_ind.append(next_q_val)

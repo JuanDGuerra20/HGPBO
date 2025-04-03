@@ -20,7 +20,7 @@ if __name__ == '__main__':
     multi = True
     dimension = 15
     noise_list = [0.1, 0.15, 0.2, 0.25]
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_query = 80
 
     for noise in noise_list:
@@ -42,7 +42,7 @@ if __name__ == '__main__':
             k_vals = [2]
             g_vals = [6]
             nu_vals = [0.5]  # Found through HP Testing
-            nbr_rand_init = 2  # Found through HP Testing
+            nbr_rand_init = 6  # Found through HP Testing
 
             seed = np.random.randint(99999, size=nbr_repetition)
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
@@ -53,7 +53,7 @@ if __name__ == '__main__':
             k_vals = [9.5]
             g_vals = [10]
             nu_vals = [0.5]  # Found through HP Testing
-            nbr_rand_init = 2  # Found through HP Testing
+            nbr_rand_init = 6  # Found through HP Testing
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                        g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise)[0]

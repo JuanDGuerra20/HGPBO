@@ -297,13 +297,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
         sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
                                                                                 train_y_sub1,
                                                                                 next_query_pins[:2],
-                                                                                contribution1, max_seen_resp_1_1D,
+                                                                                contribution1, False,
                                                                                 training_iter=training_iter)
 
         sub2, sub2_like, train_x_sub2, train_y_sub2 = hmodel.update_model1_1D_max_seen(sub2, sub2_like, train_x_sub2,
                                                                                 train_y_sub2,
                                                                                 next_query_pins[2:],
-                                                                                contribution2, max_seen_resp_2_1D,
+                                                                                contribution2, False,
                                                                                 training_iter=training_iter)
 
         sub1.eval()
@@ -631,7 +631,7 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_rand_init = 8
     k_vals = [2]  # Found through HP Testing
     g_vals = [6]  # Found through HP Testing
@@ -640,14 +640,10 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
-        """if multi:
-            p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
-                               h, multi,))
-            process.append(p)
-            p.start()
-            print(f"ID of process: {p.pid}")
-        else:"""
-
+        name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                               h, multi)[0]
+        """
         if h == hmodel.Efficient_UCB_Hierarchical_GP:
             model_name = "Efficient"
 
@@ -698,13 +694,7 @@ if __name__ == '__main__':
         training_iter_list = np.arange(2, 22, 2)
 
         for training_iter in training_iter_list:
-            """if multi:
-                p = mp.Process(target=training_procedure, args=(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                               eps, h, multi,))
-                process.append(p)
-                p.start()
-                print(f"ID of process: {p.pid}")
-            else:"""
+
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
                                    h, multi)[0]
@@ -778,4 +768,4 @@ if __name__ == '__main__':
         g_vals = [6]
 
         print("============================================================")
-        print("Done Gamma")
+        print("Done Gamma")"""
