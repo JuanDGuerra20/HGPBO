@@ -19,12 +19,12 @@ if __name__ == '__main__':
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     multi = True
     dimension = 15
-    noise_list = [0.1, 0.15, 0.2, 0.25]
+    noise_list = [0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
     nbr_repetition = 10
     nbr_query = 80
 
     for noise in noise_list:
-        for dataset_num in [2, 3]:
+        for dataset_num in [2]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

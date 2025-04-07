@@ -82,9 +82,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     ground_truth_max_2 = torch.max(y_sub2)
     ground_truth_max_hier = torch.max(y_hier)
 
-    y_sub1 = y_sub1 + np.random.normal(0, noise*(ground_truth_max_1-torch.min(y_sub1)))
+    """y_sub1 = y_sub1 + np.random.normal(0, noise*(ground_truth_max_1-torch.min(y_sub1)))
     y_sub2 = y_sub2 + np.random.normal(0, noise*(ground_truth_max_2-torch.min(y_sub2)))
-    y_hier = y_hier + np.random.normal(0, noise*(ground_truth_max_hier-torch.min(y_hier)))
+    y_hier = y_hier + np.random.normal(0, noise*(ground_truth_max_hier-torch.min(y_hier)))"""
 
 
     max_seen_resp_2D = 0
@@ -106,8 +106,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         if q == 0:
             # Need to initialize the model - Will be random in this method
-            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed)
-            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed)
+            train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed, noise=noise)
+            train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed, noise=noise)
             max_seen_resp_1_1D = torch.max(train_y_sub1)
             max_seen_resp_2_1D = torch.max(train_y_sub2)
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
@@ -124,7 +124,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub1_like.eval()
             sub2_like.eval()
 
-            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed)
+            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
             max_seen_resp_2D = torch.max(train_y_hier)
 
 
@@ -171,7 +171,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
         next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins, test_x_hier,
-                                                                                     y_hier)
+                                                                                     y_hier, noise=noise)
 
         next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
                                                                                             max_seen_resp_2D)
@@ -319,7 +319,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children,
-                                visualize, seed[i], 0.1))
+                                visualize, seed[i], noise))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
@@ -328,13 +328,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize, seed=seed[-1], noise=0.1)
+                                children=children, visualize=visualize, seed=seed[-1], noise=noise)
                         except:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize, seed=seed[-1], noise=0.1)
+                                children=children, visualize=visualize, seed=seed[-1], noise=noise)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -361,21 +361,21 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize, seed=seed[i], noise=0.1)
+                                children=children, visualize=visualize, seed=seed[i], noise=noise)
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                     hierarchical_model,
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                    children=children, visualize=visualize, seed=seed[i], noise=0.1)
+                                    children=children, visualize=visualize, seed=seed[i], noise=noise)
                             except:
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                        children=children, visualize=visualize, seed=seed[i], noise=0.1)
+                                        children=children, visualize=visualize, seed=seed[i], noise=noise)
                                 except:
                                     continue
 
@@ -491,14 +491,14 @@ if __name__ == '__main__':
 
     warnings.filterwarnings('ignore')
 
-    dimension = 30
+    dimension = 15
     nbr_query = 80
     training_iter = 10  # Found through HP Testing
     nbr_repetition = 10
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
@@ -527,4 +527,4 @@ if __name__ == '__main__':
             seed = np.arange(nbr_repetition)
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                   g_vals,nu_vals, data_name, data_creation_func, eps, h, multi, seed)[0]
+                                   g_vals,nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0.1)[0]

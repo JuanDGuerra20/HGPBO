@@ -82,9 +82,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     ground_truth_max_2 = torch.max(y_sub2)
     ground_truth_max_hier = torch.max(y_hier)
 
-    y_sub1 = y_sub1 + np.random.normal(0, noise*(ground_truth_max_1-torch.min(y_sub1)))
+    """y_sub1 = y_sub1 + np.random.normal(0, noise*(ground_truth_max_1-torch.min(y_sub1)))
     y_sub2 = y_sub2 + np.random.normal(0, noise*(ground_truth_max_2-torch.min(y_sub2)))
-    y_hier = y_hier + np.random.normal(0, noise*(ground_truth_max_hier-torch.min(y_hier)))
+    y_hier = y_hier + np.random.normal(0, noise*(ground_truth_max_hier-torch.min(y_hier)))"""
 
     max_seen_resp_2D = 0
     max_seen_resp_1_1D = 0
@@ -105,8 +105,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         if q == 0:
             if children == []:
                 # Need to initialize the model - Will be random in this method
-                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed)
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed)
+                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed, noise=noise)
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed, noise=noise)
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub1_like = gpytorch.likelihoods.GaussianLikelihood()
@@ -126,7 +126,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 train_y_sub1 = sub1.train_targets
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
 
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed)
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed, noise=noise)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
                 sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like,
@@ -149,7 +149,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
 
-            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed)
+            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
 
             max_seen_resp_2D = torch.max(train_y_hier)
             sub1.eval()
@@ -208,7 +208,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
                                                                                      test_x_hier,
-                                                                                     y_hier)
+                                                                                     y_hier, noise=noise)
 
         y_mu_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_mu1, x_sub1)
         y_mu_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_mu2, x_sub2)
@@ -448,21 +448,21 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize, seed=seed[-1], noise=0.1)
+                                children=children, visualize=visualize, seed=seed[-1], noise=noise)
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                     hierarchical_model,
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                    children=children, visualize=visualize, seed=seed[-1], noise=0.1)
+                                    children=children, visualize=visualize, seed=seed[-1], noise=noise)
                             except:
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                        children=children, visualize=visualize, seed=seed[-1], noise=0.1)
+                                        children=children, visualize=visualize, seed=seed[-1], noise=noise)
                                 except:
                                     continue
 
@@ -489,21 +489,21 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize, seed=seed[i], noise=0.1)
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize, seed=seed[i], noise=noise)
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                     hierarchical_model,
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                    children=children, visualize=visualize, seed=seed[i], noise=0.1)
+                                    children=children, visualize=visualize, seed=seed[i], noise=noise)
                             except:
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                        children=children, visualize=visualize, seed=seed[i], noise=0.1)
+                                        children=children, visualize=visualize, seed=seed[i], noise=noise)
                                 except:
                                     continue
 

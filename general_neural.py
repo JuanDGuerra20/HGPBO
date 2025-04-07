@@ -297,13 +297,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
         sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
                                                                                 train_y_sub1,
                                                                                 next_query_pins[:2],
-                                                                                contribution1, False,
+                                                                                contribution1, True,
                                                                                 training_iter=training_iter)
 
         sub2, sub2_like, train_x_sub2, train_y_sub2 = hmodel.update_model1_1D_max_seen(sub2, sub2_like, train_x_sub2,
                                                                                 train_y_sub2,
                                                                                 next_query_pins[2:],
-                                                                                contribution2, False,
+                                                                                contribution2, True,
                                                                                 training_iter=training_iter)
 
         sub1.eval()
