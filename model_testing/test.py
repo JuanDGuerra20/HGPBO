@@ -20,7 +20,7 @@ if __name__ == '__main__':
     multi = True
     dimension = 15
     noise_list = [0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_query = 80
 
     for noise in noise_list:
