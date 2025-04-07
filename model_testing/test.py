@@ -24,7 +24,7 @@ if __name__ == '__main__':
     nbr_query = 80
 
     for noise in noise_list:
-        for dataset_num in [2]:
+        for dataset_num in [2, 3]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
