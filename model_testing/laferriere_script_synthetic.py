@@ -72,8 +72,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                    data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=False, noise=0.1):
-
-
+    warnings.filterwarnings('ignore')
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     prior_map = torch.zeros(dimension, dimension)
@@ -477,12 +476,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                        child_2_r2])
 
             # Joint Section
-            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
+            """joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
                               nbr_repetition, data_name, model_name)
 
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
                         nbr_repetition, data_name, model_name)
-
+            """
     return list_models
 
 

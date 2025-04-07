@@ -4,13 +4,13 @@ import multiprocessing as mp
 from efficient_general_2d import *
 
 def two_pretrained():
-    dimension = 10
+    dimension = 15
     nbr_query = 80
-    training_iter = 5
+    training_iter = 10
     nbr_repetition = 15
-    nbr_rand_init = 5
-    k_vals = [2]
-    g_vals = [6]
+    nbr_rand_init = 6
+    k_vals = [9.5]
+    g_vals = [10]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -208,13 +208,13 @@ def two_pretrained():
 
 
 def two_pretrained_bad():
-    dimension = 10
+    dimension = 15
     nbr_query = 80
-    training_iter = 5
+    training_iter = 10
     nbr_repetition = 15
-    nbr_rand_init = 5
-    k_vals = [2]
-    g_vals = [6]
+    nbr_rand_init = 6
+    k_vals = [9.5]
+    g_vals = [10]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -409,13 +409,13 @@ def two_pretrained_bad():
 
 
 def one_pretrained():
-    dimension = 10
+    dimension = 15
     nbr_query = 80
-    training_iter = 5
+    training_iter = 10
     nbr_repetition = 15
-    nbr_rand_init = 5
-    k_vals = [2]
-    g_vals = [6]
+    nbr_rand_init = 6
+    k_vals = [9.5]
+    g_vals = [10]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -550,6 +550,8 @@ def one_pretrained():
 
 if __name__ == '__main__':
     two_pretrained()
+    two_pretrained_bad()
+    one_pretrained()
 
     """
     #with mp.Pool(processes=2) as pool:
