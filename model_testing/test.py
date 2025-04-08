@@ -21,7 +21,7 @@ if __name__ == '__main__':
     dimension = 15
     noise_list = [0, 0.1]
     nbr_repetition = 6
-    nbr_query = 80
+    nbr_query = 100
 
     for noise in noise_list:
         for dataset_num in [2]:
@@ -46,8 +46,6 @@ if __name__ == '__main__':
             nbr_rand_init = 6  # Found through HP Testing
 
             seed = np.random.randint(99999, size=nbr_repetition)
-            print("================================================================================")
-            print(f"Random seed checking functionality for Laferriere")
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 laf.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                    g_vals,nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise)[0]
@@ -57,8 +55,6 @@ if __name__ == '__main__':
             g_vals = [10]
             nu_vals = [0.5]  # Found through HP Testing
             nbr_rand_init = 6  # Found through HP Testing
-            print("================================================================================")
-            print(f"Random seed checking functionality for General")
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                        g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise)[0]

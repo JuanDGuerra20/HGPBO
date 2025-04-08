@@ -1,5 +1,5 @@
 import gpytorch
-
+import torch
 
 import synthetic_models as models
 import hmodel_synthetic as hmodel
@@ -108,10 +108,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             if children == []:
 
                 # Need to initialize the model - Will be random in this method
-                print(seed)
                 train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed, noise=noise)
                 train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed, noise=noise)
-                print(train_y_sub1)
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub1_like = gpytorch.likelihoods.GaussianLikelihood()
@@ -156,6 +154,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             for i in range(len(train_x_sub1)):
                 sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
                 sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
+
             train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
 
             max_seen_resp_2D = torch.max(train_y_hier)
@@ -190,7 +189,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
             master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
                                         prior_hierarchical_kernel,
-                                        prior_map_save / prior_map_max_save, kernel_op='add_kernel',
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)
 
@@ -232,13 +231,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         response = torch.tensor(next_query_value_random)
 
-        cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
-        cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
+        cont1 = y_mu_point_a + gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
 
-        div = torch.exp(cont1) + torch.exp(cont2)
+        cont1_scaled = torch.nan_to_num(cont1/torch.max(y_mu1 + gamma * torch.nan_to_num(y_conf1/ torch.sqrt(sub1_qc))))
 
-        contribution1 = torch.nan_to_num(response * torch.exp(cont1) / div)
-        contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
+        cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
+        cont2_scaled = torch.nan_to_num(cont2/torch.max(y_mu2 + gamma * torch.nan_to_num(y_conf2/ torch.sqrt(sub2_qc))))
+
+        div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
+
+        contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
+        contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)
 
         response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
         response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
@@ -298,7 +301,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         prior_map_max = torch.max(prior_map)
 
-        master.mean_module.map = torch.nn.Parameter(prior_map_save / prior_map_max_save)
+        master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
 
         master = hmodel.update_kernel_parameters(master, sub1, sub2)
 
@@ -494,11 +497,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 else:
 
                     for i in range(nbr_repetition):
-                        try:
-                            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                        #try:
+                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize, seed=seed[i], noise=noise)
-                        except:
+                        """except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
@@ -513,7 +516,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                         children=children, visualize=visualize, seed=seed[i], noise=noise)
                                 except:
-                                    continue
+                                    continue"""
 
 
                         better_exploration_score.append(rep_exploration_score)
@@ -650,12 +653,12 @@ if __name__ == '__main__':
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
     for h in h_model:
-        for dataset_num in [2, 3]:
+        for dataset_num in [2]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
             seed = np.arange(nbr_repetition)

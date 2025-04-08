@@ -995,9 +995,9 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
     # Update the model with the new training data
 
     div_y = train_y.clone()
-
-    div_y[model.env_ind] = div_y[model.env_ind]/model.env_max_seen
-    div_y[model.bif_ind] = div_y[model.bif_ind]/model.bif_max_seen
+    if model.env_max_seen != 0 and model.bif_max_seen != 0:
+        div_y[model.env_ind] = div_y[model.env_ind]/model.env_max_seen
+        div_y[model.bif_ind] = div_y[model.bif_ind]/model.bif_max_seen
 
     model.set_train_data(train_x, div_y, strict=False)
     # Find optimal model hyperparameters
