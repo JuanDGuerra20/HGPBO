@@ -100,6 +100,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     heatmap_rep = []
     h_opt_time = []
     h_pred_time = []
+    prior_map_save = []
     for q in tqdm(range(nbr_query)):
 
         if q == 0:
@@ -179,12 +180,14 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                     prior_map[i, j] = (p1[i] + p2[j]) / 2
 
             prior_map_max = torch.max(prior_map)
+            prior_map_save = torch.copy(prior_map)
+            prior_map_max_save = torch.max(prior_map_save)
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
             master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
                                         prior_hierarchical_kernel,
-                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        prior_map_save / prior_map_max_save, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)
 
@@ -293,7 +296,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         prior_map_max = torch.max(prior_map)
 
-        master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
+        master.mean_module.map = torch.nn.Parameter(prior_map_save / prior_map_max_save)
 
         master = hmodel.update_kernel_parameters(master, sub1, sub2)
 
