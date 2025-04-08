@@ -276,14 +276,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         response = torch.tensor(next_query_value_random)
 
-        
-        cont1 = y_mu_point_a - gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
-        cont2 = y_mu_point_b - gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
+        cont1 = y_mu_point_a + gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
+        cont1_scaled = torch.nan_to_num(cont1/torch.max(y_mu1 + gamma * torch.nan_to_num(y_conf1/ torch.sqrt(sub1_qc))))
 
-        div = torch.exp(cont1) + torch.exp(cont2)
+        cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
+        cont2_scaled = torch.nan_to_num(cont2/torch.max(y_mu2 + gamma * torch.nan_to_num(y_conf2/ torch.sqrt(sub2_qc))))
 
-        contribution1 = torch.nan_to_num(response * torch.exp(cont1) / div)
-        contribution2 = torch.nan_to_num(response * torch.exp(cont2) / div)
+        div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
+
+        contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
+        contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)
 
         response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
         response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
@@ -297,13 +299,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
         sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
                                                                                 train_y_sub1,
                                                                                 next_query_pins[:2],
-                                                                                contribution1, True,
+                                                                                contribution1, False,
                                                                                 training_iter=training_iter)
 
         sub2, sub2_like, train_x_sub2, train_y_sub2 = hmodel.update_model1_1D_max_seen(sub2, sub2_like, train_x_sub2,
                                                                                 train_y_sub2,
                                                                                 next_query_pins[2:],
-                                                                                contribution2, True,
+                                                                                contribution2, False,
                                                                                 training_iter=training_iter)
 
         sub1.eval()

@@ -20,11 +20,11 @@ if __name__ == '__main__':
     multi = True
     dimension = 15
     noise_list = [0, 0.1]
-    nbr_repetition = 6
+    nbr_repetition = 10
     nbr_query = 100
 
     for noise in noise_list:
-        for dataset_num in [2]:
+        for dataset_num in [2, 3]:
             print(f"Entering Noise {noise}")
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
