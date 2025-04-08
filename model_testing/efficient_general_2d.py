@@ -10,6 +10,7 @@ from tqdm import tqdm
 import multiprocessing as mp
 import pandas as pd
 from seaborn import heatmap
+import warnings
 
 from model_testing.efficient_synthetic_script import joint_performance
 
@@ -73,7 +74,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                    data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=True, noise=0.1):
-
+    warnings.filterwarnings('ignore')
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     prior_map = torch.zeros(dimension, dimension)
@@ -152,7 +153,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
-
+            for i in range(len(train_x_sub1)):
+                sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
+                sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
             train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
 
             max_seen_resp_2D = torch.max(train_y_hier)
@@ -180,7 +183,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                     prior_map[i, j] = (p1[i] + p2[j]) / 2
 
             prior_map_max = torch.max(prior_map)
-            prior_map_save = torch.copy(prior_map)
+            prior_map_save = prior_map.detach().clone()
             prior_map_max_save = torch.max(prior_map_save)
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
@@ -190,7 +193,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                         prior_map_save / prior_map_max_save, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)
-
 
             for i in range(len(train_x_hier)):
                 hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
@@ -445,7 +447,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         for i in range(nbr_repetition - 1):
                             p = pool.apply_async(run_repetition, (
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, visualize, seed[i],0.1))
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, visualize, seed[i], noise))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
@@ -512,6 +514,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                         children=children, visualize=visualize, seed=seed[i], noise=noise)
                                 except:
                                     continue
+
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -637,21 +640,20 @@ def hp_plotting(scores, hp_name, hp_list, model_name, folder_of_the_day):
 
 
 if __name__ == '__main__':
-    import warnings
 
-    warnings.filterwarnings('ignore')
+    #warnings.filterwarnings('ignore')
 
-    dimension = 30
+    dimension = 15
     nbr_query = 80
-    training_iter = 10 # Found through HP Testing
+    training_iter = 10  # Found through HP Testing
     nbr_repetition = 10
     k_vals = [2]
     g_vals = [6]
-    nu_vals = [0.5] # Found through HP Testing
-    multi = True
+    nu_vals = [0.5]  # Found through HP Testing
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    nbr_rand_init = 6 # Found through HP Testing
+    nbr_rand_init = 6  # Found through HP Testing
     for h in h_model:
         for dataset_num in [2, 3]:
 
@@ -672,7 +674,7 @@ if __name__ == '__main__':
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                    nu_vals, data_name, data_creation_func,
-                                   eps, h, multi, seed)[0]
+                                   eps, h, multi, seed, noise=0.1)[0]
             """parent_r2 = []
             child_1_r2_over = []
             child_2_r2_over = []

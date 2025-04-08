@@ -499,7 +499,7 @@ if __name__ == '__main__':
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
