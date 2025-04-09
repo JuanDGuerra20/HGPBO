@@ -633,7 +633,7 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 9
     nbr_rand_init = 8
     k_vals = [2]  # Found through HP Testing
     g_vals = [6]  # Found through HP Testing

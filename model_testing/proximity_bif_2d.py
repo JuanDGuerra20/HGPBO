@@ -238,10 +238,14 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
         cont2_scaled = torch.nan_to_num(cont2/torch.max(y_mu2 + gamma * torch.nan_to_num(y_conf2/ torch.sqrt(sub2_qc))))
 
-        div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
 
-        contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
-        contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)
+        dist_1 = torch.pow(1/((cont1_scaled - response/max_seen_resp_2D) + 1e-7), 2)
+        dist_2 = torch.pow(1/((cont2_scaled - response/max_seen_resp_2D) + 1e-7), 2)
+
+        div = torch.exp(dist_1) + torch.exp(dist_2)
+
+        contribution1 = torch.nan_to_num(response * torch.exp(dist_1) / div)
+        contribution2 = torch.nan_to_num(response * torch.exp(dist_2) / div)
 
         response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
         response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
@@ -392,11 +396,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals,
                        data_name, data_creation_func, eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1):
-    if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
-        model_name = "Efficient"
-
-    elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-        model_name = "Lossless_Efficient"
+    model_name = "Proximity"
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -641,12 +641,12 @@ def hp_plotting(scores, hp_name, hp_list, model_name, folder_of_the_day):
 
 if __name__ == '__main__':
 
-    #warnings.filterwarnings('ignore')
+    warnings.filterwarnings('ignore')
 
     dimension = 15
     nbr_query = 80
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 9
+    nbr_repetition = 10
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]  # Found through HP Testing
@@ -655,7 +655,7 @@ if __name__ == '__main__':
     process = []
     nbr_rand_init = 6  # Found through HP Testing
     for h in h_model:
-        for dataset_num in [2]:
+        for dataset_num in [2, 3]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
             seed = np.arange(nbr_repetition)
@@ -674,7 +674,7 @@ if __name__ == '__main__':
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                    nu_vals, data_name, data_creation_func,
-                                   eps, h, multi, seed, noise=0.1)[0]
+                                   eps, h, multi, seed, noise=0)[0]
             """parent_r2 = []
             child_1_r2_over = []
             child_2_r2_over = []
