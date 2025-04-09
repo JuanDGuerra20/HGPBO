@@ -113,7 +113,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like,
+                sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / abs(max_seen_resp_1_1D), sub1_like,
                                            query_counter=sub1_qc, nu=nu)
 
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
@@ -468,14 +468,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                     children=children, visualize=visualize, seed=seed[-1], noise=noise)
                             except:
-                                try:
-                                    master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                         children=children, visualize=visualize, seed=seed[-1], noise=noise)
-                                except:
-                                    continue
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
