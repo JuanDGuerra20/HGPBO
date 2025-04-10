@@ -654,11 +654,12 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
+    seed = np.arange(nbr_repetition)
+
     for h in h_model:
-        for dataset_num in [2]:
+        for dataset_num in [3]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-            seed = np.arange(nbr_repetition)
 
             """if h == hmodel.Efficient_UCB_Hierarchical_GP:
                 model_name = "Efficient"

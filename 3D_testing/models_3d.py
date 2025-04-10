@@ -137,7 +137,7 @@ def get_next_query_pins(acquisition_map, coord_pins):
     return next_query_pins
 
 
-def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20):
+def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0):
     """
     Get the new value for the next query pins to update training data.
 
@@ -172,6 +172,10 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20):
 
     new_query_value_mean = np.mean(new_training_values)
     new_query_value_random = np.random.choice(new_training_values)
+
+    new_query_value_mean += np.random.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_mean.shape)
+    new_query_value_random += np.random.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_random.shape)
+
     return new_query_value_random, new_query_value_mean
 
 

@@ -552,15 +552,21 @@ def random_hp_values_generation(lower, upper, num_hp: int):
     return hp_values
 
 
-def select_random_queries(num_queries, x, y):
+def select_random_queries(num_queries, x, y, seed=False, noise=0):
+    if type(seed) != bool:
+        np.random.seed(seed)
+
     indices = np.random.randint(len(x), size=(num_queries))
     train_x = x[indices]
     train_y = y[indices]
+    train_y += np.random.normal(0, noise*(torch.max(y)-torch.min(y)), size=train_y.shape)
 
     return train_x, train_y
 
 
-def hierarchical_select_random_queries(num_queries, x, y):
+def hierarchical_select_random_queries(num_queries, x, y, seed=False, noise=0):
+    if type(seed) != bool:
+        np.random.seed(seed)
     indices_X = np.random.randint(len(x), size=(num_queries))
     indices_Y = np.random.randint(len(x), size=(num_queries))
     indices_Z = np.random.randint(len(x), size=(num_queries))
@@ -568,6 +574,7 @@ def hierarchical_select_random_queries(num_queries, x, y):
 
     train_x = x[indices_X, indices_Y, indices_Z]
     train_y = y[indices_X, indices_Y, indices_Z]
+    train_y += np.random.normal(0, noise*(torch.max(y)-torch.min(y)), size=train_y.shape)
 
     return train_x, train_y
 
