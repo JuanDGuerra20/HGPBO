@@ -607,11 +607,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
 
             # Joint Section
-            """joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
+            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
                               nbr_repetition, data_name, model_name)
 
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
-                        nbr_repetition, data_name, model_name)"""
+                        nbr_repetition, data_name, model_name)
 
     return list_models
 

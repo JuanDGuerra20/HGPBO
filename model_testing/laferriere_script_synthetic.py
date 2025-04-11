@@ -484,12 +484,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                        child_2_r2])
 
             # Joint Section
-            """joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
+            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
                               nbr_repetition, data_name, model_name)
 
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
                         nbr_repetition, data_name, model_name)
-            """
+
     return list_models
 
 
