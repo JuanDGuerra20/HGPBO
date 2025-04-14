@@ -202,23 +202,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
 
-        if visualize:
-            k = str(kappa).replace('.', ',')
-            g = str(gamma).replace('.', ',')
-            n = str(nu).replace('.', ',')
-            e = str(eps).replace('.', '_')
-            e = str(e).replace(' ', '_')
-            e = str(e).replace('[', '')
-            e = str(e).replace(']', '')
-            e = str(e).replace(',_', '_')
-            e = str(e).replace('_,', '_')
-
-            noi = str(noise).replace('.', ',')
-
-            vi.contour_plot_1D(master.sub_models, x_sub1,
-                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                               f'/contour/Contour_{data_name}_{model_name}_HGP-BO_query_{q}_{nbr_query}_init_{nbr_rand_init}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps_{e}_noise_{noi}',
-                               model_name.lower(), folder_of_the_day, data_name, parent=master)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
             c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
