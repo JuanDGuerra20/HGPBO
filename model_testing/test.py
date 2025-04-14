@@ -17,10 +17,10 @@ from model_testing.efficient_synthetic_script import joint_performance
 
 if __name__ == '__main__':
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
-    multi = True
+    multi = False
     dimension = 15
     noise_list = [0.1, 0.2, 0.3, 0.4, 0.5]
-    nbr_repetition = 10
+    nbr_repetition = 30
     nbr_query = 100
     seed = np.random.randint(99999, size=nbr_repetition)
     k_vals = [9.5]

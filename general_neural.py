@@ -633,12 +633,12 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 9
+    nbr_repetition = 30
     nbr_rand_init = 8
-    k_vals = [2]  # Found through HP Testing
-    g_vals = [6]  # Found through HP Testing
+    k_vals = [9.5]  # Found through HP Testing
+    g_vals = [3]  # Found through HP Testing
     nu_vals = [0.5]
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
