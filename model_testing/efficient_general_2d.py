@@ -202,6 +202,23 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
 
+        if visualize:
+            k = str(kappa).replace('.', ',')
+            g = str(gamma).replace('.', ',')
+            n = str(nu).replace('.', ',')
+            e = str(eps).replace('.', '_')
+            e = str(e).replace(' ', '_')
+            e = str(e).replace('[', '')
+            e = str(e).replace(']', '')
+            e = str(e).replace(',_', '_')
+            e = str(e).replace('_,', '_')
+
+            noi = str(noise).replace('.', ',')
+
+            vi.contour_plot_1D(master.sub_models, x_sub1,
+                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
+                               f'/contour/Contour_{data_name}_{model_name}_HGP-BO_query_{q}_{nbr_query}_init_{nbr_rand_init}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps_{e}_noise_{noi}',
+                               model_name.lower(), folder_of_the_day, data_name, parent=master)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
             c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
@@ -380,7 +397,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         vi.contour_plot_1D(master.sub_models, x_sub1,
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
                         f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_init_{nbr_rand_init}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps_{e}_noise_{noi}',
-                        model_name.lower(), folder_of_the_day, data_name)
+                        model_name.lower(), folder_of_the_day, data_name, parent=master)
 
 
 
@@ -603,7 +620,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
                             'child2_r2']
 
-                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}')
+                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
 
             # Joint Section
@@ -646,7 +663,7 @@ if __name__ == '__main__':
     dimension = 15
     nbr_query = 80
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 9
+    nbr_repetition = 6
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]  # Found through HP Testing
@@ -657,7 +674,7 @@ if __name__ == '__main__':
     seed = np.arange(nbr_repetition)
 
     for h in h_model:
-        for dataset_num in [3]:
+        for dataset_num in [3, 2]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
