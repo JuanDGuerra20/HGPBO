@@ -5,15 +5,18 @@ from efficient_general_2d import *
 
 def two_pretrained():
     dimension = 15
-    nbr_query = 80
+    dimension = 15
+    nbr_query = 100
     training_iter = 10
-    nbr_repetition = 15
+    nbr_repetition = 10
     nbr_rand_init = 6
     k_vals = [9.5]
-    g_vals = [10]
+    g_vals = [3]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
+    seed = [False]*nbr_repetition
+    noise = 0.1
 
     avg_explor_1 = []
     avg_exploit_1 = []
@@ -38,17 +41,20 @@ def two_pretrained():
         data_name, data_creation_func, eps = get_dataset_info(2)
 
         try:
-            func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+            func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       noise=noise, visualize=False)[0]
         except:
             try:
-                func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       noise=noise, visualize=False)[0]
             except:
-                func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       noise=noise, visualize=False)[0]
 
-        name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2, child_2_r2 = func_1[0]
+        name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2, child_2_r2 = func_1
 
         avg_explor_1.append(np.mean(explor_1, axis=0))
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
@@ -60,16 +66,19 @@ def two_pretrained():
         data_name, data_creation_func, eps = get_dataset_info(3)
 
         try:
-            func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+            func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       noise=noise, visualize=False)[0]
         except:
             try:
-                func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       noise=noise, visualize=False)[0]
             except:
-                func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
-        name_2, parent_2, explor_2, exploit_2, r2_2, child_1_r2, child_2_r2 = func_2[0]
+                func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       noise=noise, visualize=False)[0]
+        name_2, parent_2, explor_2, exploit_2, r2_2, child_1_r2, child_2_r2 = func_2
 
         avg_explor_2.append(np.mean(explor_2, axis=0))
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
@@ -89,20 +98,20 @@ def two_pretrained():
 
         data_name, data_creation_func, eps = get_dataset_info(6)
         try:
-            func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                      nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                      children=modular_children, visualize=True)
+            func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       children=modular_children, noise=noise, visualize=False)[0]
         except:
             try:
-                func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                              nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                              children=modular_children, visualize=True)
+                func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       children=modular_children, noise=noise, visualize=False)[0]
             except:
-                func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                              nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                              children=modular_children, visualize=True)
+                func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       children=modular_children, noise=noise, visualize=False)[0]
 
-        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod[0]
+        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod
 
         avg_explor_mod.append(np.mean(explor_mod, axis=0))
         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
@@ -205,19 +214,45 @@ def two_pretrained():
     plt.savefig(
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_2_children_r2_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
     plt.close()
+    
+    noi = str(noise).replace('.', ',')
+    # modular
+    df = pd.DataFrame([f'mod_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+                          avg_explor_mod, avg_exploit_mod, avg_r2_mod, avg_r2_c1_mod, avg_r2_c2_mod])
+    df.index = ['name', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2', 'child2_r2']
+    df.to_csv(
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/modular_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
+    
+    # parent 1
+    df = pd.DataFrame([f'parent1_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+                          avg_explor_1, avg_exploit_1, avg_r2_1, avg_r2_c1_1, avg_r2_c2_1])
+    df.index = ['name', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2', 'child2_r2']
+
+    df.to_csv(
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent1_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
+
+    # parent 1
+    df = pd.DataFrame([f'parent2_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+                          avg_explor_2, avg_exploit_2, avg_r2_2, avg_r2_c1_2, avg_r2_c2_2])
+    df.index = ['name', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2', 'child2_r2']
+
+    df.to_csv(
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent2_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
 
 
 def two_pretrained_bad():
     dimension = 15
-    nbr_query = 80
+    nbr_query = 100
     training_iter = 10
-    nbr_repetition = 15
+    nbr_repetition = 30
     nbr_rand_init = 6
     k_vals = [9.5]
-    g_vals = [10]
+    g_vals = [3]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
+    seed = [False]*nbr_repetition
+    noise = 0.1
 
     avg_explor_1 = []
     avg_exploit_1 = []
@@ -243,17 +278,17 @@ def two_pretrained_bad():
         data_name = 'bad_modular_2D'
 
         try:
-            func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+            func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
         except:
             try:
-                func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
             except:
-                func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
 
-        name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2, child_2_r2 = func_1[0]
+        name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2, child_2_r2 = func_1
 
         avg_explor_1.append(np.mean(explor_1, axis=0))
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
@@ -266,16 +301,16 @@ def two_pretrained_bad():
         data_name = 'bad_modular_2D'
 
         try:
-            func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+            func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
         except:
             try:
-                func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
             except:
-                func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
-        name_2, parent_2, explor_2, exploit_2, r2_2, child_1_r2, child_2_r2 = func_2[0]
+                func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
+        name_2, parent_2, explor_2, exploit_2, r2_2, child_1_r2, child_2_r2 = func_2
 
         avg_explor_2.append(np.mean(explor_2, axis=0))
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
@@ -297,20 +332,20 @@ def two_pretrained_bad():
         data_name = 'bad_modular_2D'
 
         try:
-            func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                          nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                          children=modular_children, visualize=True)
+            func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       children=modular_children, noise=noise, visualize=False)[0]
         except:
             try:
-                func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                              nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                              children=modular_children, visualize=True)
+                func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       children=modular_children, noise=noise, visualize=False)[0]
             except:
-                func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                              nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                              children=modular_children, visualize=True)
+                func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                       children=modular_children, noise=noise, visualize=False)[0]
 
-        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod[0]
+        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod
 
         avg_explor_mod.append(np.mean(explor_mod, axis=0))
         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
@@ -410,15 +445,17 @@ def two_pretrained_bad():
 
 def one_pretrained():
     dimension = 15
-    nbr_query = 80
+    nbr_query = 100
     training_iter = 10
-    nbr_repetition = 15
+    nbr_repetition = 30
     nbr_rand_init = 6
     k_vals = [9.5]
-    g_vals = [10]
+    g_vals = [3]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
+    seed = [False]*nbr_repetition
+    noise = 0.1
 
     avg_explor_1 = []
     avg_exploit_1 = []
@@ -438,19 +475,16 @@ def one_pretrained():
 
         try:
             func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
-                                        g_vals,
-                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
         except:
             try:
                 func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
-                                            g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
             except:
                 func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
-                                            g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=True)
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise, visualize=False)[0]
 
-        name_1, parent_1, explor_1, exploit_1, r2_1 = func_1[0]
+        name_1, parent_1, explor_1, exploit_1, r2_1 = func_1
 
         avg_explor_1.append(np.mean(explor_1, axis=0))
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
@@ -466,20 +500,17 @@ def one_pretrained():
 
         data_name, data_creation_func, eps = get_dataset_info(6)
         try:
-            func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                      nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                      children=modular_children, visualize=True)
+            func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, children=modular_children, noise=noise, visualize=False)[0]
         except:
             try:
-                func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                              nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                              children=modular_children, visualize=True)
+                func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, children=modular_children, noise=noise, visualize=False)[0]
             except:
-                func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                              nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                              children=modular_children, visualize=True)
+                func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, children=modular_children, noise=noise, visualize=False)[0]
 
-        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod = func_mod[0]
+        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod = func_mod
 
         avg_explor_mod.append(np.mean(explor_mod, axis=0))
         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
@@ -550,8 +581,7 @@ def one_pretrained():
 
 if __name__ == '__main__':
     two_pretrained()
-    two_pretrained_bad()
-    one_pretrained()
+
 
     """
     #with mp.Pool(processes=2) as pool:
