@@ -19,37 +19,38 @@ if __name__ == '__main__':
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     multi = False
     dimension = 15
-    noise_list = [0.1, 0.2, 0.3, 0.4, 0.5]
+    noise = 0.1
     nbr_repetition = 30
     nbr_query = 100
     seed = np.random.randint(99999, size=nbr_repetition)
-    k_vals = [9.5]
-    g_vals = [3]
+    k_vals_list = [1, 2, 3, 4, 5, 6, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12]
+    g_vals_list = [1, 2, 3, 4, 5, 6, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12]
     nu_vals = [0.5]  # Found through HP Testing
     nbr_rand_init = 6  # Found through HP Testing
     training_iter = 10  # Found through HP Testing
+
+    k_vals = [9.5]
+    g_vals = [3]
     for dataset_num in [2, 3]:
 
-        for noise in noise_list:
 
-            data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+        data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
-            """if h == hmodel.Efficient_UCB_Hierarchical_GP:
-                model_name = "Efficient"
-    
-            elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-                model_name = "Lossless_Efficient"
-    
-            current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
-            current_dateday = datetime.now().strftime("%Y-%m-%d")
-            workspace = f"{data_name}/{model_name.lower()}"
-            folder_of_the_day = '/data-' + str(current_dateday)"""
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
-                                       noise=noise)[0]
+        """if h == hmodel.Efficient_UCB_Hierarchical_GP:
+            model_name = "Efficient"
 
+        elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+            model_name = "Lossless_Efficient"
 
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                laf.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                   g_vals,nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=noise)[0]
+        current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+        current_dateday = datetime.now().strftime("%Y-%m-%d")
+        workspace = f"{data_name}/{model_name.lower()}"
+        folder_of_the_day = '/data-' + str(current_dateday)"""
+        name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals_list,
+                                   g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                   noise=noise)[0]
+        name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                   g_vals_list, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                   noise=noise)[0]
