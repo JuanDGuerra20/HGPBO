@@ -39,6 +39,7 @@ def two_pretrained():
     for i in range(nbr_repetition):
         # Setting up for dataset number 1
         data_name, data_creation_func, eps = get_dataset_info(2)
+        data_name = "modular_2D"
 
         try:
             func_1 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
@@ -77,6 +78,7 @@ def two_pretrained():
 
         # Setting up for dataset number 2
         data_name, data_creation_func, eps = get_dataset_info(3)
+        data_name = "modular_2D"
 
         try:
             func_2 = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
@@ -123,6 +125,8 @@ def two_pretrained():
         modular_children = [child_11, child_22]
 
         data_name, data_creation_func, eps = get_dataset_info(6)
+        data_name = "modular_2D"
+
         try:
             func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
                                        g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
@@ -194,9 +198,9 @@ def two_pretrained():
     avg_r2_c1_mod = np.mean(avg_r2_c1_mod, axis=0)
     avg_r2_c2_mod = np.mean(avg_r2_c2_mod, axis=0)
 
-    plt.plot(avg_explor_1, label='Exploration 1')
-    plt.plot(avg_explor_2, label='Exploration 2')
-    plt.plot(avg_explor_mod, label='Exploration Modular')
+    plt.plot(np.insert(avg_explor_1, 0, np.zeros(2*nbr_rand_init))[:nbr_query], label='Exploration 1')
+    plt.plot(np.insert(avg_explor_2, 0, np.zeros(2*nbr_rand_init))[:nbr_query], label='Exploration 2')
+    plt.plot(np.insert(avg_explor_mod, 0, np.zeros(2*nbr_rand_init))[:nbr_query], label='Exploration Modular')
     plt.ylim(0, 1.1)
 
 
@@ -209,24 +213,6 @@ def two_pretrained():
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_2_children_exploration_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
     plt.savefig(
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_2_children_exploration_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}.svg')
-
-    plt.close()
-
-    plt.plot(avg_exploit_1, label='Exploitation 1')
-    plt.plot(avg_exploit_2, label='Exploitation 2')
-    plt.plot(avg_exploit_mod, label='Exploitation Modular')
-    plt.ylim(0, 1.1)
-
-
-    plt.xlabel('Query Number')
-    plt.ylabel('Performance')
-
-    plt.legend()
-    plt.title(f'2D Modularity 2 Children Experiment Exploitation with {nbr_repetition} repetitions')
-    plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_2_children_exploitation_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
-    plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/modular_2_children_exploitation_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}.svg')
 
     plt.close()
 
@@ -474,9 +460,9 @@ def two_pretrained_bad():
     avg_r2_c1_mod = np.mean(avg_r2_c1_mod, axis=0)
     avg_r2_c2_mod = np.mean(avg_r2_c2_mod, axis=0)
 
-    plt.plot(avg_explor_1, label='Exploration 1')
-    plt.plot(avg_explor_2, label='Exploration 2')
-    plt.plot(avg_explor_mod, label='Exploration Modular')
+    plt.plot(np.insert(avg_explor_1, 0, np.zeros(2 * nbr_rand_init))[:nbr_query], label='Exploration 1')
+    plt.plot(np.insert(avg_explor_2, 0, np.zeros(2 * nbr_rand_init))[:nbr_query], label='Exploration 2')
+    plt.plot(np.insert(avg_explor_mod, 0, np.zeros(2 * nbr_rand_init))[:nbr_query], label='Exploration Modular')
     plt.ylim(0, 1.1)
     print(f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/')
     plt.xlabel('Query Number')
@@ -487,23 +473,6 @@ def two_pretrained_bad():
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/bad_modular_2_children_exploration_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
     plt.savefig(
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/bad_modular_2_children_exploration_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}.svg')
-
-    plt.close()
-
-    plt.plot(avg_exploit_1, label='Exploitation 1')
-    plt.plot(avg_exploit_2, label='Exploitation 2')
-    plt.plot(avg_exploit_mod, label='Exploitation Modular')
-    plt.ylim(0, 1.1)
-
-    plt.xlabel('Query Number')
-    plt.ylabel('Performance')
-
-    plt.legend()
-    plt.title(f'2D BAD Modularity 2 Children Experiment Exploitation with {nbr_repetition} repetitions')
-    plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/bad_modular_2_children_exploitation_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}')
-    plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/bad_modular_2_children_exploitation_query_{nbr_query}_repetition_{nbr_repetition}_k_{k}_g_{g}_n_{n}.svg')
 
     plt.close()
 
