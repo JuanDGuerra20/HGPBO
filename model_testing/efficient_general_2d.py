@@ -25,7 +25,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploitation Score')
     plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}.svg')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{nbr_repetition}_Exploitation_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
     for i, nu in enumerate(nu_vals):
@@ -37,7 +37,7 @@ def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_th
     plt.ylabel(f'Exploration Score')
     plt.title(f'Joint {model_name} Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{model_name}_Propagation_HGPBO_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}.svg')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/Joint_{nbr_repetition}_Exploration_kappa_{kappa}_gamma_{gamma}.svg')
     plt.close()
 
 
@@ -56,7 +56,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploitation Performance over {nbr_repetition} repetitions')
     plt.tight_layout()
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploitation_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}.svg')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploitation_{nbr_repetition}_repetitions_k_{kappa}_g_{gamma}.svg')
     plt.close()
 
     fig, ax = plt.subplots(figsize=(nbr_query/5, len(nu_vals)*3))
@@ -67,7 +67,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.title(f'Joint HP Exploration Performance over {nbr_repetition} repetitions')
     #plt.tight_layout()
     plt.savefig(
-        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}.svg')
+        f'{data_name}/{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_{nbr_repetition}_reps_k_{kappa}_g_{gamma}.svg')
     plt.close()
 
 
@@ -377,7 +377,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         vi.contour_plot_1D(master.sub_models, x_sub1,
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                        f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{nbr_query}_init_{nbr_rand_init}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_pid_{os.getpid()}_eps_{e}_noise_{noi}',
+                        f'/contour/Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
                         model_name.lower(), folder_of_the_day, data_name, parent=master)
 
 
@@ -536,7 +536,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 noi = str(noise).replace('.', ',')
 
                 torch.save(master.state_dict(),
-                           f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}.pth')
+                           f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
                 y = np.insert(y, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
@@ -575,14 +575,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.svg')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.svg')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.png')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.png')
 
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}',
+                                 f'Heatmap_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
                                  model_name.lower(), folder_of_the_day, data_name)
 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
@@ -590,7 +590,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 re_output = np.reshape(data, y_hier.shape)
                 df = pd.DataFrame(re_output)
                 df.to_csv(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.csv')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
@@ -601,7 +601,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
                             'child2_r2']
 
-                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
+                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
 
             # Joint Section
