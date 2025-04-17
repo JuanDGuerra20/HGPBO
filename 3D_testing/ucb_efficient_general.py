@@ -129,13 +129,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                 train_x_hier[:, 2], train_y_hier)"""
 
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like, sub1_qc, nu=nu)
+            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1, sub1_like, sub1_qc, nu=nu)
 
             sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like, sub2_qc, nu=nu)
+            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like, sub2_qc, nu=nu)
 
             sub3_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub3 = models.ExactGPModel(train_x_sub3, train_y_sub3 / max_seen_resp_3_1D, sub3_like, sub3_qc, nu=nu)
+            sub3 = models.ExactGPModel(train_x_sub3, train_y_sub3, sub3_like, sub3_qc, nu=nu)
 
             sub1.eval()
             sub2.eval()
@@ -180,7 +180,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
-                                        sub_models=[sub1, sub2],
+                                        sub_models=[sub1, sub2, sub3],
                                         kappa=kappa, query_counter=hier_qc)
 
             for i in range(len(train_x_hier)):
@@ -367,6 +367,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
+        vi.contour_plot_1D(master.sub_models, x_sub1,
+                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
+                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
+                           model_name, folder_of_the_day, data_name, parent=master)
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -385,10 +389,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         better_exploitation_score.append(exploitation_score_2D)
         heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
 
-    vi.contour_plot_1D(master.sub_models, x_sub1,
-                       [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                       f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
-                       model_name, folder_of_the_day, data_name)
+    """ """
 
     
     if final:

@@ -115,11 +115,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / abs(max_seen_resp_1_1D), sub1_like,
+                sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1, sub1_like,
                                            query_counter=sub1_qc, nu=nu)
 
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / abs(max_seen_resp_2_1D), sub2_like,
+                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like,
                                            query_counter=sub2_qc, nu=nu)
 
             elif len(children) == 1:
