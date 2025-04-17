@@ -129,13 +129,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                 train_x_hier[:, 2], train_y_hier)"""
 
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1, sub1_like, sub1_qc, nu=nu)
+            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like, sub1_qc, nu=nu)
 
             sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like, sub2_qc, nu=nu)
+            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like, sub2_qc, nu=nu)
 
             sub3_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub3 = models.ExactGPModel(train_x_sub3, train_y_sub3, sub3_like, sub3_qc, nu=nu)
+            sub3 = models.ExactGPModel(train_x_sub3, train_y_sub3 / max_seen_resp_3_1D, sub3_like, sub3_qc, nu=nu)
 
             sub1.eval()
             sub2.eval()
@@ -194,7 +194,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
             child_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)])
 
         children_r2.append(child_r2)
        

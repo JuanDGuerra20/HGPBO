@@ -268,6 +268,7 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
 class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
     def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None, device=device):
+
         super(Efficient_UCB_Hierarchical_GP, self).__init__(train_x, train_y, likelihood)
 
         self.sub_models = sub_models  # This will be useful for creating the training procedure

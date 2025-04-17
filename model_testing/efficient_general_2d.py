@@ -108,16 +108,18 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             if children == []:
 
                 # Need to initialize the model - Will be random in this method
-                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed, noise=noise)
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed, noise=noise)
+                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed,
+                                                                   noise=noise)
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed,
+                                                                   noise=noise)
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1, sub1_like,
+                sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / abs(max_seen_resp_1_1D), sub1_like,
                                            query_counter=sub1_qc, nu=nu)
 
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like,
+                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / abs(max_seen_resp_2_1D), sub2_like,
                                            query_counter=sub2_qc, nu=nu)
 
             elif len(children) == 1:
@@ -125,14 +127,15 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
                 sub1_like = sub1.likelihood
 
-                train_x_sub1 = sub1.train_inputs[0][:,0]
+                train_x_sub1 = sub1.train_inputs[0][:, 0]
                 train_y_sub1 = sub1.train_targets
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
 
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed, noise=noise)
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed,
+                                                                   noise=noise)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like,
+                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / abs(max_seen_resp_2_1D), sub2_like,
                                            query_counter=sub2_qc, nu=nu)
 
             elif len(children) == 2:
@@ -142,10 +145,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub1_like = sub1.likelihood
                 sub2_like = sub2.likelihood
 
-                train_x_sub1 = sub1.train_inputs[0][:,0]
+                train_x_sub1 = sub1.train_inputs[0][:, 0]
                 train_y_sub1 = sub1.train_targets
 
-                train_x_sub2 = sub2.train_inputs[0][:,0]
+                train_x_sub2 = sub2.train_inputs[0][:, 0]
                 train_y_sub2 = sub2.train_targets
 
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
@@ -164,7 +167,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub1_like.eval()
             sub2_like.eval()
 
-
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
                 observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
@@ -182,6 +184,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                     prior_map[i, j] = (p1[i] + p2[j]) / 2
 
             prior_map_max = torch.max(prior_map)
+            prior_map_save = prior_map.detach().clone()
+            prior_map_max_save = torch.max(prior_map_save)
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -203,7 +207,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
             c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
 
         child_1_r2.append(c1_r2)
         child_2_r2.append(c2_r2)
@@ -231,10 +235,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         cont1 = y_mu_point_a + gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
 
-        cont1_scaled = torch.nan_to_num(cont1/torch.max(y_mu1 + gamma * torch.nan_to_num(y_conf1/ torch.sqrt(sub1_qc))))
+        cont1_scaled = torch.nan_to_num(
+            cont1 / torch.max(y_mu1 + gamma * torch.nan_to_num(y_conf1 / torch.sqrt(sub1_qc))))
 
         cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
-        cont2_scaled = torch.nan_to_num(cont2/torch.max(y_mu2 + gamma * torch.nan_to_num(y_conf2/ torch.sqrt(sub2_qc))))
+        cont2_scaled = torch.nan_to_num(
+            cont2 / torch.max(y_mu2 + gamma * torch.nan_to_num(y_conf2 / torch.sqrt(sub2_qc))))
 
         div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
 
@@ -340,7 +346,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             h_pred_time.append(t)
             print(f"Hierarchical pred time: {t}")"""
 
-
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
         exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
@@ -377,7 +382,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         vi.contour_plot_1D(master.sub_models, x_sub1,
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                        f'/contour/Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                        f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
                         model_name.lower(), folder_of_the_day, data_name, parent=master)
 
 
@@ -642,9 +647,9 @@ if __name__ == '__main__':
     #warnings.filterwarnings('ignore')
 
     dimension = 15
-    nbr_query = 80
+    nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 6
+    nbr_repetition = 10
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]  # Found through HP Testing

@@ -109,13 +109,13 @@ class PriorMean(gpytorch.means.Mean):  # PMF
     point by looking up the prior map passed from the submodules
     """
 
-    def __init__(self, prior_map, test_x):
+    def __init__(self, prior_map, test_x, device="cpu"):
         super().__init__()
         self.register_parameter('map', torch.nn.Parameter(prior_map, requires_grad=False))
 
         # Going to setup the hashmap now
         self.hash_map = HashTable(np.prod(test_x.shape[:-1]))
-
+        self.device = device
         for i in range(len(test_x)):
             for j in range(len(test_x)):
                 for k in range(len(test_x)):
@@ -279,12 +279,11 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
 
 class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
-    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter):
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None, device="cpu"):
         super(Efficient_UCB_Hierarchical_GP, self).__init__(train_x, train_y, likelihood)
-
         self.sub_models = sub_models  # This will be useful for creating the training procedure
         self.kernel_op = kernel_op
-        self.mean_module = PriorMean(prior_map, test_x)
+        self.mean_module = PriorMean(prior_map, test_x, device=device).to(device)
         self.mean_module.requires_grad = False
         self.covar_module = hierarchical_kernel
         self.kappa = kappa
@@ -564,8 +563,10 @@ class Changing_Data_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
             sub_opt.zero_grad()
 
 class Lossless_Efficient_UCB_Hierarchical_GP(Efficient_UCB_Hierarchical_GP):
-    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
-        super().__init__(train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=query_counter)
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models,
+                 kappa, query_counter=None, device="cpu"):
+        super().__init__(train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models,
+                         kappa, query_counter=query_counter, device=device)
 
     def Hoptimize(self, likelihood, training_iter, train_x, train_y, verbose=True):
         """
