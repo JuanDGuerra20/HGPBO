@@ -602,16 +602,16 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 30
+    nbr_repetition = 10
     nbr_rand_init = 10
-    k_vals = [2] # Found through HP Testing
-    g_vals = [8]  # Found through HP Testing
+    k_vals = [9.5] # Found through HP Testing
+    g_vals = [3]  # Found through HP Testing
     nu_vals = [0.5]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = False
+    multi = True
     seed = np.arange(nbr_repetition)
     for h in h_model:
         for dataset_num in [5]:

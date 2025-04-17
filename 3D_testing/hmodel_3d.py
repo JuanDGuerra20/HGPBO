@@ -810,12 +810,11 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
 
     div_y = train_y.clone()
 
-    if model.env_max_seen != 0 and model.bif_max_seen != 0:
-        div_y[model.env_ind] = div_y[model.env_ind] / abs(model.env_max_seen)
-        div_y[model.bif_ind] = div_y[model.bif_ind] / abs(model.bif_max_seen)
-    else:
-        div_y[model.env_ind] = div_y[model.env_ind] / 1e-5
-        div_y[model.bif_ind] = div_y[model.bif_ind] / 1e-5
+    div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (
+                torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
+    if len(model.bif_ind) > 1:
+        div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (
+                    torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))
 
     model.set_train_data(train_x, div_y, strict=False)
     # Find optimal model hyperparameters
