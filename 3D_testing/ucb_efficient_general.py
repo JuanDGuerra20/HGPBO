@@ -108,7 +108,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed, noise=noise)
             train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed, noise=noise)
             train_x_sub3, train_y_sub3 = select_random_queries(nbr_rand_init, x_sub3, y_sub3, seed=seed, noise=noise)
-            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier)
+            train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed)
             max_seen_resp_1_1D = torch.max(train_y_sub1)
             max_seen_resp_2_1D = torch.max(train_y_sub2)
             max_seen_resp_3_1D = torch.max(train_y_sub3)
@@ -129,13 +129,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                 train_x_hier[:, 2], train_y_hier)"""
 
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, sub1_like, sub1_qc, nu=nu)
+            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1, sub1_like, sub1_qc, nu=nu)
 
             sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, sub2_like, sub2_qc, nu=nu)
+            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like, sub2_qc, nu=nu)
 
             sub3_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub3 = models.ExactGPModel(train_x_sub3, train_y_sub3 / max_seen_resp_3_1D, sub3_like, sub3_qc, nu=nu)
+            sub3 = models.ExactGPModel(train_x_sub3, train_y_sub3, sub3_like, sub3_qc, nu=nu)
 
             sub1.eval()
             sub2.eval()
@@ -177,8 +177,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", [sub1, sub2, sub3])
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hmodel.Efficient_UCB_Hierarchical_GP(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
-                                                            prior_hierarchical_kernel, prior_map / prior_map_max,'add_kernel', [sub1, sub2, sub3], kappa, hier_qc)
+            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2],
+                                        kappa=kappa, query_counter=hier_qc)
 
             for i in range(len(train_x_hier)):
                 hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
@@ -188,7 +191,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
+        with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
+            child_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
+                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+
+        children_r2.append(child_r2)
        
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
@@ -359,10 +367,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-            temp_child_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3/torch.max(y_sub3)])
-
-        children_r2.append(temp_child_r2)
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
