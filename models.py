@@ -29,7 +29,9 @@ class ExactGPModel(gpytorch.models.ExactGP):
         - train_y (torch.Tensor): Training output data: EMG values
         - likelihood: Likelihood function.
         """
-        super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
+        scaled_y = (train_y - torch.min(train_y)) / (torch.max(train_y) - torch.min(train_y))
+
+        super(ExactGPModel, self).__init__(train_x, scaled_y, likelihood)
         self.mean_module = gpytorch.means.ConstantMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=2.5))
         self.query_counter = query_counter

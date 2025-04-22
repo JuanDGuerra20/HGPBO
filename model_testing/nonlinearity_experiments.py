@@ -11,6 +11,7 @@ def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
+    seed = [False] * nbr_repetition
 
     explor = []
     exploit = []
@@ -27,19 +28,16 @@ def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
         data_name, data_creation_func, eps = get_dataset_info(8, alpha=alpha)
         try:
             result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                        g_vals,
-                                        nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                                        g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=0.1)
         except:
             try:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                            g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                            visualize=False)
+                                            g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                            noise=0.1)
             except:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                            g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi,
-                                            visualize=False)
+                                            g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                            noise=0.1)
 
         name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2_1, child_1_r2_2 = result[0]
 
@@ -97,6 +95,7 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals,
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
+    seed = [False] * nbr_repetition
 
     explor = []
     exploit = []
@@ -107,17 +106,15 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals,
 
         data_name, data_creation_func, eps = get_dataset_info(dataset_num, alpha=alpha)
         try:
-            result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                    nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+            result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                   g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=0.1)
         except:
             try:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                            g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=0.1)
             except:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                            g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, noise=0.1)
 
         name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2_1, child_1_r2_2 = result[0]
 
@@ -181,6 +178,8 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     heat_r2 = []
     heat_child_1_r2 = []
     heat_child_2_r2 = []
+    seed = [False] * nbr_repetition
+
     for i in range(len(alpha_vals)):
         explor = []
         exploit = []
@@ -198,17 +197,19 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
             temp_child_2_r2 = []
             try:
                 result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                            g_vals,
-                                            nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                                            g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                            noise=0.1)
             except:
                 try:
-                    result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                                g_vals,
-                                                nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                    result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter,
+                                                k_vals,
+                                                g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                                noise=0.1)
                 except:
-                    result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                                g_vals,
-                                                nu_vals, data_name, data_creation_func, eps, h_model, multi, visualize=False)
+                    result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter,
+                                                k_vals,
+                                                g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                                noise=0.1)
 
             name_1, parent_1, explor_1, exploit_1, r2_1, child_1_r2, child_2_r2 = result[0]
 
@@ -302,20 +303,23 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
 if __name__ == "__main__":
     alpha_vals = [0.25, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
 
-    mult_factor_experiment(10, 10 ,80, alpha_vals)
-    """b_list = []
+    mult_factor_experiment(20, 10 ,100, alpha_vals)
+    exponential_experiment(20, 10 ,100, alpha_vals)
+    b_list = []
     for i in range(len(alpha_vals)):
         temp_b = []
         for j in range(len(alpha_vals)):
             temp_b.append([alpha_vals[i], alpha_vals[j]])
         b_list.append(temp_b)
 
-    with mp.Pool(processes=2) as pool:
+    with mp.Pool(processes=3) as pool:
 
-        p1 = pool.apply_async(exponential_experiment, (20, 10, 80, alpha_vals, 7.5, ))
+        p1 = pool.apply_async(exponential_experiment, (20, 10, 100, alpha_vals, 7.5, ))
 
 
         p2 = pool.apply_async(b_mult_experiment, (20, 10, 80, b_list, ))
+        p3 = pool.apply_async(generate_mult_factor_nonlinearity_dataset, (20, 10, 100, alpha_vals, 7.5, ))
 
         p1.get()
-        p2.get()"""
+        p2.get()
+        p3.get()
