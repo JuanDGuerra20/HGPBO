@@ -509,11 +509,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 over_exploit.append(y)
 
-                std = np.std(better_exploitation_score, axis=0)
-                std = np.insert(std, 0, np.zeros(2*nbr_rand_init))
-                plt.plot(y[:nbr_query], label='Exploitation')
-                plt.fill_between(range(len(y[:nbr_query])), y[:nbr_query] - std[:nbr_query], y[:nbr_query] + std[:nbr_query], alpha=0.4)
-
                 r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
                 r2 = np.insert(r2, 0, np.zeros(2*nbr_rand_init))
 

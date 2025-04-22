@@ -441,12 +441,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 over_exploit.append(y)
 
-                std = np.std(better_exploitation_score, axis=0)
-                std = np.insert(std, 0, np.zeros(2 * nbr_rand_init))
-                plt.plot(y[:nbr_query], label='Exploitation')
-                plt.fill_between(range(len(y[:nbr_query])), y[:nbr_query] - std[:nbr_query],
-                                 y[:nbr_query] + std[:nbr_query], alpha=0.4)
-
                 r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
                 r2 = np.insert(r2, 0, np.zeros(2 * nbr_rand_init))
 
@@ -465,7 +459,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 plt.ylim(0, 1.1)
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with Kappa {k} Gamma {g} Nu {n}')
                 plt.savefig(
-                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}_rand_init_{nbr_rand_init}')
+                    f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_{nbr_repetition}_reps_k_{k}_g_{g}_nu_{n}_rand_init_{nbr_rand_init}.svg')
                 plt.close()
 
                 """vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
@@ -534,7 +528,7 @@ if __name__ == '__main__':
     test_y_hier = torch.tensor(Ymean_2D)
 
     nbr_query = 100
-    training_iter = 5
+    training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 6
     k_vals = [2]
