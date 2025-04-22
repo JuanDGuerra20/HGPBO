@@ -304,8 +304,9 @@ if __name__ == "__main__":
     alpha_vals = [0.25, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
 
     mult_factor_experiment(20, 10 ,100, alpha_vals)
-    exponential_experiment(20, 10 ,100, alpha_vals)
-    b_list = []
+    exponential_experiment(20, 10 ,100, alpha_vals, 7)
+
+    """ b_list = []
     for i in range(len(alpha_vals)):
         temp_b = []
         for j in range(len(alpha_vals)):
@@ -314,12 +315,10 @@ if __name__ == "__main__":
 
     with mp.Pool(processes=3) as pool:
 
-        p1 = pool.apply_async(exponential_experiment, (20, 10, 100, alpha_vals, 7.5, ))
+        p1 = pool.apply_async(exponential_experiment, (20, 10, 100, alpha_vals, ))
 
 
-        p2 = pool.apply_async(b_mult_experiment, (20, 10, 80, b_list, ))
-        p3 = pool.apply_async(generate_mult_factor_nonlinearity_dataset, (20, 10, 100, alpha_vals, 7.5, ))
+        p3 = pool.apply_async(generate_mult_factor_nonlinearity_dataset, (20, 10, 100, alpha_vals,))
 
         p1.get()
-        p2.get()
-        p3.get()
+        p3.get()"""
