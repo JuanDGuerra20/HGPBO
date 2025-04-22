@@ -5,7 +5,7 @@ from efficient_general_2d import *
 
 def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     dimension = 10
-    training_iter = 5
+    training_iter = 10
     k_vals = [9.5]
     g_vals = [6]
     nu_vals = [0.5]
@@ -105,7 +105,7 @@ def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
 
 def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals, dataset_num):
     dimension = 10
-    training_iter = 5
+    training_iter = 10
     k_vals = [9.5]
     g_vals = [6]
     nu_vals = [0.5]
@@ -201,7 +201,7 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals,
 
 def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     dimension = 10
-    training_iter = 5
+    training_iter = 10
     k_vals = [9.5]
     g_vals = [6]
     nu_vals = [0.5]
@@ -359,8 +359,8 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
 if __name__ == "__main__":
     alpha_vals = [0.25, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
 
-    mult_factor_experiment(20, 10 ,100, alpha_vals)
-    exponential_experiment(20, 10 ,100, alpha_vals, 7)
+    mult_factor_experiment(20, 6 ,100, alpha_vals)
+    exponential_experiment(20, 6 ,100, alpha_vals, 7)
 
     b_list = []
     for i in range(len(alpha_vals)):
@@ -368,4 +368,4 @@ if __name__ == "__main__":
         for j in range(len(alpha_vals)):
             temp_b.append([alpha_vals[i], alpha_vals[j]])
 
-    b_mult_experiment(20, 10, 100, b_list)
+    b_mult_experiment(20, 6, 100, b_list)
