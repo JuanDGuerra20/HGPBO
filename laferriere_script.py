@@ -541,8 +541,8 @@ if __name__ == '__main__':
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 6
-    k_vals = [2]
-    g_vals = [6]
+    k_vals = [9.5]
+    g_vals = [3]
     nu_vals = [0.5]
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
