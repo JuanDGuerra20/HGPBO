@@ -6,6 +6,7 @@ from dataset_actions import *
 from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm
+import pandas as pd
 
 xy2ch = [[2, 6, 10, 14, 9],
          [13, 17, 21, 18, 22]]
@@ -234,6 +235,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
             f'vanilla{folder_of_the_day}/differentiable_plots/vanilla_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}.svg')
 
         plt.close()
+
+        df = pd.DataFrame([
+            f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+            master, better_exploration_score, better_exploitation_score, r2])
+        df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2']
+
+        df.to_csv(
+            f'vanilla{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}.csv')
 
         # Joint Section
 

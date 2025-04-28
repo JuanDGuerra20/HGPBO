@@ -483,7 +483,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                             'child2_r2']
 
                 df.to_csv(
-                    f'{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}_noise.csv')
+                    f'{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}.csv')
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
 
@@ -493,11 +493,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
             # Joint Section
 
-            joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
+            """joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
                         nbr_repetition, model_name)
 
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
-                              nbr_repetition, model_name)
+                              nbr_repetition, model_name)"""
     return list_models
 
 
