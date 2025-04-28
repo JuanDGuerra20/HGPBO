@@ -1,13 +1,8 @@
-import math
-import torch
-import numpy as np
 import gpytorch
 import models
-from matplotlib import pyplot as plt
-from torch.utils.data import Dataset
+
 import update_hmodel as hmodel
 from dataset_actions import *
-from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm
@@ -235,6 +230,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
         plt.savefig(
             f'vanilla{folder_of_the_day}/differentiable_plots/vanilla_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}')
+        plt.savefig(
+            f'vanilla{folder_of_the_day}/differentiable_plots/vanilla_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}.svg')
+
         plt.close()
 
         # Joint Section

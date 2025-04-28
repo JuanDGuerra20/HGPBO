@@ -11,7 +11,6 @@ import time
 from dataset_actions import NumpyArrayEncoder
 import torch
 from seaborn import heatmap
-from torcheval.metrics import R2Score
 from scipy.stats import linregress
 
 def compute_execution_time(executionTime_repetitions, startTime, nbr_repetition, nbr_query, folder_of_the_day,
