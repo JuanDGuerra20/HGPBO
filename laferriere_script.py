@@ -421,7 +421,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
-                n = str(nu).replace('.', ',')
+                n = str(nu).replace('.', '_')
+
                 heatmap_data = np.array(heatmap_data)
                 torch.save(master.state_dict(),
                            f'{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
@@ -474,6 +475,15 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
+                df = pd.DataFrame([
+                                      f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',
+                                      master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
+                                      child_2_r2])
+                df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
+                            'child2_r2']
+
+                df.to_csv(
+                    f'{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}_noise.csv')
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
 
