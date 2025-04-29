@@ -709,6 +709,7 @@ def hierarchical_kernel(kernel_type, submodels):
         kernels[i].lengthscale = sub.covar_module.base_kernel.lengthscale
 
     if kernel_type == 'add_kernel':
+        kernels.reverse()
         for i, kernel in enumerate(kernels):
             if i == 0:
                 hkernel = kernel

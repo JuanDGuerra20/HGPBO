@@ -206,59 +206,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                         test_x_hier,
                                                                                         y_hier, noise=noise)
 
-        y_mu_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_mu1, x_sub1)
-        y_mu_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_mu2, x_sub2)
-        y_mu_point_c = hmodel.get_y_mu_point_value(next_query_pins[2], y_mu3, x_sub3)
-
-        y_conf_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_conf1, x_sub1)
-        y_conf_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_conf2, x_sub2)
-        y_conf_point_c = hmodel.get_y_mu_point_value(next_query_pins[2], y_conf3, x_sub3)
-
-        y_qc_a = hmodel.get_y_mu_point_value(next_query_pins[0], sub1_qc, x_sub1)
-        y_qc_b = hmodel.get_y_mu_point_value(next_query_pins[1], sub2_qc, x_sub2)
-        y_qc_c = hmodel.get_y_mu_point_value(next_query_pins[2], sub3_qc, x_sub3)
 
         next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,   
                                                                                     max_seen_resp_2D)
 
         response = torch.tensor(next_query_value_random)
-
-        cont1 = y_mu_point_a + gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
-
-        cont1_scaled = torch.nan_to_num(
-            cont1 / torch.max(y_mu1 + gamma * torch.nan_to_num(y_conf1 / torch.sqrt(sub1_qc))))
-
-        cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
-        cont2_scaled = torch.nan_to_num(
-            cont2 / torch.max(y_mu2 + gamma * torch.nan_to_num(y_conf2 / torch.sqrt(sub2_qc))))
-
-        cont3 = y_mu_point_c + gamma * torch.nan_to_num(y_conf_point_c / torch.sqrt(y_qc_c))
-        cont3_scaled = torch.nan_to_num(
-            cont3 / torch.max(y_mu3 + gamma * torch.nan_to_num(y_conf3 / torch.sqrt(sub3_qc))))
-
-        div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled) + torch.exp(cont3_scaled)
-
-        contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
-        contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)
-        contribution3 = torch.nan_to_num(response * torch.exp(cont3_scaled) / div)
-
-
-        response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
-        response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
-        response_3 = sub3.update_max_seen_response_no_norm(contribution3, max_seen_resp_3_1D)
-
-        """train_x_sub1, train_y_sub1 = update_training_data(train_x_sub1, train_y_sub1, next_query_pins[0],
-                                                            response_1)
-        train_x_sub2, train_y_sub2 = update_training_data(train_x_sub2, train_y_sub2, next_query_pins[1],
-                                                            response_2)
-
-        sub1.set_train_data(train_x_sub1, train_y_sub1 / max_seen_resp_1_1D, strict=False)
-        sub2.set_train_data(train_x_sub2, train_y_sub2 / max_seen_resp_2_1D, strict=False)"""
-
-        sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[0], x_sub1)
-        sub2_qc = sub2.increment_q_n(sub2_qc, next_query_pins[1], x_sub2)
-        sub3_qc = sub3.increment_q_n(sub3_qc, next_query_pins[2], x_sub3)
-        hier_qc = master.increment_q_n(hier_qc, next_query_pins, x_hier)
 
         # next_query_pins = next_query_pins.to(torch.int)
 
@@ -279,64 +231,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             x += 1
 
 
-        sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
-                                                                                       train_y_sub1,
-                                                                                       x_sub1[next_query_indices[0]],
-                                                                                       contribution1,
-                                                                                       False,
-                                                                                       training_iter=training_iter)
-
-        sub2, sub2_like, train_x_sub2, train_y_sub2 = hmodel.update_model1_1D_max_seen(sub2, sub2_like, train_x_sub2,
-                                                                                       train_y_sub2,
-                                                                                       x_sub2[next_query_indices[1]],
-                                                                                       contribution2,
-                                                                                       False,
-                                                                                       training_iter=training_iter)
-
-        sub3, sub3_like, train_x_sub3, train_y_sub3 = hmodel.update_model1_1D_max_seen(sub3, sub3_like, train_x_sub3,
-                                                                                       train_y_sub3,
-                                                                                       x_sub3[next_query_indices[2]],
-                                                                                       contribution3,
-                                                                                       False,
-                                                                                       training_iter=training_iter)
-
-        sub1.eval()
-        sub1_like.eval()
-
-        sub2.eval()
-        sub2_like.eval()
-
-        sub3.eval()
-        sub3_like.eval()
-
-        # Make a prediction, observed_pred = likelihood
-        with gpytorch.settings.lazily_evaluate_kernels(state=False):
-            observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
-            observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
-            observed_pred3 = models.make_prediction(sub3, x_sub3, sub3_like)
-
-        y_mu1 = observed_pred1.mean
-        y_mu2 = observed_pred2.mean
-        y_mu3 = observed_pred3.mean
-
-        y_conf1 = observed_pred1.stddev
-        y_conf2 = observed_pred2.stddev
-        y_conf3 = observed_pred3.stddev
-
-        p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-        p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
-        p3 = y_mu3 + gamma * y_conf3 / (torch.sqrt(sub3_qc))
-
-        for i in range(len(prior_map)):
-            for j in range(len(prior_map)):
-                for k in range(len(prior_map)):
-                    prior_map[i, j, k] = (p1[i] + p2[j] + p3[k]) / 3
-
-        prior_map_max = torch.max(prior_map)
-
         master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
 
-        master = hmodel.update_kernel_parameters(master, [sub1, sub2, sub3])
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                             response)
@@ -358,11 +254,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             # Get into evaluation (predictive posterior) mode
             master.eval()
             likelihood.eval()
-            sub1.eval()
-            sub1_like.eval()
-
-            sub2.eval()
-            sub2_like.eval()
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
@@ -399,11 +290,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
                            eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1):
     
-    if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
-        model_name = "Efficient_3D"
-
-    elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-        model_name = "Lossless_Efficient"
+    model_name = "laferriere_3D"
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -615,7 +502,7 @@ if __name__ == '__main__':
     process = []
 
     multi = False
-    seed = np.arange(nbr_repetition)
+    seed = [False] * nbr_repetition
     for h in h_model:
         for dataset_num in [6]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)

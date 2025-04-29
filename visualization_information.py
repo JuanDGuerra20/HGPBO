@@ -542,7 +542,7 @@ def heatmap_r_score(data, z):
     z = z.reshape(data[0].shape)
 
     for q in range(len(data)):
-        r_scores.append(linregress(z, data[q]).rvalue)
+        r_scores.append((linregress(z, data[q]).rvalue)**2)
 
     return r_scores
 

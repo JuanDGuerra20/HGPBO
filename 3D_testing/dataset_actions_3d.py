@@ -826,7 +826,8 @@ def generate_3d_3_dataset(dimension, eps):
     for i in range(len(y_sub1)):
         for j in range(len(y_sub2)):
             for k in range(len(y_sub3)):
-                y_hier[i, j] = (y_sub1[i] + y_sub2[j] + y_sub3[k])
+                y_hier[i, j] = (y_sub1[i] + y_sub2[j] + y_sub3[k])/ (
+                    (((x_sub1[i] - x_sub2[j]) + (x_sub1 - x_sub3) + (x_sub2 - x_sub3)) ** 2 + eps))
 
     y_hier = y_hier.double()
 
@@ -857,7 +858,7 @@ def get_dataset_info(dataset_num):
     elif dataset_num == 6:
         data_name = "third_3D"
         data_creation_func = generate_3d_3_dataset
-        eps = 0
+        eps = 2
     else:
         raise AssertionError("Dataset number invalid")
 
