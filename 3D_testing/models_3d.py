@@ -555,7 +555,7 @@ def update_max_seen_response(next_query_value_random, max_seen_resp):
     next_query_value_random = next_query_value_random / max_seen_resp
     return next_query_value_random, max_seen_resp
 
-def update_max_seen_response_no_norm(next_query_value_random, max_seen_resp, env=False):
+def update_max_seen_response_no_norm(next_query_value_random, max_seen_resp):
     if (next_query_value_random > max_seen_resp) or (max_seen_resp == 0):
         max_seen_resp = next_query_value_random
     # next_query_value_random = next_query_value_random / max_seen_resp

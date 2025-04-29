@@ -171,7 +171,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             for i in range(len(prior_map)):
                 for j in range(len(prior_map)):
                     for k in range(len(prior_map)):
-                        prior_map[i, j, k] = (p1[i] + p2[j] + p3[k]) / 3
+                        prior_map[i, j, k] = (p1[i] + p2[j] + p3[k])
 
             prior_map_max = torch.max(prior_map)
 
@@ -236,7 +236,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         cont3_scaled = torch.nan_to_num(
             cont3 / torch.max(y_mu3 + gamma * torch.nan_to_num(y_conf3 / torch.sqrt(sub3_qc))))
 
-        div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
+        div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled) + torch.exp(cont3_scaled)
 
         contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
         contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)
@@ -279,7 +279,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             x += 1
 
 
-        start = time.time()
         sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
                                                                                        train_y_sub1,
                                                                                        x_sub1[next_query_indices[0]],
@@ -296,7 +295,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         sub3, sub3_like, train_x_sub3, train_y_sub3 = hmodel.update_model1_1D_max_seen(sub3, sub3_like, train_x_sub3,
                                                                                        train_y_sub3,
-                                                                                       x_sub1[next_query_indices[2]],
+                                                                                       x_sub3[next_query_indices[2]],
                                                                                        contribution3,
                                                                                        False,
                                                                                        training_iter=training_iter)
@@ -367,10 +366,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-        vi.contour_plot_1D(master.sub_models, x_sub1,
-                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                           f'/contour/Contour_{data_name}_{model_name}_HGP-BO_nbr_query_{q}_{nbr_query}_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
-                           model_name, folder_of_the_day, data_name, parent=master)
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
@@ -389,7 +384,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         better_exploitation_score.append(exploitation_score_2D)
         heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
 
-    """ """
+        """vi.contour_plot_1D(master.sub_models, x_sub1,
+                           [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
+                           f'/contour/Contour_{data_name}_query_{q}_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
+                           f"{model_name}", folder_of_the_day, data_name, parent=master)"""
 
     
     if final:
@@ -507,7 +505,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 # Currently only takes the last model of the repetitions, currently too lazy to fix
                 vi.contour_plot_1D(master.sub_models, x_sub1, [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
                                    f'/contour/Contour_{data_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
-                                   f"{model_name}", folder_of_the_day, data_name)
+                                   f"{model_name}", folder_of_the_day, data_name, parent=master)
 
                 y = np.mean(better_exploration_score, axis=0)
                 y = np.insert(y, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
@@ -525,8 +523,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 std = np.std(better_exploitation_score, axis=0)
                 std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
-                plt.plot(y, label='Exploitation')
-                plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
+                #plt.plot(y, label='Exploitation')
+                #plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
                 r2 = np.insert(r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
@@ -607,7 +605,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 1
     nbr_rand_init = 10
     k_vals = [9.5] # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
@@ -616,10 +614,10 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = True
+    multi = False
     seed = np.arange(nbr_repetition)
     for h in h_model:
-        for dataset_num in [5]:
+        for dataset_num in [6]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
 
