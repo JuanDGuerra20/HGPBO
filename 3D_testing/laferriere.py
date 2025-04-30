@@ -492,7 +492,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 1
     nbr_rand_init = 6
     k_vals = [9.5] # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
