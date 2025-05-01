@@ -457,17 +457,52 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                             data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, seed[i], noise))
                             processes.append(p)
 
-                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
-                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, True, children, seed[-1], noise)
+                        try:
+                            master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                hierarchical_model,
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, True, children,
+                                seed[i], noise)
 
-                        better_exploration_score.append(rep_exploration_score)
-                        better_exploitation_score.append(rep_exploitation_score)
-                        heatmap_data.append(heatmap_rep)
-                        children_r2 = np.array(children_r2)
-                        c1_r2_data.append(children_r2[:,0])
-                        c2_r2_data.append(children_r2[:,1])
-                        c3_r2_data.append(children_r2[:,2])
+                            better_exploration_score.append(rep_exploration_score)
+                            better_exploitation_score.append(rep_exploitation_score)
+                            heatmap_data.append(heatmap_rep)
+                            children_r2 = np.array(children_r2)
+                            c1_r2_data.append(children_r2[:, 0])
+                            c2_r2_data.append(children_r2[:, 1])
+                            c3_r2_data.append(children_r2[:, 2])
+                        except:
+                            try:
+                                master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
+                                    kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                    hierarchical_model,
+                                    data_creation_func, eps, model_name, folder_of_the_day, data_name, True, children,
+                                    seed[i], noise)
+
+                                better_exploration_score.append(rep_exploration_score)
+                                better_exploitation_score.append(rep_exploitation_score)
+                                heatmap_data.append(heatmap_rep)
+                                children_r2 = np.array(children_r2)
+                                c1_r2_data.append(children_r2[:, 0])
+                                c2_r2_data.append(children_r2[:, 1])
+                                c3_r2_data.append(children_r2[:, 2])
+                            except:
+                                try:
+                                    master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
+                                        kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                        hierarchical_model,
+                                        data_creation_func, eps, model_name, folder_of_the_day, data_name, True,
+                                        children, seed[i], noise)
+
+                                    better_exploration_score.append(rep_exploration_score)
+                                    better_exploitation_score.append(rep_exploitation_score)
+                                    heatmap_data.append(heatmap_rep)
+                                    children_r2 = np.array(children_r2)
+                                    c1_r2_data.append(children_r2[:, 0])
+                                    c2_r2_data.append(children_r2[:, 1])
+                                    c3_r2_data.append(children_r2[:, 2])
+                                except:
+                                    continue
 
                         for proc in processes:
                             try:
@@ -485,18 +520,50 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 else:
                     for i in range(nbr_repetition):
-                        master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
-                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, True, children, seed[i], noise)
+                        try:
+                            master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, True, children, seed[i], noise)
 
-                        better_exploration_score.append(rep_exploration_score)
-                        better_exploitation_score.append(rep_exploitation_score)
-                        heatmap_data.append(heatmap_rep)
-                        children_r2 = np.array(children_r2)
-                        c1_r2_data.append(children_r2[:, 0])
-                        c2_r2_data.append(children_r2[:, 1])
-                        c3_r2_data.append(children_r2[:, 2])
+                            better_exploration_score.append(rep_exploration_score)
+                            better_exploitation_score.append(rep_exploitation_score)
+                            heatmap_data.append(heatmap_rep)
+                            children_r2 = np.array(children_r2)
+                            c1_r2_data.append(children_r2[:, 0])
+                            c2_r2_data.append(children_r2[:, 1])
+                            c3_r2_data.append(children_r2[:, 2])
+                        except:
+                            try:
+                                master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
+                                    kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                    hierarchical_model,
+                                    data_creation_func, eps, model_name, folder_of_the_day, data_name, True, children,
+                                    seed[i], noise)
 
+                                better_exploration_score.append(rep_exploration_score)
+                                better_exploitation_score.append(rep_exploitation_score)
+                                heatmap_data.append(heatmap_rep)
+                                children_r2 = np.array(children_r2)
+                                c1_r2_data.append(children_r2[:, 0])
+                                c2_r2_data.append(children_r2[:, 1])
+                                c3_r2_data.append(children_r2[:, 2])
+                            except:
+                                try:
+                                    master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
+                                        kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                        hierarchical_model,
+                                        data_creation_func, eps, model_name, folder_of_the_day, data_name, True,
+                                        children, seed[i], noise)
+
+                                    better_exploration_score.append(rep_exploration_score)
+                                    better_exploitation_score.append(rep_exploitation_score)
+                                    heatmap_data.append(heatmap_rep)
+                                    children_r2 = np.array(children_r2)
+                                    c1_r2_data.append(children_r2[:, 0])
+                                    c2_r2_data.append(children_r2[:, 1])
+                                    c3_r2_data.append(children_r2[:, 2])
+                                except:
+                                    continue
                 heatmap_data = np.array(heatmap_data)
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
@@ -562,15 +629,15 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
                                       master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
-                                      child_2_r2])
+                                      child_2_r2, child_3_r2])
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
-                            'child2_r2']
+                            'child2_r2', 'child3_r2']
 
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
                                        master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
-                                       child_2_r2])
+                                       child_2_r2, child_3_r2])
 
             # Joint Section
             '''joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
@@ -608,7 +675,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 1
+    nbr_repetition = 9
     nbr_rand_init = 6
     k_vals = [9.5] # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
@@ -617,7 +684,7 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = False
+    multi = True
     #seed = np.arange(nbr_repetition)
     seed = [False] * nbr_repetition
     for h in h_model:
@@ -625,7 +692,7 @@ if __name__ == '__main__':
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
 
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                    g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0)[0]
             """

@@ -357,15 +357,18 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         c3_r2_data.append(children_r2[:,2])
 
                         for proc in processes:
-                            rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = proc.get()
+                            try:
+                                rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = proc.get()
 
-                            better_exploration_score.append(rep_exploration_score)
-                            better_exploitation_score.append(rep_exploitation_score)
-                            heatmap_data.append(heatmap_rep)
-                            children_r2 = np.array(children_r2)
-                            c1_r2_data.append(children_r2[:, 0])
-                            c2_r2_data.append(children_r2[:, 1])
-                            c3_r2_data.append(children_r2[:, 2])
+                                better_exploration_score.append(rep_exploration_score)
+                                better_exploitation_score.append(rep_exploitation_score)
+                                heatmap_data.append(heatmap_rep)
+                                children_r2 = np.array(children_r2)
+                                c1_r2_data.append(children_r2[:, 0])
+                                c2_r2_data.append(children_r2[:, 1])
+                                c3_r2_data.append(children_r2[:, 2])
+                            except:
+                                continue
 
                 else:
                     for i in range(nbr_repetition):
@@ -492,7 +495,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 1
+    nbr_repetition = 10
     nbr_rand_init = 6
     k_vals = [9.5] # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
@@ -501,7 +504,7 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = False
+    multi = True
     seed = [False] * nbr_repetition
     for h in h_model:
         for dataset_num in [6]:
