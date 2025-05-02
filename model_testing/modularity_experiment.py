@@ -622,7 +622,7 @@ def one_pretrained():
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 5
     nbr_rand_init = 6
     k_vals = [9.5]
     g_vals = [3]
@@ -694,7 +694,17 @@ def one_pretrained():
 
         data_name, data_creation_func, eps = get_dataset_info(6)
         data_name = "modular_1_child"
+        func_mod = training_procedure(nbr_query, 1, 6, dimension, training_iter, k_vals,
+                                      g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
+                                      children=modular_children, noise=noise, visualize=False)[0]
+        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod
 
+        avg_explor_mod.append(np.mean(explor_mod, axis=0))
+        avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
+        avg_r2_mod.append(r2_mod)
+
+        avg_r2_c1_mod.append(child_1_r2)
+        avg_r2_c2_mod.append(child_2_r2)
         try:
             func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
                                           g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
@@ -1134,9 +1144,5 @@ def one_pretrained_bad():
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent1_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
 
 if __name__ == '__main__':
-    with mp.Pool(processes = 2) as pool:
-        p1 = pool.apply_async(one_pretrained())
-        p2 = pool.apply_async(one_pretrained_bad())
 
-        p1.get()
-        p2.get()
+    one_pretrained()

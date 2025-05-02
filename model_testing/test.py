@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     k_vals = [9.5]
     g_vals = [3]
-    for dataset_num in [2, 3]:
+    for dataset_num in [3, 2]:
         for noise in noise_list:
 
 
@@ -46,10 +46,6 @@ if __name__ == '__main__':
             current_dateday = datetime.now().strftime("%Y-%m-%d")
             workspace = f"{data_name}/{model_name.lower()}"
             folder_of_the_day = '/data-' + str(current_dateday)"""
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
-                                       noise=noise)[0]
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                        g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,

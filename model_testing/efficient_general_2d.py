@@ -154,9 +154,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
-            for i in range(len(train_x_sub1)):
-                sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
-                sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
+
+            if len(children) < 2:
+                if len(children) == 0:
+                    for i in range(len(train_x_sub1)):
+                        sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
+                for i in range(len(train_x_sub2)):
+                    sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
 
             train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
 
@@ -497,7 +501,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 else:
 
                     for i in range(nbr_repetition):
-                        try:
+                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
+                            children=children, visualize=visualize, seed=seed[i], noise=noise)
+                        """try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize, seed=seed[i], noise=noise)
@@ -516,7 +524,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                         children=children, visualize=visualize, seed=seed[i], noise=noise)
                                 except:
-                                    continue
+                                    continue"""
 
 
                         better_exploration_score.append(rep_exploration_score)
@@ -544,26 +552,26 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                            f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.pth')
 
                 y = np.mean(better_exploration_score, axis=0)
-                y = np.insert(y, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                y = np.insert(y, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0)
-                std = np.insert(std, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                std = np.insert(std, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 y = np.mean(better_exploitation_score, axis=0)
-                y = np.insert(y, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                y = np.insert(y, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
 
                 over_exploit.append(y)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-                r2 = np.insert(r2, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                r2 = np.insert(r2, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
                 plt.plot(r2, label="Parent R2")
 
                 child_1_r2 = np.mean(child_1_r2_data, axis=0)
-                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                child_1_r2 = np.insert(child_1_r2, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
                 child_2_r2 = np.mean(child_2_r2_data, axis=0)
-                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
+                child_2_r2 = np.insert(child_2_r2, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
 
                 """plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")"""

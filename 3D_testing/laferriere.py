@@ -496,7 +496,7 @@ if __name__ == '__main__':
 
 
     dimension = 10
-    nbr_query = 100
+    nbr_query = 300
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 6
