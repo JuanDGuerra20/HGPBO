@@ -285,12 +285,9 @@ def two_pretrained():
 
     plt.close()
 
-    plt.plot(avg_r2_c1_1, label='Func 1 child 1', color='red')
-    plt.plot(avg_r2_c2_1, label='Func 1 child 2', color='red', linestyle='dashed')
-    plt.plot(avg_r2_c1_2, label='Func 2 child 1', color='blue')
-    plt.plot(avg_r2_c2_2, label='Func 2 child 2', color='blue', linestyle='dashed')
-    plt.plot(avg_r2_c1_mod, label='Modular Func Child 1', color='green')
-    plt.plot(avg_r2_c2_mod, label='Modular Func Child 2', color='green', linestyle='dashed')
+    plt.plot((avg_r2_c1_mod + avg_r2_c2_mod) / 2, label='Modular Avg Child R2')
+    plt.plot((avg_r2_c1_1 + avg_r2_c2_1) / 2, label='Parent 1 Avg Child R2')
+    plt.plot((avg_r2_c1_2 + avg_r2_c2_2) / 2, label='Parent 2 Avg Child R2')
     plt.ylim(0, 1.1)
 
 
@@ -574,12 +571,10 @@ def two_pretrained_bad():
 
     plt.close()
 
-    plt.plot(avg_r2_c1_1, label='Func 1 child 1', color='red')
-    plt.plot(avg_r2_c2_1, label='Func 1 child 2', color='red', linestyle='dashed')
-    plt.plot(avg_r2_c1_2, label='Func 2 child 1', color='blue')
-    plt.plot(avg_r2_c2_2, label='Func 2 child 2', color='blue', linestyle='dashed')
-    plt.plot(avg_r2_c1_mod, label='Modular Func Child 1', color='green')
-    plt.plot(avg_r2_c2_mod, label='Modular Func Child 2', color='green', linestyle='dashed')
+    plt.plot((avg_r2_c1_mod + avg_r2_c2_mod) / 2, label='Modular Avg Child R2')
+    plt.plot((avg_r2_c1_1 + avg_r2_c2_1) / 2, label='Parent 1 Avg Child R2')
+    plt.plot((avg_r2_c1_2 + avg_r2_c2_2) / 2, label='Parent 2 Avg Child R2')
+
     plt.ylim(0, 1.1)
 
     plt.legend()
@@ -622,7 +617,7 @@ def one_pretrained():
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 5
+    nbr_repetition = 20
     nbr_rand_init = 6
     k_vals = [9.5]
     g_vals = [3]
@@ -852,10 +847,9 @@ def one_pretrained():
 
     plt.close()
 
-    plt.plot(avg_r2_c1_1, label='Func 1 child 1', color='red')
-    plt.plot(avg_r2_c2_1, label='Func 1 child 2', color='red', linestyle='dashed')
-    plt.plot(avg_r2_c1_mod, label='Modular Func Child 1', color='green')
-    plt.plot(avg_r2_c2_mod, label='Modular Func Child 2', color='green', linestyle='dashed')
+    plt.plot((avg_r2_c1_mod + avg_r2_c2_mod)/2, label='Modular Avg Child R2')
+    plt.plot((avg_r2_c1_1 + avg_r2_c2_1)/2, label='Parent 1 Avg Child R2')
+
     plt.ylim(0, 1.1)
 
     plt.legend()
@@ -1110,10 +1104,9 @@ def one_pretrained_bad():
 
     plt.close()
 
-    plt.plot(avg_r2_c1_1, label='Func 1 child 1', color='red')
-    plt.plot(avg_r2_c2_1, label='Func 1 child 2', color='red', linestyle='dashed')
-    plt.plot(avg_r2_c1_mod, label='Modular Func Child 1', color='green')
-    plt.plot(avg_r2_c2_mod, label='Modular Func Child 2', color='green', linestyle='dashed')
+    plt.plot((avg_r2_c1_mod + avg_r2_c2_mod) / 2, label='Modular Avg Child R2')
+    plt.plot((avg_r2_c1_1 + avg_r2_c2_1) / 2, label='Parent 1 Avg Child R2')
+
     plt.ylim(0, 1.1)
 
     plt.legend()
@@ -1144,5 +1137,13 @@ def one_pretrained_bad():
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent1_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
 
 if __name__ == '__main__':
+    with mp.Pool(processes=2) as pool:
+        p1 = pool.apply_async(one_pretrained, ())
+        p2 = pool.apply_async(one_pretrained_bad, ())
+        p3 = pool.apply_async(two_pretrained(), ())
+        p4 = pool.apply_async(two_pretrained_bad(), ())
 
-    one_pretrained()
+        p1.get()
+        p2.get()
+        p3.get()
+        p4.get()

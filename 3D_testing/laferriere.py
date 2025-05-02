@@ -510,13 +510,13 @@ if __name__ == '__main__':
     multi = False
     seed = np.arange(nbr_repetition)
     for h in h_model:
-        for dataset_num in [6]:
+        for dataset_num in [6, 5]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
 
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                   g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0)[0]
+                                   g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0.1)[0]
             """
             current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
             current_dateday = datetime.now().strftime("%Y-%m-%d")

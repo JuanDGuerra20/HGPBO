@@ -639,7 +639,7 @@ def child_contour_r2(sub_models, test_x, true_y):
             mean = observed_pred.mean.numpy()
             mean = mean / np.max(mean)
 
-        children.append(linregress(true_y[i], mean).rvalue)
+        children.append(linregress(true_y[i], mean).rvalue ** 2)
 
     return children
 
