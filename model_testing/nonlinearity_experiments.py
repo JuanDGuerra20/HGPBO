@@ -9,7 +9,7 @@ def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
     k_vals = [9.5]
     g_vals = [6]
     nu_vals = [0.5]
-    multi = True
+    multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     seed = [False] * nbr_repetition
 
@@ -110,7 +110,7 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals,
     k_vals = [9.5]
     g_vals = [6]
     nu_vals = [0.5]
-    multi = True
+    multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     seed = [False] * nbr_repetition
 
@@ -207,7 +207,7 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     k_vals = [9.5]
     g_vals = [6]
     nu_vals = [0.5]
-    multi = True
+    multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     seed = [False] * nbr_repetition
 
@@ -370,13 +370,18 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
 
 
 if __name__ == "__main__":
-    alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 10, 16, 32]
+    alpha_vals = [0.25, 0.5, 1, 2, 4, 6, 8, 10 ,12, 14, 16, 18, 20]
+    with mp.Pool(processes=3) as pool:
 
-    exponential_experiment(20, 10, 100, alpha_vals, 7)
-    exponential_experiment(20, 10, 100, alpha_vals, 7.5)
+        p1 = pool.apply_async(exponential_experiment, (20, 10, 100, alpha_vals, 7,))
+        p2 = pool.apply_async(exponential_experiment, (20, 10, 100, alpha_vals, 7.5, ))
 
-    mult_factor_experiment(20, 10, 100, alpha_vals)
+        p3 = pool.apply_async(mult_factor_experiment, (20, 10, 100, alpha_vals, ))
 
+        p1.get()
+        p2.get()
+        p3.get()
+    """
 
     b_list = []
     for i in range(len(alpha_vals)):
@@ -384,4 +389,4 @@ if __name__ == "__main__":
         for j in range(len(alpha_vals)):
             temp_b.append([alpha_vals[i], alpha_vals[j]])
         b_list.append(temp_b)
-    b_mult_experiment(20, 6, 100, b_list)
+    b_mult_experiment(20, 6, 100, b_list)"""

@@ -430,10 +430,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
                 child_3_r2 = np.insert(child_3_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
-
+                """
                 plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")
-                plt.plot(child_3_r2, label="Child 3 R2")
+                plt.plot(child_3_r2, label="Child 3 R2")"""
+
+                avg_child = (child_1_r2 + child_2_r2 + child_3_r2) / 3
+                plt.plot(avg_child, label='Child Avg R2')
 
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
@@ -495,7 +498,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 30
     nbr_rand_init = 6
     k_vals = [9.5] # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
@@ -504,8 +507,8 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = True
-    seed = [False] * nbr_repetition
+    multi = False
+    seed = np.arange(nbr_repetition)
     for h in h_model:
         for dataset_num in [6]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)

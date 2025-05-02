@@ -799,13 +799,13 @@ def generate_3d_3_dataset(dimension, eps):
     y_sub1 = y_sub1.double()
 
     x_sub2 = torch.linspace(0, 4, dimension).double()
-    y_sub2 = torch.sin(x_sub2 *2*math.pi)
+    y_sub2 = torch.cos(x_sub2 *2*math.pi)
     #y_sub2 = torch.where(y_sub2 == -torch.inf, 6.283, y_sub2)  # solved the overflow by limits
 
     y_sub2 = y_sub2.double()
 
     x_sub3 = torch.linspace(0, 4, dimension).double()
-    y_sub3 = torch.sin(x_sub2 *2*math.pi)
+    y_sub3 = torch.tan(x_sub2 *2*math.pi)
     y_sub3 = y_sub3.double()
 
     x_hier = torch.zeros((dimension, dimension, dimension, 3)).double()

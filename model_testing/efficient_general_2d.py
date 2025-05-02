@@ -497,11 +497,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 else:
 
                     for i in range(nbr_repetition):
-                        #try:
-                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                        try:
+                            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True, children=children, visualize=visualize, seed=seed[i], noise=noise)
-                        """except:
+                        except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
@@ -516,7 +516,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                         children=children, visualize=visualize, seed=seed[i], noise=noise)
                                 except:
-                                    continue"""
+                                    continue
 
 
                         better_exploration_score.append(rep_exploration_score)
@@ -565,9 +565,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 child_2_r2 = np.mean(child_2_r2_data, axis=0)
                 child_2_r2 = np.insert(child_2_r2, 0, np.zeros(2*nbr_rand_init))[:nbr_query]
 
-                plt.plot(child_1_r2, label="Child 1 R2")
-                plt.plot(child_2_r2, label="Child 2 R2")
+                """plt.plot(child_1_r2, label="Child 1 R2")
+                plt.plot(child_2_r2, label="Child 2 R2")"""
 
+                avg_child = (child_1_r2 + child_2_r2) / 2
+                plt.plot(avg_child, label='Child Avg R2')
 
                 """rand = np.random.rand(*heatmap_data.shape)
                 random_r2 = vi.heatmap_r_score(rand, y_hier)
@@ -649,18 +651,18 @@ if __name__ == '__main__':
     dimension = 15
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 10
-    k_vals = [2]
-    g_vals = [6]
+    nbr_repetition = 20
+    k_vals = [9.5]
+    g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
     seed = np.arange(nbr_repetition)
 
     for h in h_model:
-        for dataset_num in [3, 2]:
+        for dataset_num in [6]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
