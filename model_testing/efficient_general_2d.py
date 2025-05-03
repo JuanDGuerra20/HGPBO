@@ -122,6 +122,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like,
                                            query_counter=sub2_qc, nu=nu)
 
+                for i in range(len(train_x_sub1)):
+                    sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
+                    sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
+
             elif len(children) == 1:
                 sub1 = children[0]
 
@@ -137,6 +141,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
                 sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / abs(max_seen_resp_2_1D), sub2_like,
                                            query_counter=sub2_qc, nu=nu)
+
+                for i in range(len(train_x_sub2)):
+                    sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
 
             elif len(children) == 2:
                 sub1 = children[0]
@@ -154,13 +161,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
-
-            if len(children) < 2:
-                if len(children) == 0:
-                    for i in range(len(train_x_sub1)):
-                        sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
-                for i in range(len(train_x_sub2)):
-                    sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
 
             train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
 

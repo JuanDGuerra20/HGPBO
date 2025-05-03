@@ -1137,13 +1137,5 @@ def one_pretrained_bad():
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent1_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
 
 if __name__ == '__main__':
-    with mp.Pool(processes=2) as pool:
-        p1 = pool.apply_async(one_pretrained, ())
-        p2 = pool.apply_async(one_pretrained_bad, ())
-        p3 = pool.apply_async(two_pretrained(), ())
-        p4 = pool.apply_async(two_pretrained_bad(), ())
+    one_pretrained()
 
-        p1.get()
-        p2.get()
-        p3.get()
-        p4.get()
