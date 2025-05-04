@@ -228,13 +228,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 if __name__ == '__main__':
 
     dimension = 10
-    nbr_query = 80
+    nbr_query = 200
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 1
     k_vals = [2]
 
-    for dataset_num in [5]:
+    for dataset_num in [6]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
