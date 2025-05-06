@@ -628,7 +628,7 @@ if __name__ == '__main__':
     seed = np.arange(nbr_repetition)
     #seed = [False] * nbr_repetition
     for h in h_model:
-        for dataset_num in [6, 5]:
+        for dataset_num in [6]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
 
