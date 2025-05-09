@@ -41,10 +41,6 @@ name_code = 'HGP_BO-test6-priorMAP-1model1D'
 current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
 current_dateday = datetime.now().strftime("%Y-%m-%d")
 
-workspace_folder = (r'C:\Users\preda\PycharmProjects\HGPBO')  # path to folder
-
-os.chdir(workspace_folder)
-
 kern_op = 'add_kernel'
 
 
@@ -463,9 +459,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                     f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_{nbr_repetition}_reps_k_{k}_g_{g}_nu_{n}_rand_init_{nbr_rand_init}.svg')
                 plt.close()
 
-                """vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
-                                 f'/Heatmap_Neural_{model_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}',
-                                 model_name.lower(), folder_of_the_day, "Neural", neural=True)"""
+                vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
+                                 f'/Heatmap_{nbr_repetition}_reps_k_{k}_g_{g}_nu_{n}_rand_init_{nbr_rand_init}',
+                                 model_name.lower(), folder_of_the_day, "Neural", neural=True)
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
 
                 re_output = np.reshape(data, test_y_hier.shape)
@@ -541,7 +537,7 @@ if __name__ == '__main__':
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 6
-    k_vals = [9.5]
+    k_vals = [4]
     g_vals = [3]
     nu_vals = [0.5]
     multi = False

@@ -390,7 +390,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     k = str(kappa).replace('.', ',')
     g = str(gamma).replace('.', ',')
     n = str(nu).replace('.', ',')
-    if multi:
+    '''if multi:
         vi.contour_plot_1D(master.sub_models, test_x_1D,
                             [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
                             f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}_pid_{os.getpid()}',
@@ -400,7 +400,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
         vi.contour_plot_1D(master.sub_models, test_x_1D,
                            [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
                            f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}_pid_{rand_id}',
-                           model_name.lower(), folder_of_the_day, "Neural", neural=True)
+                           model_name.lower(), folder_of_the_day, "Neural", neural=True)'''
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
     else:
@@ -534,9 +534,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 plt.close()
 
-                """vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
-                                 f'/Heatmap_Neural_{model_name}_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}_nu_{n}',
-                                 model_name.lower(), folder_of_the_day, "Neural", neural=True)"""
+                vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
+                                 f'/Heatmap_Neural_{model_name}_Neural_{nbr_repetition}_reps_k_{k}_g_{g}_nu_{n}_rand_init_{nbr_rand_init}',
+                                 model_name.lower(), folder_of_the_day, "Neural", neural=True)
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
 
                 re_output = np.reshape(data, test_y_hier.shape)
@@ -628,18 +628,20 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 30
     nbr_rand_init = 8
-    k_vals = [9.5]  # Found through HP Testing
+    k_vals = [4]  # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
     nu_vals = [0.5]
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
+        name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
+                           h, multi)[0]
 
-
-        if h == hmodel.Efficient_UCB_Hierarchical_GP:
+        """if h == hmodel.Efficient_UCB_Hierarchical_GP:
             model_name = "Efficient"
 
         elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
@@ -762,4 +764,4 @@ if __name__ == '__main__':
         g_vals = [6]
 
         print("============================================================")
-        print("Done Gamma")
+        print("Done Gamma")"""

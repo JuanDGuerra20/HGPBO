@@ -510,15 +510,23 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
     data = np.mean(data, axis=0)
     if neural:
         re_output = np.reshape(data, (10, 10))
-        input = np.reshape(input, (10, 10))
+        input = np.reshape(np.arange(len(input)), (10, 10))
+        z = np.reshape(z, (10,10))
     else:
         re_output = np.reshape(data, z.shape)
 
     fig, axs = plt.subplots(1, 2)
-    ax = heatmap(re_output, cmap="viridis", xticklabels=np.round(input[0, :, 1].numpy(), 3),
+    if neural:
+        ax = heatmap(re_output, cmap="viridis", xticklabels=np.arange(10),
+                     yticklabels=np.arange(10), ax=axs[0])
+        axs[0].set_yticklabels(np.arange(10), rotation=45)
+
+    else:
+        ax = heatmap(re_output, cmap="viridis", xticklabels=np.round(input[0, :, 1].numpy(), 3),
                  yticklabels=np.round(input[0, :, 1].numpy(), 3), ax=axs[0])
+        axs[0].set_yticklabels(np.round(input[0, :, 1].numpy(), 3), rotation=45)
+
     axs[0].set_title(f'Model Prediction of State Space')
-    axs[0].set_yticklabels(np.round(input[0, :, 1].numpy(), 3), rotation=45)
 
     ax = heatmap(z, cmap="viridis", xticklabels=False, yticklabels=False, ax=axs[1])
     axs[1].set_title(f'True State Space')
@@ -526,7 +534,6 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
 
     if neural:
         plt.savefig(f'{model_type}/{folder_of_the_day}/contour/{file_name}.svg')
-        plt.savefig(f'{model_type}/{folder_of_the_day}/png/{file_name}.png')
 
     else:
         plt.savefig(f'{data_name}/{model_type}{folder_of_the_day}/differentiable_plots/{file_name}.svg')
@@ -535,14 +542,23 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
     plt.close()
 
 def heatmap_r_score(data, z):
-    data = np.mean(data, axis=0)
+    data_avg = np.mean(data, axis=0)
 
     r_scores = []
 
-    z = z.reshape(data[0].shape)
+    z = z.reshape(data_avg[0].shape)
+    r_over = []
+    """for d in range(len(data)):
+        r_scores_list = []
+        for i in range(len(data[d])):
+            r_scores.append((linregress(z, data_avg[d][i]).rvalue) ** 2)
+            r_scores_list.append(r_scores)
+        r_over.append(r_scores_list)
 
-    for q in range(len(data)):
-        r_scores.append((linregress(z, data[q]).rvalue)**2)
+    r_std = np.std(r_over, axis=0)"""
+
+    for q in range(len(data_avg)):
+        r_scores.append((linregress(z, data_avg[q]).rvalue)**2)
 
     return r_scores
 

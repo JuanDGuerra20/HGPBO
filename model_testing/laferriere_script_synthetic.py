@@ -499,9 +499,9 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     dimension = 15
-    nbr_query = 80
+    nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 10
+    nbr_repetition = 30
     k_vals = [2]
     g_vals = [6]
     nu_vals = [0.5]  # Found through HP Testing
@@ -510,7 +510,7 @@ if __name__ == '__main__':
     process = []
     nbr_rand_init = 6  # Found through HP Testing
     for h in h_model:
-        for dataset_num in [2, 3]:
+        for dataset_num in [3]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

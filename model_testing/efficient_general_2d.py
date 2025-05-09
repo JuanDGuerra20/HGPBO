@@ -1,4 +1,5 @@
 import gpytorch
+import matplotlib.pyplot as plt
 import torch
 
 import synthetic_models as models
@@ -566,18 +567,27 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
                 r2 = np.insert(r2, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
+                #r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
+
                 plt.plot(r2, label="Parent R2")
+                #plt.fill_between(range(len(r2_std)), r2-r2_std, r2_std, alpha=0.4)
 
                 child_1_r2 = np.mean(child_1_r2_data, axis=0)
+                child_1_r2_std = np.std(child_1_r2_data, axis=0)
+                child_1_r2_std = np.insert(child_1_r2_std, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
+
                 child_1_r2 = np.insert(child_1_r2, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
                 child_2_r2 = np.mean(child_2_r2_data, axis=0)
+                child_2_r2_std = np.std(child_2_r2_data, axis=0)
                 child_2_r2 = np.insert(child_2_r2, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
-
+                child_2_r2_std = np.insert(child_2_r2_std, 0, np.zeros((2 - len(children))*nbr_rand_init))[:nbr_query]
                 """plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")"""
 
                 avg_child = (child_1_r2 + child_2_r2) / 2
+                avg_child_std = (child_1_r2_std + child_2_r2_std) / 2
                 plt.plot(avg_child, label='Child Avg R2')
+                plt.fill_between(range(len(avg_child)), avg_child - avg_child_std, avg_child + avg_child_std, alpha=0.4)
 
                 """rand = np.random.rand(*heatmap_data.shape)
                 random_r2 = vi.heatmap_r_score(rand, y_hier)
@@ -659,18 +669,18 @@ if __name__ == '__main__':
     dimension = 15
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 20
-    k_vals = [9.5]
+    nbr_repetition = 10
+    k_vals = [2,3,4,5,6,7,8,9]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
-    seed = np.arange(nbr_repetition)
-
+    #seed = np.arange(nbr_repetition)
+    seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [6]:
+        for dataset_num in [3]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

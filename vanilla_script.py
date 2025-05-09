@@ -34,12 +34,10 @@ name_code = 'HGP_BO-test6-priorMAP-1model1D'
 current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
 current_dateday = datetime.now().strftime("%Y-%m-%d")
 
-workspace_folder = (r'C:\Users\preda\PycharmProjects\HGPBO')  # path to folder
 
-os.chdir(workspace_folder)
 
 kern_op = 'add_kernel'
-folder_of_the_day = (str(workspace_folder) + f'/vanilla/data-' + str(name_code) + str(current_dateday))
+folder_of_the_day = (f'/vanilla/data-' + str(name_code) + str(current_dateday))
 
 
 class ExactGPModel(gpytorch.models.ExactGP):
@@ -198,7 +196,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 heatmap_data.append(observed_pred.mean.detach().cpu().numpy())
 
-            print(f'\nRepetition {repetition} complete!\n')
 
         exploration_scores = []
         exploitation_scores = []
@@ -235,6 +232,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
             f'vanilla{folder_of_the_day}/differentiable_plots/vanilla_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}.svg')
 
         plt.close()
+        vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
+                         f'/Heatmap_Neural_{nbr_repetition}_reps_k_{k}_rand_init_{nbr_rand_init}',
+                         "vanilla", folder_of_the_day, "Neural", neural=True)
 
         df = pd.DataFrame([
             f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
