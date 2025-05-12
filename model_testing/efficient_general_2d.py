@@ -713,7 +713,7 @@ if __name__ == '__main__':
             exploit = []
             names = []
 
-            """nbr_rand_init_list = np.arange(1, 10, 1)
+            nbr_rand_init_list = np.arange(1, 10, 1)
 
             for nbr_rand_init in nbr_rand_init_list:
                 name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
@@ -761,7 +761,6 @@ if __name__ == '__main__':
             training_iter = 10
             print("==============================================================")
             print("Done Training Iter HP")
-"""
 
             parent_r2 = []
             child_1_r2_over = []
