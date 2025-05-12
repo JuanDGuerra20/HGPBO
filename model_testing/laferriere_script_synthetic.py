@@ -457,6 +457,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                  f'Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}',
                                  model_name.lower(), folder_of_the_day, data_name)
 
+                vi.model_contour_3d(heatmap_data[:, -1, :], x_hier, y_hier,
+                                    f'Parent_Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                                    model_name.lower(), folder_of_the_day, data_name)
+
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
 
                 re_output = np.reshape(data, y_hier.shape)

@@ -476,11 +476,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                     children=children, visualize=visualize, seed=seed[-1], noise=noise)
                             except:
-                                master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                try:
+                                    master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                         children=children, visualize=visualize, seed=seed[-1], noise=noise)
+                                except:
+                                    continue
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -609,6 +612,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
                                  f'Heatmap_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
                                  model_name.lower(), folder_of_the_day, data_name)
+                vi.model_contour_3d(heatmap_data[:, -1, :], x_hier, y_hier,
+                                 f'Parent_Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                                 model_name.lower(), folder_of_the_day, data_name)
 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
 
@@ -630,11 +636,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
 
             # Joint Section
-            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
+            """joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
                               nbr_repetition, data_name, model_name)
 
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
-                        nbr_repetition, data_name, model_name)
+                        nbr_repetition, data_name, model_name)"""
 
     return list_models
 
@@ -670,7 +676,7 @@ if __name__ == '__main__':
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
     nbr_repetition = 10
-    k_vals = [2,3,4,5,6,7,8,9]
+    k_vals = [4]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
     multi = True
@@ -684,7 +690,7 @@ if __name__ == '__main__':
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
-            """if h == hmodel.Efficient_UCB_Hierarchical_GP:
+            if h == hmodel.Efficient_UCB_Hierarchical_GP:
                 model_name = "Efficient"
 
             elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
@@ -693,26 +699,27 @@ if __name__ == '__main__':
             current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
             current_dateday = datetime.now().strftime("%Y-%m-%d")
             workspace = f"{data_name}/{model_name.lower()}"
-            folder_of_the_day = '/data-' + str(current_dateday)"""
+            folder_of_the_day = '/data-' + str(current_dateday)
 
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            """name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                    nu_vals, data_name, data_creation_func,
                                    eps, h, multi, seed, noise=0.1)[0]
-            """parent_r2 = []
+            print('done first')"""
+            parent_r2 = []
             child_1_r2_over = []
             child_2_r2_over = []
             explor = []
             exploit = []
             names = []
 
-            nbr_rand_init_list = np.arange(2, 22, 2)
+            """nbr_rand_init_list = np.arange(1, 10, 1)
 
             for nbr_rand_init in nbr_rand_init_list:
                 name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                   nu_vals, data_name, data_creation_func,
-                                   eps, h, multi)[0]
+                    training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, noise=0.1)[0]
                 parent_r2.append(r2[:nbr_query])
                 child_1_r2_over.append(child_1_r2[:nbr_query])
                 child_2_r2_over.append(child_2_r2[:nbr_query])
@@ -722,7 +729,7 @@ if __name__ == '__main__':
             scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                       ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                       ["Exploitation", np.array(exploit)]]
-            hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list)
+            hp_plotting(scores, "nbr_rand_init", nbr_rand_init_list, model_name, folder_of_the_day)
             nbr_rand_init = 6
             print("==============================================================")
             print("Done Rand Init HP")
@@ -735,13 +742,14 @@ if __name__ == '__main__':
             names = []
 
             # Doing Training Iteration Hyper Parameter
-            training_iter_list = np.arange(2, 22, 2)
+            training_iter_list = np.arange(1, 10, 1)
 
             for training_iter in training_iter_list:
-
-
-                name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                                   eps, h, multi)[0]
+                name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+                    training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals,
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, noise=0.1)[0]
                 parent_r2.append(r2[:nbr_query])
                 child_1_r2_over.append(child_1_r2[:nbr_query])
                 child_2_r2_over.append(child_2_r2[:nbr_query])
@@ -749,11 +757,11 @@ if __name__ == '__main__':
                 exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
 
             scores = [["Parent_R2", np.array(parent_r2)],["Child_1_R2", np.array(child_1_r2_over)],["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)], ["Exploitation", np.array(exploit)]]
-            hp_plotting(scores, "training_iter", training_iter_list)
+            hp_plotting(scores, "training_iter", training_iter_list, model_name, folder_of_the_day)
             training_iter = 10
             print("==============================================================")
             print("Done Training Iter HP")
-
+"""
 
             parent_r2 = []
             child_1_r2_over = []
@@ -763,13 +771,14 @@ if __name__ == '__main__':
             names = []
             # HP search for kappa values
 
-            k_vals_list = np.linspace(0.5, 10, 20)
+            k_vals_list = np.linspace(1, 10.5, 20)
             for k_vals in k_vals_list:
                 k_vals = [k_vals]
                 name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                                   nu_vals, data_name, data_creation_func,
-                                   eps, h, multi)[0]
+                    training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals,
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, noise=0.1)[0]
                 parent_r2.append(r2[:nbr_query])
                 child_1_r2_over.append(child_1_r2[:nbr_query])
                 child_2_r2_over.append(child_2_r2[:nbr_query])
@@ -779,7 +788,7 @@ if __name__ == '__main__':
             scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                       ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                       ["Exploitation", np.array(exploit)]]
-            hp_plotting(scores, "k_vals", k_vals_list)
+            hp_plotting(scores, "k_vals", k_vals_list, model_name, folder_of_the_day)
             k_vals = [2]
 
             print("==============================================================")
@@ -793,14 +802,14 @@ if __name__ == '__main__':
             exploit = []
             names = []
 
-            g_vals_list = np.linspace(0.5, 10, 20)
+            g_vals_list = np.linspace(1, 10.5, 20)
             for g_vals in g_vals_list:
                 g_vals = [g_vals]
                 name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                     training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                        g_vals,
                                        nu_vals, data_name, data_creation_func,
-                                       eps, h, multi)[0]
+                                       eps, h, multi, seed, noise=0.1)[0]
                 parent_r2.append(r2[:nbr_query])
                 child_1_r2_over.append(child_1_r2[:nbr_query])
                 child_2_r2_over.append(child_2_r2[:nbr_query])
@@ -810,8 +819,8 @@ if __name__ == '__main__':
             scores = [["Parent_R2", np.array(parent_r2)], ["Child_1_R2", np.array(child_1_r2_over)],
                       ["Child_2_R2", np.array(child_2_r2_over)], ["Exploration", np.array(explor)],
                       ["Exploitation", np.array(exploit)]]
-            hp_plotting(scores, "g_vals", g_vals_list)
+            hp_plotting(scores, "g_vals", g_vals_list, model_name, folder_of_the_day)
             g_vals = [6]
 
             print("==============================================================")
-            print("Done Gamma HP")"""
+            print("Done Gamma HP")

@@ -12,6 +12,8 @@ from dataset_actions import NumpyArrayEncoder
 import torch
 from seaborn import heatmap
 from scipy.stats import linregress
+from mpl_toolkits.mplot3d import Axes3D
+
 
 def compute_execution_time(executionTime_repetitions, startTime, nbr_repetition, nbr_query, folder_of_the_day,
                            workspace_folder):
@@ -535,6 +537,45 @@ def model_heatmap(data, input, z, file_name, model_type, folder_of_the_day, data
     if neural:
         plt.savefig(f'{model_type}/{folder_of_the_day}/contour/{file_name}.svg')
 
+    else:
+        plt.savefig(f'{data_name}/{model_type}{folder_of_the_day}/differentiable_plots/{file_name}.svg')
+        plt.savefig(f'{data_name}/{model_type}{folder_of_the_day}/png/{file_name}.png')
+
+    plt.close()
+
+def model_contour_3d(data, input, z, file_name, model_type, folder_of_the_day, data_name, neural=False):
+    data = np.mean(data, axis=0)
+    if neural:
+        re_output = np.reshape(data, (10, 10))
+        z = np.reshape(z, (10, 10))
+        X, Y = np.meshgrid(np.arange(10), np.arange(10))
+    else:
+        re_output = np.reshape(data, z.shape)
+        X, Y = np.meshgrid(np.arange(z.shape[0]), np.arange(z.shape[1]))
+
+    fig = plt.figure(figsize=(12, 6))
+
+    # Plot Model Prediction
+    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+    ax1.contour3D(X, Y, re_output, 50, cmap='viridis')
+    ax1.set_title('Model Prediction (Contour)')
+    ax1.set_xlabel('X')
+    ax1.set_ylabel('Y')
+    ax1.set_zlabel('Z')
+
+    # Plot Ground Truth
+    ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+    ax2.contour3D(X, Y, z, 50, cmap='viridis')
+    ax2.set_title('True State Space (Contour)')
+    ax2.set_xlabel('X')
+    ax2.set_ylabel('Y')
+    ax2.set_zlabel('Z')
+
+    fig.suptitle(f"{model_type} Model Contour vs True State Space")
+
+    # Save plot
+    if neural:
+        plt.savefig(f'{model_type}/{folder_of_the_day}/contour/{file_name}.svg')
     else:
         plt.savefig(f'{data_name}/{model_type}{folder_of_the_day}/differentiable_plots/{file_name}.svg')
         plt.savefig(f'{data_name}/{model_type}{folder_of_the_day}/png/{file_name}.png')

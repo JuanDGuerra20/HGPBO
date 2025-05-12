@@ -211,6 +211,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
                          f'/Heatmap_{data_name}_vanilla_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
                          "vanilla", folder_of_the_day, data_name)
+        vi.model_contour_3d(heatmap_data[:, -1, :], x_hier, y_hier,
+                         f'/parent_contour_{data_name}_vanilla_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
+                         "vanilla", folder_of_the_day, data_name)
 
         df = pd.DataFrame([
                               f'kappa_{k}_model_state_{nbr_query}_queries_eps_init_{nbr_rand_init}_train_iter_{training_iter}',
@@ -228,13 +231,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 if __name__ == '__main__':
 
     dimension = 15
-    nbr_query = 80
+    nbr_query = 100
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 1
     k_vals = [2]
 
-    for dataset_num in [2, 3]:
+    for dataset_num in [3]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
