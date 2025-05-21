@@ -125,7 +125,80 @@ class NN_baseline(nn.Module):
         self.linear_stack.append(nn.Linear(dims[-1], 1))
 
     def forward(self, x):
-        x = self.flatten(x)
-        logits = self.linear_stack(x)
+        mapped_x = self.mapper.get_val(str(x))
+        mapped_x = self.flatten(mapped_x)
+        logits = self.linear_stack(mapped_x)
         return logits
 
+    def get_acquisition_map(self, test_x_hier):
+        predictions = []
+        for x in test_x_hier:
+            predictions.append(self.forward(x))
+
+        return predictions
+
+
+def get_next_query_pins(acquisition_map, coord_pins):
+    """
+    Determine the next query pins based on the acquisition map.
+    This is for the hierarchical model!!!
+
+    Parameters:
+    - acquisition_map (torch.Tensor): Acquisition map.
+    - coord_pins (numpy.ndarray): Coordinates of pins.
+
+    Returns:
+    - next_query_pins (torch.Tensor): Coordinates of the next query pins.
+    """
+    # get next query pin based on the acquisition map, max return the max value, argmax return indices of the max value
+    possible_next_query = torch.where(acquisition_map.reshape(len(acquisition_map))==torch.max(acquisition_map.reshape(len(acquisition_map))))
+    # randomly choose a query if there are multiple max values
+    if len(possible_next_query[0])>1: # si plusieurs fois la valeur max, choisir random parmis ces valeurs max
+        indice_next_query = np.random.randint(len(possible_next_query[0]))             # récupère l'indice de la next query aléatoirement parmis les indices offrant la max value
+        next_query = possible_next_query[0][indice_next_query]                         # coordonnées x,y correspondant à la val max sélectionnée
+    else:
+        next_query = possible_next_query
+    next_query_pins = torch.as_tensor(coord_pins[next_query], dtype=torch.float64)
+    next_query_pins = torch.squeeze(next_query_pins)    # récupère les coord des pins et la valeur correpsondante
+    return next_query_pins
+
+def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0):
+    """
+    Get the new value for the next query pins to update training data.
+
+    Parameters:
+    - next_query_pins (torch.Tensor): Coordinates of the next query pins.
+    - Y (list): List of values for the corresponding pins.
+                Per pins, possible values =  nbr_rdm_points_data
+
+    Returns:
+    - new_query_value_random (float): Randomly chosen new value to add_kernel to the training dataset.
+    - new_query_value_mean (float): Mean value of the corresponding pins to compute exploitation score.
+    """
+    # next_query_pins = next_query_pins.to(torch.int)
+    new_training_values_tampon = np.zeros(nbr_rdm_points_data)
+    reshape_y = torch.reshape(Y, (-1, 1))
+    i = 0
+    for indices, pins in enumerate(X):
+        # find pins of ((x, y), (x, y)) coordinates in X
+        if pins[0] == next_query_pins[0] and pins[1] == next_query_pins[1]:
+            new_training_values_tampon[i] = reshape_y[indices]
+            i += 1
+
+    # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
+    # (most of the time is 10 in 2D dataset because they took 10 emg responses from monkeys)
+    # but it can be 11 or 9. More elegant way is to use len(ys) in make_dataset function
+    # but here it works by taking fixing the lenght of new_training_values_tampon to 11
+    # and taking the real lenght of non zero elements, then using a new array
+    len_non_zero = np.count_nonzero(new_training_values_tampon)
+    new_training_values = np.zeros(len_non_zero)
+    for x in range(len_non_zero):
+        new_training_values[x] = new_training_values_tampon[x]
+
+    new_query_value_mean = np.mean(new_training_values)
+    new_query_value_random = np.random.choice(new_training_values)
+
+    new_query_value_mean += np.random.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_mean.shape)
+    new_query_value_random += np.random.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_random.shape)
+
+    return new_query_value_random, new_query_value_mean

@@ -7,7 +7,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_rand_init = 6
 
     multi = False
@@ -327,7 +327,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_rand_init = 6
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -612,7 +612,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_rand_init = 6
 
     multi = False
@@ -868,7 +868,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_rand_init = 6
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
