@@ -3,15 +3,13 @@ import multiprocessing as mp
 
 from efficient_general_2d import *
 
-def two_pretrained():
+def two_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
     nbr_rand_init = 6
-    k_vals = [9.5]
-    g_vals = [3]
-    nu_vals = [0.5]
+
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     seed = [False]*nbr_repetition
@@ -325,15 +323,12 @@ def two_pretrained():
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent2_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
 
 
-def two_pretrained_bad():
+def two_pretrained_bad(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
     nbr_rand_init = 6
-    k_vals = [9.5]
-    g_vals = [3]
-    nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     seed = [False]*nbr_repetition
@@ -613,15 +608,13 @@ def two_pretrained_bad():
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent2_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
 
 
-def one_pretrained():
+def one_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
     nbr_rand_init = 6
-    k_vals = [9.5]
-    g_vals = [3]
-    nu_vals = [0.5]
+
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     seed = [False] * nbr_repetition
@@ -871,15 +864,12 @@ def one_pretrained():
         f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent1_kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}.csv')
 
 
-def one_pretrained_bad():
+def one_pretrained_bad(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
     nbr_rand_init = 6
-    k_vals = [9.5]
-    g_vals = [3]
-    nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     seed = [False] * nbr_repetition
@@ -1130,4 +1120,29 @@ def one_pretrained_bad():
 
 if __name__ == '__main__':
 
-    one_pretrained()
+    k_vals = [2, 4, 6, 8, 10]
+    g_vals = [1, 3, 5, 7, 9]
+
+    for k_val in k_vals:
+        with mp.Pool(processes=4) as pool:
+            p1 = pool.apply_async(two_pretrained, args=([k_val], g_vals, nu_vals))
+            p2 = pool.apply_async(two_pretrained_bad, args=([k_val], g_vals, nu_vals))
+            p3 = pool.apply_async(one_pretrained, args=([k_val], g_vals, nu_vals))
+            p4 = pool.apply_async(one_pretrained_bad, args=([k_val], g_vals, nu_vals))
+
+            p1.get()
+            p2.get()
+            p3.get()
+            p4.get()
+
+    for g_val in g_vals:
+        with mp.Pool(processes=4) as pool:
+            p1 = pool.apply_async(two_pretrained, args=([9.5], [g_val], nu_vals))
+            p2 = pool.apply_async(two_pretrained_bad, args=([9.5], [g_val], nu_vals))
+            p3 = pool.apply_async(one_pretrained, args=([9.5], [g_val], nu_vals))
+            p4 = pool.apply_async(one_pretrained_bad, args=([9.5], [g_val], nu_vals))
+
+            p1.get()
+            p2.get()
+            p3.get()
+            p4.get()
