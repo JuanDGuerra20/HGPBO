@@ -572,7 +572,7 @@ def hierarchical_select_random_queries(num_queries, x, y, seed=False, noise=0):
 
     train_x = x[indices_X, indices_Y]
     train_y = y[indices_X, indices_Y]
-    train_y += np.random.normal(0, noise*(torch.max(y)-torch.min(y)), size=train_y.shape)
+    train_y += torch.normal(0, noise*(y.max()-y.min()), size=train_y.shape, device=train_y.device)
 
     return train_x, train_y
 

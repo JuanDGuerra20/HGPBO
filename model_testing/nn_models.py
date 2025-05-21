@@ -106,16 +106,15 @@ class HashTable:
 
 class NN_baseline(nn.Module):
 
-    def __init__(self, dims, device="cpu"):
+    def __init__(self, dims, test_x, device="cpu"):
+        super().__init__()
 
         self.device = device
-        self.mapper = HashTable(np.prod(test_x.shape[:-1]))
+        self.hash_map = HashTable(np.prod(test_x.shape[:-1]))
         for i in range(len(test_x)):
-            for j in range(len(test_x)):
-                one_hot = torch.zeros(len(test_x) * len(test_x))
-                one_hot[i * len(test_x) + j] = 1
-                self.hash_map.set_val(str(test_x[i][j]), one_hot)
-
+            one_hot = torch.zeros(len(test_x))
+            one_hot[i] = 1
+            self.hash_map.set_val(str(test_x[i]), one_hot)
         self.flatten = nn.Flatten()
         self.linear_stack = nn.Sequential()
 
@@ -125,8 +124,7 @@ class NN_baseline(nn.Module):
         self.linear_stack.append(nn.Linear(dims[-1], 1))
 
     def forward(self, x):
-        mapped_x = self.mapper.get_val(str(x))
-        mapped_x = self.flatten(mapped_x)
+        mapped_x = self.hash_map.get_val(str(x))
         logits = self.linear_stack(mapped_x)
         return logits
 
