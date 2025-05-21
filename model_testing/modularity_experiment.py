@@ -1122,6 +1122,7 @@ if __name__ == '__main__':
 
     k_vals = [2, 4, 6, 8, 10]
     g_vals = [1, 3, 5, 7, 9]
+    nu_vals[0.5]
 
     for k_val in k_vals:
         with mp.Pool(processes=4) as pool:
