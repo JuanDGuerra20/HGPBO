@@ -3,11 +3,13 @@ from nn_models import *
 
 def training_procedure(model, optimizer, loss_fn, X, y, training_iter):
     model.train()
-    torch.cuda.synchronize()
-
-    for i in training_iter:
+    if model.device != torch.device('cpu'):
+        torch.cuda.synchronize()
+    X = X.float()
+    y = y.float()
+    for i in range(training_iter):
         pred = model(X)
-        train_loss = loss_fn(y, pred)
+        train_loss = loss_fn(y, pred.view(-1))
         train_loss.backward()
         optimizer.step()
         optimizer.zero_grad()

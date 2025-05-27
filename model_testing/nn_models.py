@@ -124,14 +124,20 @@ class NN_baseline(nn.Module):
         self.linear_stack.append(nn.Linear(dims[-1], 1))
 
     def forward(self, x):
-        mapped_x = self.hash_map.get_val(str(x))
-        logits = self.linear_stack(mapped_x)
+        mapped_x = []
+        for ind_x in x:
+            mapped_x.append(self.hash_map.get_val(str(ind_x)))
+
+        print("mapped_x type:", type(mapped_x))
+        print("mapped_x length:", len(mapped_x))
+        print("mapped_x[0] shape:", getattr(mapped_x[0], "shape", "not an array"))
+        print("mapped_x:", mapped_x)
+        flattened_x = self.flatten(torch.tensor(np.array(mapped_x)))
+        logits = self.linear_stack(flattened_x)
         return logits
 
     def get_acquisition_map(self, test_x_hier):
-        predictions = []
-        for x in test_x_hier:
-            predictions.append(self.forward(x))
+        predictions = self.forward(test_x_hier)
 
         return predictions
 
