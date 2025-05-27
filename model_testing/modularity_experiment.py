@@ -1120,8 +1120,8 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
 if __name__ == '__main__':
 
-    k_vals = [2, 4, 6, 8, 10]
-    g_vals = [1, 3, 5, 7, 9]
+    k_vals = [1, 3, 5, 7, 9]
+    g_vals = [3]
     nu_vals = [0.5]
 
     for k_val in k_vals:
@@ -1136,14 +1136,14 @@ if __name__ == '__main__':
             p3.get()
             p4.get()
 
-    for g_val in g_vals:
+    """for g_val in g_vals:
         with mp.Pool(processes=4) as pool:
-            p1 = pool.apply_async(two_pretrained, args=([9.5], [g_val], nu_vals))
-            p2 = pool.apply_async(two_pretrained_bad, args=([9.5], [g_val], nu_vals))
-            p3 = pool.apply_async(one_pretrained, args=([9.5], [g_val], nu_vals))
-            p4 = pool.apply_async(one_pretrained_bad, args=([9.5], [g_val], nu_vals))
+            p1 = pool.apply_async(two_pretrained, args=([7.5], [g_val], nu_vals))
+            p2 = pool.apply_async(two_pretrained_bad, args=([7.5], [g_val], nu_vals))
+            p3 = pool.apply_async(one_pretrained, args=([7.5], [g_val], nu_vals))
+            p4 = pool.apply_async(one_pretrained_bad, args=([7.5], [g_val], nu_vals))
 
             p1.get()
             p2.get()
             p3.get()
-            p4.get()
+            p4.get()"""

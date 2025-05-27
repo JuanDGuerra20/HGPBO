@@ -7,7 +7,7 @@ import glob
 import ast
 
 def hp_plotting(scores, hp_name, hp_list):
-    for j in range(len(scores)):
+    '''for j in range(len(scores)):
         eval_name, evaluation = scores[j]
         print(evaluation.shape)
         for i in range(len(hp_list)):
@@ -18,7 +18,7 @@ def hp_plotting(scores, hp_name, hp_list):
         plt.legend()
         plt.savefig(
             f"synthetic3/lossless_efficient/data-2025-04-12/hp_analysis/{eval_name}_varying_{hp_name}.svg")
-        plt.close()
+        plt.close()'''
 
     for eval_name, evaluation in scores:
         plt.plot(hp_list, evaluation[:, nbr_query - 1], label=eval_name)
@@ -27,9 +27,9 @@ def hp_plotting(scores, hp_name, hp_list):
     plt.xlabel(f"{hp_name}")
     plt.ylabel(f"Performance")
     plt.legend()
-    plt.savefig(f"synthetic3/lossless_efficient/data-2025-04-12/hp_analysis/final_scores_varying_{hp_name}.svg")
-    plt.savefig(f"synthetic3/lossless_efficient/data-2025-04-12/hp_analysis/final_scores_varying_{hp_name}")
-
+    plt.ylim(-0.1, 1.1)
+    plt.savefig(f"bad_modular_1_child/lossless_efficient/data-2025-05-26/hp_analysis/final_scores_varying_{hp_name}.svg")
+    plt.savefig(f"bad_modular_1_child/lossless_efficient/data-2025-05-26/hp_analysis/final_scores_varying_{hp_name}")
     plt.close()
 
 def format_data(data, new_line=False):
@@ -66,17 +66,18 @@ def format_data(data, new_line=False):
 if __name__ == "__main__":
     # Load the data
 
-    files = glob.glob(f"synthetic3/lossless_efficient/data-2025-04-12/csv/kappa_*_gamma_10_nu_0_5_model_state_100_queries_eps_2_init_6_train_iter_10_repetitions_20_noise_0,5")
+    files = glob.glob(f"bad_modular_1_child/lossless_efficient/data-2025-05-26/csv/bad_modular_1_kappa_*_gamma_3_nu_0,5_model_state_100_queries_init_6_train_iter_10_repetitions_10_noise_0,1.csv")
 
     parent_r2 = []
     child_1_r2_over = []
     child_2_r2_over = []
+    avg_child_over = []
     explor = []
     exploit = []
     nbr_query = 100
     print(files)
 
-    kappa_list = [2, 3, 4, 5, 6, 7, 8, 9]
+    kappa_list = [1, 3, 5, 7, 9]
     str_ordering = [str(i) for i in kappa_list]
     print(str_ordering)
 
@@ -91,19 +92,19 @@ if __name__ == "__main__":
         df = pd.read_csv(file)
 
         data = df.values
-        better_exploration_score = format_data(data[2,1])
-        better_exploitation_score = format_data(data[3,1])
-        r2 = np.fromstring(data[4,1].strip("[]"), sep=" ")
-        child_1_r2 = np.fromstring(data[5,1].strip("[]"), sep=" ")
-        child_2_r2 = np.fromstring(data[6,1].strip("[]"), sep=" ")
+        better_exploration_score = np.fromstring(data[1,1].strip("[]"), sep=" ")
+        better_exploitation_score = np.fromstring(data[2,1].strip("[]"), sep=" ")
+        r2 = np.fromstring(data[3,1].strip("[]"), sep=" ")
+        child_1_r2 = np.fromstring(data[4,1].strip("[]"), sep=" ")
+        child_2_r2 = np.fromstring(data[5,1].strip("[]"), sep=" ")
 
+        avg_child = (child_1_r2 + child_2_r2) / 2
 
         parent_r2.append(r2[:nbr_query])
         child_1_r2_over.append(child_1_r2[:nbr_query])
         child_2_r2_over.append(child_2_r2[:nbr_query])
-        explor.append(np.mean(better_exploration_score, axis=0)[:nbr_query])
-        exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
-    scores = [["Parent_R2", np.array(parent_r2)[sorting]], ["Child_1_R2", np.array(child_1_r2_over)[sorting]],
-                    ["Child_2_R2", np.array(child_2_r2_over)[sorting]], ["Exploration", np.array(explor)[sorting]],
-                    ["Exploitation", np.array(exploit)[sorting]]]
-    hp_plotting(scores, "kappa_list", kappa_list)
+        avg_child_over.append(avg_child[:nbr_query])
+        explor.append(better_exploration_score[:nbr_query])
+        #exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
+    scores = [["Exploration", np.array(explor)[sorting]], ["Parent_R2", np.array(parent_r2)[sorting]], ["Avg_Child_R2", np.array(avg_child_over)]]
+    hp_plotting(scores, "kappa", kappa_list)
