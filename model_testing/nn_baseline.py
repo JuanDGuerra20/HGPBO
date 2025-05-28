@@ -26,13 +26,15 @@ def run_repetition(model, optimizer, loss_fn, nbr_query, training_iter, data_cre
     x_hier = x_hier.to(device)
     y_hier = y_hier.to(device)
 
+    list_acquisitions = []
+
     for q in tqdm(range(nbr_query)):
 
         if q == 0:
             train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
 
         acquisition_map = model.get_acquisition_map(test_x_hier)
-
+        list_acquisitions.append(acquisition_map)
         next_query_pins = torch.tensor(get_next_query_pins(acquisition_map, test_x_hier))
 
 
@@ -64,7 +66,7 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     dimension = 10
     training_iter = 10
-    nbr_query = 100
+    nbr_query = 1000
 
     over_explor = []
     over_r2 = []
