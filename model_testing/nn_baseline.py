@@ -1,15 +1,16 @@
 import torch
 from nn_models import *
+import warnings
 
 def training_procedure(model, optimizer, loss_fn, X, y, training_iter):
     model.train()
     if model.device != torch.device('cpu'):
         torch.cuda.synchronize()
-    X = X.float()
-    y = y.float()
+    X = X.to(torch.float)
+    y = y.to(torch.float)
     for i in range(training_iter):
         pred = model(X)
-        train_loss = loss_fn(y, pred.view(-1))
+        train_loss = loss_fn(y, pred)
         train_loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -17,7 +18,10 @@ def training_procedure(model, optimizer, loss_fn, X, y, training_iter):
 def run_repetition(model, optimizer, loss_fn, nbr_query, training_iter, data_creation_func, dimension, eps, model_name, folder_of_the_day, data_name, seed=True, noise=0.1):
     device = model.device
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
-
+    heatmap_rep = []
+    better_exploration_score = []
+    test_x_hier = test_x_hier.to(torch.float)
+    x_hier = x_hier.to(torch.float)
     test_x_hier = test_x_hier.to(device)
     x_hier = x_hier.to(device)
     y_hier = y_hier.to(device)
@@ -40,14 +44,30 @@ def run_repetition(model, optimizer, loss_fn, nbr_query, training_iter, data_cre
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
-
         training_procedure(model, optimizer, loss_fn, train_x_hier, train_y_hier, training_iter)
+
+        hierar_y_mu = model(test_x_hier)
+        ground_truth_max_hier = torch.argmax(hierar_y_mu)
+
+        exploration_score_2D, next_query_pins_exploration_2D = get_exploration_score(hierar_y_mu,
+                                                                                    ground_truth_max_hier,
+                                                                                    test_x_hier,
+                                                                                    x_hier, y_hier)
+        better_exploration_score.append(exploration_score_2D)
+        heatmap_rep.append(hierar_y_mu)
+
+    return master, better_exploration_score, heatmap_rep
 
 
 if __name__ == "__main__":
+
+    warnings.filterwarnings("ignore")
     dimension = 10
     training_iter = 10
     nbr_query = 100
+
+    over_explor = []
+    over_r2 = []
 
     data_name, data_creation_func, eps = get_dataset_info(3)
     model_name = "nn_baseline"
@@ -58,6 +78,8 @@ if __name__ == "__main__":
     folder_of_the_day = '/data-' + str(current_dateday)
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
+    x_hier = x_hier.to(torch.float)
+    test_x_hier = test_x_hier.to(torch.float)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     test_x_hier = test_x_hier.to(device)
@@ -68,4 +90,9 @@ if __name__ == "__main__":
     loss_fn = nn.MSELoss()
 
 
-    run_repetition(master, optimizer, loss_fn, nbr_query, training_iter, data_creation_func, dimension, eps, model_name, folder_of_the_day, data_name, seed=False, noise=0.1)
+    master, exploration_score, heatmap = run_repetition(master, optimizer, loss_fn, nbr_query, training_iter, data_creation_func, dimension, eps, model_name, folder_of_the_day, data_name, seed=False, noise=0.1)
+
+    print(f"exploration: {exploration_score}")
+
+    over_explor.append(exploration_score)
+    over_r2.append(heatmap)
