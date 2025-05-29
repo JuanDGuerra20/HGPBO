@@ -131,6 +131,6 @@ if __name__ == "__main__":
         plt.xlabel(f"Query Number")
         plt.ylabel('Exploration Score')
         plt.savefig(f"{data_name}/{model_name}/{folder_of_the_day}/differentiable_plots/exploration_score_over_training_lr_{alpha}.png")
-
+        plt.close()
         over_explor.append(exploration_score)
         over_r2.append(heatmap)
