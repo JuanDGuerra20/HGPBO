@@ -77,7 +77,7 @@ if __name__ == "__main__":
     dimension = 10
     training_iter = 10
     nbr_query = 1000
-    rand_init = 10
+    rand_init = 100
     lr = [1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
     over_explor = []
     over_r2 = []
