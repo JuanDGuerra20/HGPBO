@@ -133,7 +133,7 @@ class NN_baseline(nn.Module):
                 print(ind_x.dtype)
                 print(ind_x)
                 print(mapped_x[-1])
-        flattened_x = self.flatten(torch.tensor(np.array(mapped_x)))
+        flattened_x = self.flatten(torch.tensor(np.array(mapped_x), device=self.device))
         logits = self.linear_stack(flattened_x)
         return logits
 
@@ -181,7 +181,7 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
     - new_query_value_mean (float): Mean value of the corresponding pins to compute exploitation score.
     """
     # next_query_pins = next_query_pins.to(torch.int)
-    new_training_values_tampon = np.zeros(nbr_rdm_points_data)
+    new_training_values_tampon = torch.zeros(nbr_rdm_points_data)
     reshape_y = torch.reshape(Y, (-1, 1))
     i = 0
     for indices, pins in enumerate(X):
@@ -196,15 +196,15 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
     # but here it works by taking fixing the lenght of new_training_values_tampon to 11
     # and taking the real lenght of non zero elements, then using a new array
     len_non_zero = np.count_nonzero(new_training_values_tampon)
-    new_training_values = np.zeros(len_non_zero)
+    new_training_values = torch.zeros(len_non_zero)
     for x in range(len_non_zero):
         new_training_values[x] = new_training_values_tampon[x]
 
-    new_query_value_mean = np.mean(new_training_values)
+    new_query_value_mean = torch.mean(new_training_values)
     new_query_value_random = np.random.choice(new_training_values)
 
-    new_query_value_mean += np.random.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_mean.shape)
-    new_query_value_random += np.random.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_random.shape)
+    new_query_value_mean += torch.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_mean.shape)
+    new_query_value_random += torch.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_random.shape)
 
     return torch.tensor(new_query_value_random, dtype=torch.float), torch.tensor(new_query_value_mean, dtype=torch.float)
 
