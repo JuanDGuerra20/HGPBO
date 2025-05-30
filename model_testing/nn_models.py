@@ -108,11 +108,13 @@ class HashTable:
 
 class NN_baseline(nn.Module):
 
-    def __init__(self, dims, test_x, device="cpu"):
+    def __init__(self, dims, test_x, query_counter, device="cpu"):
         super().__init__()
 
         self.device = device
         self.hash_map = HashTable(np.prod(test_x.shape[:-1]))
+        self.query_counter = query_counter
+
         for i in range(len(test_x)):
             one_hot = torch.zeros(len(test_x))
             one_hot[i] = 1
@@ -140,7 +142,16 @@ class NN_baseline(nn.Module):
     def get_acquisition_map(self, test_x_hier):
         predictions = self.forward(test_x_hier)
 
-        return predictions
+        return predictions[:,0]/torch.sqrt(self.query_counter)
+
+    def increment_q_n(self, query, domain):
+        for x in range(len(domain)):
+            for y in range(len(domain[x])):
+                if domain[x][y][0] == query[0] and domain[x][y][1] == query[1]:
+                    self.query_counter[x * (len(domain[x])) + y] += 1
+                    break
+
+        return self.query_counter
 
 
 def get_next_query_pins(acquisition_map, coord_pins):

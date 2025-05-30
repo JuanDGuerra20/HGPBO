@@ -33,7 +33,8 @@ def run_repetition(model, optimizer, loss_fn, nbr_query, training_iter, rand_ini
 
         if q == 0:
             train_x_hier, train_y_hier = hierarchical_select_random_queries(rand_init, x_hier, y_hier, seed=seed, noise=noise)
-
+            for i in range(len(train_x_hier)):
+                model.increment_q_n(train_x_hier[i], x_hier)
         acquisition_map = model.get_acquisition_map(test_x_hier)
         list_acquisitions.append(acquisition_map)
 
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     training_iter = 10
     nbr_query = 1000
     rand_init = 100
-    lr = [1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    lr = [0.5, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]
     over_explor = []
     over_r2 = []
 
@@ -113,9 +114,10 @@ if __name__ == "__main__":
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = "cpu"
     test_x_hier = test_x_hier.to(device)
+    query_counter = torch.ones(dimension**2)
 
     for alpha in lr:
-        master = NN_baseline([dimension**2, dimension**2], test_x_hier, device=device).to(device)
+        master = NN_baseline([dimension**2, dimension**2], test_x_hier, query_counter, device=device).to(device)
 
         optimizer = torch.optim.Adam(master.parameters(), lr=alpha)
 
