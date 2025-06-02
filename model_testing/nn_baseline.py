@@ -14,6 +14,7 @@ def training_procedure(model, optimizer, loss_fn, X, y, num_epochs):
     y = y.to(torch.float)
     losses = []
     exploration_score_tracker = []
+    heatmaps = []
     tolerance = 10
 
     pbar = tqdm(range(num_epochs))
@@ -26,6 +27,7 @@ def training_procedure(model, optimizer, loss_fn, X, y, num_epochs):
         optimizer.zero_grad()
         losses.append(train_loss.item())
         pred = model(test_x_hier)
+        heatmaps.append(pred.detach().cpu().numpy())
         ground_truth_max_hier = torch.argmax(pred)
 
         exploration_score_2D, next_query_pins_exploration_2D = get_exploration_score(pred,
@@ -47,7 +49,7 @@ def training_procedure(model, optimizer, loss_fn, X, y, num_epochs):
             if early_stopping:
                 break
 
-    return losses, exploration_score_tracker
+    return losses, exploration_score_tracker, heatmaps
 
 def run_repetition(model, optimizer, loss_fn, nbr_query, training_iter, rand_init, data_creation_func, dimension, eps, model_name, folder_of_the_day, data_name, seed=True, noise=0.1):
     device = model.device
@@ -163,7 +165,7 @@ if __name__ == "__main__":
 
             loss_fn = nn.MSELoss()
 
-            loss, explor = training_procedure(master, optimizer, loss_fn, train_x_hier, train_y_hier, training_iter)
+            loss, explor, heatmaps = training_procedure(master, optimizer, loss_fn, train_x_hier, train_y_hier, training_iter)
 
             plt.plot(loss, label=f"lr_{alpha}_beta_{beta}")
             plt.title(f"Training Loss for different LR and Weight Decay")
@@ -171,7 +173,25 @@ if __name__ == "__main__":
             plt.ylabel("Loss")
             plt.xlabel("Epoch")
             plt.savefig(f"{data_name}/{model_name}/{folder_of_the_day}/png/training_loss_OVERALL.png")
-    plt.close()
+            plt.close()
+
+            plt.plot(list(range(len(explor))), explor)
+            plt.ylim(-0.1, 1.1)
+            plt.xlabel(f"Query Number")
+            plt.ylabel('Exploration Score')
+            plt.savefig(
+                f"{data_name}/{model_name}/{folder_of_the_day}/differentiable_plots/exploration_score_over_lr_{alpha}_training_penalty_{beta}.png")
+            plt.close()
+            over_explor.append(explor)
+            over_r2.append(heatmap)
+
+            final_heatmap = heatmaps[-1].reshape(10, 10)
+            plt.imshow(final_heatmap)
+            plt.title(f"NN Heatmap for lr {alpha} and beta {beta}")
+            plt.colorbar()
+            plt.savefig(
+                f"{data_name}/{model_name}/{folder_of_the_day}/png/final_heatmap_lr_{alpha}_weight_decay_{beta}.png")
+            plt.close()
 
     """plt.plot(explor, label="Training Exploration")
     plt.title(f"Training Loss for LR {alpha} Weight Decay {beta}")
