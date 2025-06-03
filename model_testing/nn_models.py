@@ -129,12 +129,15 @@ class NN_baseline(nn.Module):
 
     def forward(self, x):
         mapped_x = []
-        for ind_x in x:
-            mapped_x.append(self.hash_map.get_val(str(ind_x)))
-            if len(mapped_x[-1]) != 100:
-                print(ind_x.dtype)
-                print(ind_x)
-                print(mapped_x[-1])
+        if x.dim() > 1:
+            for ind_x in x:
+                mapped_x.append(self.hash_map.get_val(str(ind_x)))
+                if len(mapped_x[-1]) != 100:
+                    print(ind_x.dtype)
+                    print(ind_x)
+                    print(mapped_x[-1])
+        else:
+            mapped_x.append(self.hash_map.get_val(str(x)))
         flattened_x = self.flatten(torch.tensor(np.array(mapped_x), device=self.device))
         logits = self.linear_stack(flattened_x)
         return logits
@@ -219,7 +222,7 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
 
     return torch.tensor(new_query_value_random, dtype=torch.float), torch.tensor(new_query_value_mean, dtype=torch.float)
 
-def get_exploration_score(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_points_data=20):
+def get_exploration_score(y_mu, ground_truth_max, Y):
     """
     Compute the exploration score.
 
@@ -235,42 +238,9 @@ def get_exploration_score(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_poin
 
     Comments: X and Y represent the coord and respective values of GT, size of nbr_rdm_points_data
     """
-    new_training_values_tampon = np.zeros(nbr_rdm_points_data)
-    i = 0
-    mu = y_mu
-    argmax_mu = torch.where(mu.reshape(len(mu)) == torch.max(mu.reshape(len(mu))))
-
-    # randomly choose a query if there are multiple max values
-    if len(argmax_mu[0]) > 1:  # si plusieurs fois la valeur max, choisir random parmis ces valeurs max
-        indice_next_query = np.random.randint(len(
-            argmax_mu[0]))  # récupère l'indice de la next query aléatoirement parmis les indices offrant la max value
-        next_query = argmax_mu[0][indice_next_query]  # coordonnées x,y correspondant à la val max sélectionnée
-        next_query_pins = torch.as_tensor(coord_pins[next_query],
-                                          dtype=torch.float)  # récupère les coord des pins et la valeur correpsondante
-    else:
-        next_query = argmax_mu[0][0]
-        next_query_pins = torch.as_tensor(coord_pins[next_query], dtype=torch.float)
-
-    for indices_x, pins in enumerate(X):
-        # find pins of ((x, y), (x, y)) coordinates in X
-        for indices_y, sub_pin in enumerate(pins):
-            if sub_pin[0] == next_query_pins[0] and sub_pin[1] == next_query_pins[1]:
-                new_training_values_tampon[i] = Y[indices_x, indices_y]
-                i += 1
-
-    # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
-    # (most of the time is 10 in 2D dataset because they took 10 emg responses from monkeys)
-    # but it can be 11 or 9. More elegant way is to use len(ys) in make_dataset function
-    # but here it works by taking fixing the length of new_training_values_tampon to 11
-    # and taking the real length of non zero elements, then using a new array
-    len_non_zero = np.count_nonzero(new_training_values_tampon)
-    new_training_values = np.zeros(len_non_zero)
-    for x in range(len_non_zero):
-        new_training_values[x] = new_training_values_tampon[x]
-
-    mean_value = np.mean(new_training_values)
-    exploration_score = mean_value / ground_truth_max
-    return exploration_score, next_query_pins
+    argmax_mu = torch.argmax(y_mu)
+    pred_max_mu = Y.reshape(y_mu.shape)[argmax_mu]
+    return pred_max_mu/ground_truth_max
 
 def heatmap_r_score(data, z):
     data_avg = np.mean(data, axis=0)

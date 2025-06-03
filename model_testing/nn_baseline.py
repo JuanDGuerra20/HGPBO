@@ -3,7 +3,7 @@ import torch
 from nn_models import *
 import warnings
 
-def training_procedure(model, optimizer, loss_fn, X, y, num_epochs):
+def training_procedure(model, optimizer, scheduler, loss_fn, X, y, y_hier, num_epochs, tolerance=10):
     model.train()
     if model.device != torch.device('cpu'):
         torch.cuda.synchronize()
@@ -12,10 +12,11 @@ def training_procedure(model, optimizer, loss_fn, X, y, num_epochs):
     y = y.to(model.device)
     X = X.to(torch.float)
     y = y.to(torch.float)
+    #scheduler.to(model.device)
+    y_hier = y_hier.to(model.device)
     losses = []
     exploration_score_tracker = []
     heatmaps = []
-    tolerance = 10
 
     pbar = tqdm(range(num_epochs))
     early_stopping = False
@@ -25,15 +26,14 @@ def training_procedure(model, optimizer, loss_fn, X, y, num_epochs):
         train_loss.backward()
         optimizer.step()
         optimizer.zero_grad()
+        scheduler.step(train_loss)
+
         losses.append(train_loss.item())
         pred = model(test_x_hier)
         heatmaps.append(pred.detach().cpu().numpy())
         ground_truth_max_hier = torch.argmax(pred)
 
-        exploration_score_2D, next_query_pins_exploration_2D = get_exploration_score(pred,
-                                                                                     ground_truth_max_hier,
-                                                                                     test_x_hier,
-                                                                                     x_hier, y_hier)
+        exploration_score_2D = get_exploration_score(pred, ground_truth_max_hier, y_hier)
         exploration_score_tracker.append(exploration_score_2D.cpu())
         if epoch % 10 == 0:
             pbar.set_postfix({'loss': losses[-1], 'exploration': exploration_score_2D.item()})
@@ -88,10 +88,8 @@ def run_repetition(model, optimizer, loss_fn, nbr_query, training_iter, rand_ini
         hierar_y_mu = model(test_x_hier)
         ground_truth_max_hier = torch.argmax(hierar_y_mu)
 
-        exploration_score_2D, next_query_pins_exploration_2D = get_exploration_score(hierar_y_mu,
-                                                                                    ground_truth_max_hier,
-                                                                                    test_x_hier,
-                                                                                    x_hier, y_hier)
+        exploration_score_2D = get_exploration_score(hierar_y_mu, ground_truth_max_hier, y_hier)
+
         better_exploration_score.append(exploration_score_2D)
 
         """#plotting the heatmaps
@@ -113,12 +111,12 @@ if __name__ == "__main__":
     training_iter = 1000
     nbr_query = 1
     rand_init = 1000
-    lr = [0.1, 1e-2, 1e-3]
-    l2 = [0.01, 1e-3, 0]
+    lr = [0.2]
+    l2 = [0]
     over_explor = []
     over_r2 = []
 
-    data_name, data_creation_func, eps = get_dataset_info(3)
+    data_name, data_creation_func, eps = get_dataset_info(2)
     model_name = "nn_baseline"
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
@@ -153,7 +151,7 @@ if __name__ == "__main__":
     test_x_hier = test_x_hier.to(device)
     query_counter = torch.ones(dimension**2)
     seed = False
-    noise = 0.1
+    noise = 0
     train_x_hier, train_y_hier = hierarchical_select_random_queries(rand_init, x_hier, y_hier, seed=seed,
                                                                     noise=noise)
 
@@ -162,17 +160,17 @@ if __name__ == "__main__":
             master = NN_baseline([dimension**2], test_x_hier, query_counter, device=device).to(device)
 
             optimizer = torch.optim.Adam(master.parameters(), lr=alpha, weight_decay=beta)
-
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "min")
             loss_fn = nn.MSELoss()
 
-            loss, explor, heatmaps = training_procedure(master, optimizer, loss_fn, train_x_hier, train_y_hier, training_iter)
+            loss, explor, heatmaps = training_procedure(master, optimizer, scheduler, loss_fn, x_hier.reshape((100, 2)), y_hier.reshape((100,)), y_hier, training_iter, tolerance=1000)
 
             plt.plot(loss, label=f"lr_{alpha}_beta_{beta}")
             plt.title(f"Training Loss for different LR and Weight Decay")
             plt.legend()
             plt.ylabel("Loss")
             plt.xlabel("Epoch")
-            plt.savefig(f"{data_name}/{model_name}/{folder_of_the_day}/png/training_loss_OVERALL.png")
+            plt.savefig(f"{data_name}/{model_name}/{folder_of_the_day}/png/training_loss_lr_{alpha}_weight_decay_{beta}.png")
             plt.close()
 
             plt.plot(list(range(len(explor))), explor)
