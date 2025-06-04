@@ -588,7 +588,7 @@ def heatmap_r_score(data, z):
     r_scores = []
 
     z = z.reshape(data_avg[0].shape)
-    r_over = []
+
     """for d in range(len(data)):
         r_scores_list = []
         for i in range(len(data[d])):
@@ -597,9 +597,9 @@ def heatmap_r_score(data, z):
         r_over.append(r_scores_list)
 
     r_std = np.std(r_over, axis=0)"""
-
-    for q in range(len(data_avg)):
-        r_scores.append((linregress(z, data_avg[q]).rvalue)**2)
+    for datum in data:
+        for q in range(len(datum)):
+            r_scores.append((linregress(z, datum[q]).rvalue)**2)
 
     return r_scores
 

@@ -424,20 +424,22 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 over_exploit.append(y)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-                r2 = np.insert(r2, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
-                plt.plot(r2, label="Parent R2")
+                r2 = np.insert(r2, 0, np.zeros((2 - len(children)) * nbr_rand_init), axis=1)[:nbr_query]
+                r2_avg = np.mean(r2, axis=0)
+                r2_std = np.std(r2, axis=0)
+                # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
 
-                child_1_r2 = np.mean(child_1_r2_data, axis=0)
-                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
-                child_2_r2 = np.mean(child_2_r2_data, axis=0)
-                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
+                plt.plot(r2_avg, label="Parent R2")
+                plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
-                plt.plot(child_1_r2, label="Child 1 R2")
-                plt.plot(child_2_r2, label="Child 2 R2")
+                all_children = np.concatenate([child_1_r2, child_2_r2])
+                all_children = np.insert(all_children, 0, np.zeros((2 - len(children)) * nbr_rand_init))[:, nbr_query]
 
-                """rand = np.random.rand(*heatmap_data.shape)
-                random_r2 = vi.heatmap_r_score(rand, y_hier)
-                plt.plot(random_r2, label="Random Heatmap R2")"""
+                avg_child = np.mean(all_children, axis=0)
+                std_child = np.std(all_children, axis=0)
+
+                plt.plot(avg_child, label='Child Avg R2')
+                plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
 
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
