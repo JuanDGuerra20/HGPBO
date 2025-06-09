@@ -583,11 +583,9 @@ def model_contour_3d(data, input, z, file_name, model_type, folder_of_the_day, d
     plt.close()
 
 def heatmap_r_score(data, z):
-    data_avg = np.mean(data, axis=0)
-
     r_scores = []
 
-    z = z.reshape(data_avg[0].shape)
+    z = z.reshape(data.shape[-1])
 
     """for d in range(len(data)):
         r_scores_list = []
@@ -598,8 +596,10 @@ def heatmap_r_score(data, z):
 
     r_std = np.std(r_over, axis=0)"""
     for datum in data:
+        trial_score = []
         for q in range(len(datum)):
-            r_scores.append((linregress(z, datum[q]).rvalue)**2)
+            trial_score.append((linregress(z, datum[q]).rvalue)**2)
+        r_scores.append(trial_score)
 
     return r_scores
 
