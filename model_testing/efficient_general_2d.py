@@ -663,9 +663,9 @@ if __name__ == '__main__':
     #warnings.filterwarnings('ignore')
 
     dimension = 15
-    nbr_query = 100
+    nbr_query = 50
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 10
+    nbr_repetition = 3
     k_vals = [4]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
@@ -691,12 +691,12 @@ if __name__ == '__main__':
             workspace = f"{data_name}/{model_name.lower()}"
             folder_of_the_day = '/data-' + str(current_dateday)
 
-            """name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                    nu_vals, data_name, data_creation_func,
                                    eps, h, multi, seed, noise=0.1)[0]
-            print('done first')"""
-            parent_r2 = []
+            print('done first')
+            """parent_r2 = []
             child_1_r2_over = []
             child_2_r2_over = []
             explor = []
@@ -812,4 +812,4 @@ if __name__ == '__main__':
             g_vals = [6]
 
             print("==============================================================")
-            print("Done Gamma HP")
+            print("Done Gamma HP")"""
