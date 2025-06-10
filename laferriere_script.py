@@ -564,7 +564,7 @@ if __name__ == '__main__':
     k_vals = [4]
     g_vals = [3]
     nu_vals = [0.5]
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     for h in h_model:
