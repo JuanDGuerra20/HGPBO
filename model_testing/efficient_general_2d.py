@@ -663,10 +663,10 @@ if __name__ == '__main__':
     #warnings.filterwarnings('ignore')
 
     dimension = 15
-    nbr_query = 20
+    nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 2
-    k_vals = [4]
+    nbr_repetition = 30
+    k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
     multi = False
