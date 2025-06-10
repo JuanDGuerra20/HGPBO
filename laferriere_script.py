@@ -459,7 +459,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
 
                 plt.legend()
-                plt.ylim(0, 1.1)
+                plt.ylim(-0.1, 1.1)
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with Kappa {k} Gamma {g} Nu {n}')
                 plt.savefig(
                     f'{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Neural_{nbr_repetition}_reps_k_{k}_g_{g}_nu_{n}_rand_init_{nbr_rand_init}.svg')

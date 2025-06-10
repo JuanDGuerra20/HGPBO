@@ -528,7 +528,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
 
                 plt.legend()
-                plt.ylim(0, 1.1)
+                plt.ylim(-0.1, 1.1)
                 plt.title(
                     f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
