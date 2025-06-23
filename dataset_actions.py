@@ -559,7 +559,7 @@ def select_random_queries(num_queries, x, y, seed=False, noise=0):
     indices = np.random.randint(len(x), size=(num_queries))
     train_x = x[indices]
     train_y = y[indices]
-    train_y += np.random.normal(0, noise*(torch.max(y)-torch.min(y)), size=train_y.shape)
+    train_y += (torch.max(y)-torch.min(y)) * np.random.normal(0, noise, size=train_y.shape)
 
     return train_x, train_y
 
@@ -572,7 +572,7 @@ def hierarchical_select_random_queries(num_queries, x, y, seed=False, noise=0):
 
     train_x = x[indices_X, indices_Y]
     train_y = y[indices_X, indices_Y]
-    train_y += torch.normal(0, noise*(y.max()-y.min()), size=train_y.shape, device=train_y.device)
+    train_y += torch.normal(0, noise, size=train_y.shape, device=train_y.device)*(y.max()-y.min())
 
     return train_x, train_y
 
