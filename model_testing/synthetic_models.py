@@ -180,8 +180,8 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
     new_query_value_mean = np.mean(new_training_values)
     new_query_value_random = np.random.choice(new_training_values)
 
-    new_query_value_mean += np.random.normal(0, noise, size=new_query_value_mean.shape) * (torch.max(reshape_y)-torch.min(reshape_y))
-    new_query_value_random += np.random.normal(0, noise, size=new_query_value_random.shape) * (torch.max(reshape_y)-torch.min(reshape_y))
+    new_query_value_mean += np.random.normal(0, noise, size=new_query_value_mean.shape) * (np.max(reshape_y.numpy())-np.min(reshape_y.numpy()))
+    new_query_value_random += np.random.normal(0, noise, size=new_query_value_random.shape) * (np.max(reshape_y.numpy())-np.min(reshape_y.numpy()))
 
     return new_query_value_random, new_query_value_mean
 

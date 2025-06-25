@@ -206,7 +206,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
         y = np.mean(exploration_scores, axis=0)
         over_explor.append(y)
-        std = np.std(exploration_scores, axis=0)
+        std = np.std(exploration_scores, axis=0) / np.sqrt(len(exploration_scores))
         plt.plot(y, label='Exploration')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
@@ -220,7 +220,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         heatmap_data = np.reshape(heatmap_data, (-1, nbr_query, len(test_y_hier)))
         r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
         r2_avg = np.mean(r2, axis=0)
-        r2_std = np.std(r2, axis=0)
+        r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
         # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
 
         plt.plot(r2_avg, label="Parent R2")

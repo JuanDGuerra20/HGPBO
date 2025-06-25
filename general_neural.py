@@ -498,7 +498,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 y = np.mean(better_exploration_score, axis=0)
                 y = np.insert(y, 0, np.zeros(2*nbr_rand_init))
                 over_explor.append(y)
-                std = np.std(better_exploration_score, axis=0)
+                std = np.std(better_exploration_score, axis=0) / np.sqrt(len(better_exploration_score))
                 std = np.insert(std, 0, np.zeros(2*nbr_rand_init))
 
                 plt.plot(y[:nbr_query], label='Exploration')
@@ -512,7 +512,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
                 r2 = np.insert(r2, 0, np.zeros((nbr_rand_init * 2, 1)), axis=1)[:, :nbr_query]
                 r2_avg = np.mean(r2, axis=0)
-                r2_std = np.std(r2, axis=0)
+                r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
                 #r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
 
                 plt.plot(r2_avg, label="Parent R2")
@@ -522,7 +522,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 all_children = np.insert(all_children, 0, np.zeros((nbr_rand_init * 2, 1)), 1)[:, :nbr_query]
 
                 avg_child = np.mean(all_children, axis=0)
-                std_child = np.std(all_children, axis=0)
+                std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))
 
                 plt.plot(avg_child, label='Child Avg R2')
                 plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
