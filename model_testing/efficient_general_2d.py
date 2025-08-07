@@ -618,11 +618,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
 
-                df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
+                df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2_avg, child_1_r2, child_2_r2])
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
                             'child2_r2']
 
                 df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
+                np.save(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
+
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
 
             # Joint Section
@@ -673,8 +675,12 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
-    #seed = np.arange(nbr_repetition)
-    seed = [False]*nbr_repetition
+    seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
+                     542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
+                     445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
+                     56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
+                     833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
+    #seed = [False]*nbr_repetition
     for h in h_model:
         for dataset_num in [3]:
 

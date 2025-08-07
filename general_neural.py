@@ -561,8 +561,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
                             'child2_r2']
 
+
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
+                np.save(f'{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
 
             # Joint Section
 

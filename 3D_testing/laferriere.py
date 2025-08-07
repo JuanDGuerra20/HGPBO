@@ -417,9 +417,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 #plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-                r2 = np.insert(r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
+                r2 = np.insert(r2, 0, np.zeros((3*nbr_rand_init, 1)), axis=1)[:, :nbr_query]
+                r2_avg = np.mean(r2, axis=0)
+                r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
+                # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
 
-                plt.plot(r2, label="Heatmap R2")
+                plt.plot(r2_avg, label="Parent R2")
+                plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
                 child_1_r2 = np.mean(c1_r2_data, axis=0)
                 child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
@@ -458,6 +462,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
+
+                np.save(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
+
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
                                        master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
                                        child_2_r2])
@@ -496,7 +503,7 @@ if __name__ == '__main__':
 
 
     dimension = 10
-    nbr_query = 300
+    nbr_query = 100
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 6
@@ -510,7 +517,7 @@ if __name__ == '__main__':
     multi = False
     seed = np.arange(nbr_repetition)
     for h in h_model:
-        for dataset_num in [6, 5]:
+        for dataset_num in [6]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
 

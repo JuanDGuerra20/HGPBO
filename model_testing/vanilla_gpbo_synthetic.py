@@ -181,7 +181,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
         y = np.mean(exploration_scores, axis=0)
         over_explor.append(y)
-        std = np.std(exploration_scores, axis=0)
+        std = np.std(exploration_scores, axis=0) / np.sqrt(len(exploration_scores))
         plt.plot(y, label='Exploration')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
@@ -189,14 +189,17 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         over_exploit.append(y)
 
         std = np.std(exploitation_scores, axis=0)
-        plt.plot(y, label='Exploitation')
-        plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
+        #plt.plot(y, label='Exploitation')
+        #plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
         r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-        plt.plot(r2, label="Parent R2")
+        r2_avg = np.mean(r2, axis=0)
+        r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
+        plt.plot(r2_avg, label="Parent R2")
+        plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
         plt.legend()
-        plt.ylim(0, 1.1)
+        plt.ylim(-0.1, 1.1)
         k = str(kappa).replace('.', ',')
 
         plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
@@ -237,7 +240,7 @@ if __name__ == '__main__':
     nbr_rand_init = 1
     k_vals = [2]
 
-    for dataset_num in [3]:
+    for dataset_num in [10]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

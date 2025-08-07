@@ -704,6 +704,36 @@ def generate_synthetic3_dataset(dimension, eps):
 
     return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
 
+def generate_sub_dataset(dimension, eps):
+    x_sub1 = torch.linspace(0, 2, dimension).double()
+    y_sub1 = torch.sin(x_sub1 * (2 * math.pi))
+    y_sub1 = y_sub1.double()
+
+    x_sub2 = torch.linspace(0, 2, dimension).double()
+    y_sub2 = torch.sin(x_sub2 * (2 * math.pi))
+
+    y_sub2 = y_sub2.double()
+
+    x_hier = torch.zeros((dimension, dimension, 2)).double()
+
+    for i in range(len(x_sub1)):
+        for j in range(len(x_sub2)):
+            x_hier[i, j, 0] = x_sub1[i]
+            x_hier[i, j, 1] = x_sub2[j]
+
+    y_hier = torch.zeros((dimension, dimension))
+
+    test_x = make_test_sub(5, x_sub1)
+    test_x_hier = torch.reshape(x_hier, (-1, 2))
+
+    for i in range(len(y_sub1)):
+        for j in range(len(y_sub2)):
+            y_hier[i, j] = y_sub1[i]  - y_sub2[j] +1
+
+    y_hier = y_hier.double()
+
+    return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
+
 def generate_3d_dataset(dimension, eps):
     x_sub1 = torch.linspace(0, 4, dimension).double()
     y_sub1 = torch.zeros(x_sub1.shape)
@@ -997,6 +1027,10 @@ def get_dataset_info(dataset_num, alpha=1):
     elif dataset_num == 9:
         data_name = 'nonlinearity_beta_mult_factor'
         data_creation_func = generate_b_mult_factor_nonlinearity_dataset
+        eps = alpha
+    elif dataset_num == 10:
+        data_name = 'sub_2D'
+        data_creation_func = generate_sub_dataset
         eps = alpha
     else:
         raise AssertionError("Dataset number invalid")

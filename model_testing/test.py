@@ -23,14 +23,14 @@ if __name__ == '__main__':
     nbr_repetition = 30
     nbr_query = 100
     seed = np.random.randint(99999, size=nbr_repetition)
-    noise_list = [0.1, 0.2, 0.3, 0.4, 0.5]
+    noise_list = [0.1]
     nu_vals = [0.5]  # Found through HP Testing
     nbr_rand_init = 6  # Found through HP Testing
     training_iter = 10  # Found through HP Testing
 
-    k_vals = [9.5]
+    k_vals = [7.5]
     g_vals = [3]
-    for dataset_num in [3, 2]:
+    for dataset_num in [10]:
         for noise in noise_list:
 
 
@@ -46,7 +46,16 @@ if __name__ == '__main__':
             current_dateday = datetime.now().strftime("%Y-%m-%d")
             workspace = f"{data_name}/{model_name.lower()}"
             folder_of_the_day = '/data-' + str(current_dateday)"""
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
-                                       noise=noise)[0]
+
+            with mp.Pool(processes=2) as pool:
+                p1 = pool.apply_async(gen.training_procedure, (nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, [], False,
+                                       noise, ))
+
+                p2 = pool.apply_async(laf.training_procedure,
+                                      (nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+                                       g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed, [], False,
+                                       noise,))
+
+                p1.get()
+                p2.get()

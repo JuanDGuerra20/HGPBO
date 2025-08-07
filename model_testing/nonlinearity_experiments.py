@@ -6,8 +6,8 @@ from efficient_general_2d import *
 def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     dimension = 10
     training_iter = 10
-    k_vals = [9.5]
-    g_vals = [6]
+    k_vals = [7.5]
+    g_vals = [3]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -107,8 +107,8 @@ def mult_factor_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals)
 def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals, dataset_num):
     dimension = 10
     training_iter = 10
-    k_vals = [9.5]
-    g_vals = [6]
+    k_vals = [7.5]
+    g_vals = [3]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -204,8 +204,8 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals,
 def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
     dimension = 10
     training_iter = 10
-    k_vals = [9.5]
-    g_vals = [6]
+    k_vals = [7.5]
+    g_vals = [3]
     nu_vals = [0.5]
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -371,7 +371,11 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
 
 if __name__ == "__main__":
     alpha_vals = [0.25, 0.5, 1, 2, 4, 6, 8, 10 ,12, 14, 16, 18, 20]
-    with mp.Pool(processes=3) as pool:
+
+    exponential_experiment(2, 10, 100, [1,2,3], 7)
+    """
+    
+    #with mp.Pool(processes=3) as pool:
 
         p1 = pool.apply_async(exponential_experiment, (20, 10, 100, alpha_vals, 7,))
         p2 = pool.apply_async(exponential_experiment, (20, 10, 100, alpha_vals, 7.5, ))
@@ -380,7 +384,7 @@ if __name__ == "__main__":
 
         p1.get()
         p2.get()
-        p3.get()
+        p3.get()"""
     """
 
     b_list = []

@@ -488,6 +488,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}.csv')
 
+                np.save(f'{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
+
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
 
                 list_models.append(

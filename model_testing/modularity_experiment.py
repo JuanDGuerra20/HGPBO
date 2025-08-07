@@ -7,7 +7,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_rand_init = 6
 
     multi = False
@@ -69,7 +69,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
         avg_explor_1.append(np.mean(explor_1, axis=0))
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
-        avg_r2_1.append(r2_1)
+        avg_r2_1.append(r2_1[0])
         avg_r2_c1_1.append(child_1_r2)
         avg_r2_c2_1.append(child_2_r2)
 
@@ -107,7 +107,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
         avg_explor_2.append(np.mean(explor_2, axis=0))
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
-        avg_r2_2.append(r2_2)
+        avg_r2_2.append(r2_2[0])
 
         avg_r2_c1_2.append(child_1_r2)
         avg_r2_c2_2.append(child_2_r2)
@@ -132,7 +132,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
             avg_explor_mod.append(np.mean(explor_mod, axis=0))
             avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-            avg_r2_mod.append(r2_mod)
+            avg_r2_mod.append(r2_mod[0])
 
             avg_r2_c1_mod.append(child_1_r2)
             avg_r2_c2_mod.append(child_2_r2)
@@ -145,7 +145,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
                 avg_explor_mod.append(np.mean(explor_mod, axis=0))
                 avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                avg_r2_mod.append(r2_mod)
+                avg_r2_mod.append(r2_mod[0])
 
                 avg_r2_c1_mod.append(child_1_r2)
                 avg_r2_c2_mod.append(child_2_r2)
@@ -159,7 +159,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
                     avg_explor_mod.append(np.mean(explor_mod, axis=0))
                     avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                    avg_r2_mod.append(r2_mod)
+                    avg_r2_mod.append(r2_mod[0])
 
                     avg_r2_c1_mod.append(child_1_r2)
                     avg_r2_c2_mod.append(child_2_r2)
@@ -173,7 +173,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
                         avg_explor_mod.append(np.mean(explor_mod, axis=0))
                         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                        avg_r2_mod.append(r2_mod)
+                        avg_r2_mod.append(r2_mod[0])
 
                         avg_r2_c1_mod.append(child_1_r2)
                         avg_r2_c2_mod.append(child_2_r2)
@@ -187,7 +187,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
                             avg_explor_mod.append(np.mean(explor_mod, axis=0))
                             avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                            avg_r2_mod.append(r2_mod)
+                            avg_r2_mod.append(r2_mod[0])
 
                             avg_r2_c1_mod.append(child_1_r2)
                             avg_r2_c2_mod.append(child_2_r2)
@@ -203,7 +203,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
                                 avg_explor_mod.append(np.mean(explor_mod, axis=0))
                                 avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                                avg_r2_mod.append(r2_mod)
+                                avg_r2_mod.append(r2_mod[0])
 
                                 avg_r2_c1_mod.append(child_1_r2)
                                 avg_r2_c2_mod.append(child_2_r2)
@@ -327,7 +327,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_rand_init = 6
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -383,7 +383,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
         avg_explor_1.append(np.mean(explor_1, axis=0))
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
-        avg_r2_1.append(r2_1)
+        avg_r2_1.append(r2_1[0])
         avg_r2_c1_1.append(child_1_r2)
         avg_r2_c2_1.append(child_2_r2)
 
@@ -416,7 +416,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
         avg_explor_2.append(np.mean(explor_2, axis=0))
         avg_exploit_2.append(np.mean(exploit_2, axis=0))
-        avg_r2_2.append(r2_2)
+        avg_r2_2.append(r2_2[0])
 
         avg_r2_c1_2.append(child_1_r2)
         avg_r2_c2_2.append(child_2_r2)
@@ -441,7 +441,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
             avg_explor_mod.append(np.mean(explor_mod, axis=0))
             avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-            avg_r2_mod.append(r2_mod)
+            avg_r2_mod.append(r2_mod[0])
             avg_r2_c1_mod.append(child_1_r2)
             avg_r2_c2_mod.append(child_2_r2)
         except:
@@ -453,7 +453,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
                 avg_explor_mod.append(np.mean(explor_mod, axis=0))
                 avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                avg_r2_mod.append(r2_mod)
+                avg_r2_mod.append(r2_mod[0])
                 avg_r2_c1_mod.append(child_1_r2)
                 avg_r2_c2_mod.append(child_2_r2)
             except:
@@ -466,7 +466,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
                     avg_explor_mod.append(np.mean(explor_mod, axis=0))
                     avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                    avg_r2_mod.append(r2_mod)
+                    avg_r2_mod.append(r2_mod[0])
                     avg_r2_c1_mod.append(child_1_r2)
                     avg_r2_c2_mod.append(child_2_r2)
                 except:
@@ -479,7 +479,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
                         avg_explor_mod.append(np.mean(explor_mod, axis=0))
                         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                        avg_r2_mod.append(r2_mod)
+                        avg_r2_mod.append(r2_mod[0])
                         avg_r2_c1_mod.append(child_1_r2)
                         avg_r2_c2_mod.append(child_2_r2)
                     except:
@@ -492,7 +492,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
                         avg_explor_mod.append(np.mean(explor_mod, axis=0))
                         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                        avg_r2_mod.append(r2_mod)
+                        avg_r2_mod.append(r2_mod[0])
                         avg_r2_c1_mod.append(child_1_r2)
                         avg_r2_c2_mod.append(child_2_r2)
 
@@ -612,7 +612,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_rand_init = 6
 
     multi = False
@@ -668,7 +668,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
         avg_explor_1.append(np.mean(explor_1, axis=0))
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
-        avg_r2_1.append(r2_1)
+        avg_r2_1.append(r2_1[0])
         avg_r2_c1_1.append(child_1_r2)
         avg_r2_c2_1.append(child_2_r2)
 
@@ -692,7 +692,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
             avg_explor_mod.append(np.mean(explor_mod, axis=0))
             avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-            avg_r2_mod.append(r2_mod)
+            avg_r2_mod.append(r2_mod[0])
 
             avg_r2_c1_mod.append(child_1_r2)
             avg_r2_c2_mod.append(child_2_r2)
@@ -705,7 +705,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
                 avg_explor_mod.append(np.mean(explor_mod, axis=0))
                 avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                avg_r2_mod.append(r2_mod)
+                avg_r2_mod.append(r2_mod[0])
 
                 avg_r2_c1_mod.append(child_1_r2)
                 avg_r2_c2_mod.append(child_2_r2)
@@ -719,7 +719,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
                     avg_explor_mod.append(np.mean(explor_mod, axis=0))
                     avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                    avg_r2_mod.append(r2_mod)
+                    avg_r2_mod.append(r2_mod[0])
 
                     avg_r2_c1_mod.append(child_1_r2)
                     avg_r2_c2_mod.append(child_2_r2)
@@ -733,7 +733,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
                         avg_explor_mod.append(np.mean(explor_mod, axis=0))
                         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                        avg_r2_mod.append(r2_mod)
+                        avg_r2_mod.append(r2_mod[0])
 
                         avg_r2_c1_mod.append(child_1_r2)
                         avg_r2_c2_mod.append(child_2_r2)
@@ -747,7 +747,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
                             avg_explor_mod.append(np.mean(explor_mod, axis=0))
                             avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                            avg_r2_mod.append(r2_mod)
+                            avg_r2_mod.append(r2_mod[0])
 
                             avg_r2_c1_mod.append(child_1_r2)
                             avg_r2_c2_mod.append(child_2_r2)
@@ -763,7 +763,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
                                 avg_explor_mod.append(np.mean(explor_mod, axis=0))
                                 avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                                avg_r2_mod.append(r2_mod)
+                                avg_r2_mod.append(r2_mod[0])
 
                                 avg_r2_c1_mod.append(child_1_r2)
                                 avg_r2_c2_mod.append(child_2_r2)
@@ -868,7 +868,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_rand_init = 6
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -923,7 +923,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
         avg_explor_1.append(np.mean(explor_1, axis=0))
         avg_exploit_1.append(np.mean(exploit_1, axis=0))
-        avg_r2_1.append(r2_1)
+        avg_r2_1.append(r2_1[0])
         avg_r2_c1_1.append(child_1_r2)
         avg_r2_c2_1.append(child_2_r2)
 
@@ -946,7 +946,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
             avg_explor_mod.append(np.mean(explor_mod, axis=0))
             avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-            avg_r2_mod.append(r2_mod)
+            avg_r2_mod.append(r2_mod[0])
 
             avg_r2_c1_mod.append(child_1_r2)
             avg_r2_c2_mod.append(child_2_r2)
@@ -959,7 +959,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
                 avg_explor_mod.append(np.mean(explor_mod, axis=0))
                 avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                avg_r2_mod.append(r2_mod)
+                avg_r2_mod.append(r2_mod[0])
 
                 avg_r2_c1_mod.append(child_1_r2)
                 avg_r2_c2_mod.append(child_2_r2)
@@ -973,7 +973,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
                     avg_explor_mod.append(np.mean(explor_mod, axis=0))
                     avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                    avg_r2_mod.append(r2_mod)
+                    avg_r2_mod.append(r2_mod[0])
 
                     avg_r2_c1_mod.append(child_1_r2)
                     avg_r2_c2_mod.append(child_2_r2)
@@ -987,7 +987,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
                         avg_explor_mod.append(np.mean(explor_mod, axis=0))
                         avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                        avg_r2_mod.append(r2_mod)
+                        avg_r2_mod.append(r2_mod[0])
 
                         avg_r2_c1_mod.append(child_1_r2)
                         avg_r2_c2_mod.append(child_2_r2)
@@ -1001,7 +1001,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
                             avg_explor_mod.append(np.mean(explor_mod, axis=0))
                             avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                            avg_r2_mod.append(r2_mod)
+                            avg_r2_mod.append(r2_mod[0])
 
                             avg_r2_c1_mod.append(child_1_r2)
                             avg_r2_c2_mod.append(child_2_r2)
@@ -1018,7 +1018,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
                                 avg_explor_mod.append(np.mean(explor_mod, axis=0))
                                 avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                                avg_r2_mod.append(r2_mod)
+                                avg_r2_mod.append(r2_mod[0])
 
                                 avg_r2_c1_mod.append(child_1_r2)
                                 avg_r2_c2_mod.append(child_2_r2)
@@ -1120,7 +1120,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
 
 if __name__ == '__main__':
 
-    k_vals = [1, 3, 5, 7, 9]
+    k_vals = [7]
     g_vals = [3]
     nu_vals = [0.5]
 
@@ -1131,10 +1131,24 @@ if __name__ == '__main__':
             p3 = pool.apply_async(one_pretrained, args=([k_val], g_vals, nu_vals))
             p4 = pool.apply_async(one_pretrained_bad, args=([k_val], g_vals, nu_vals))
 
-            p1.get()
-            p2.get()
-            p3.get()
-            p4.get()
+            try:
+                p1.get()
+            except:
+                continue
+            try:
+                p2.get()
+            except:
+                continue
+
+            try:
+                p3.get()
+            except:
+                continue
+
+            try:
+                p4.get()
+            except:
+                continue
 
     """for g_val in g_vals:
         with mp.Pool(processes=4) as pool:
