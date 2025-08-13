@@ -2,6 +2,8 @@ import gpytorch
 import matplotlib.pyplot as plt
 import torch
 
+from apiBO_commands import *
+
 import synthetic_models as models
 import hmodel_synthetic as hmodel
 from dataset_actions import *
@@ -74,11 +76,12 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=True, noise=0.1):
+                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=True, noise=0.1, alpha=0.75):
     warnings.filterwarnings('ignore')
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     prior_map = torch.zeros(dimension, dimension)
+    conf_map = torch.zeros(dimension, dimension)
 
     ground_truth_max_1 = torch.max(y_sub1)
     ground_truth_max_2 = torch.max(y_sub2)
@@ -162,7 +165,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
-
             sub1.eval()
             sub2.eval()
 
@@ -178,27 +180,29 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             y_conf1 = observed_pred1.stddev
             y_conf2 = observed_pred2.stddev
 
-            p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-            p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
+            #TODO: check if adding the original UCB method we used in the original method works better
+            p1 = gamma * y_conf1 / (torch.sqrt(sub1_qc))
+            p2 = gamma * y_conf2 / (torch.sqrt(sub2_qc))
+
 
             for i in range(len(prior_map)):
                 for j in range(len(prior_map)):
-                    prior_map[i, j] = (p1[i] + p2[j]) / 2
+                    prior_map[i, j] = (y_mu1[i] + y_mu2[j]) / 2
+                    #conf_map[i, j] = (p1[i] + p2[j]) / 2
+
+            # Implementing the code from Guay-Hottin to start off the priors
+
+            # only used for alpha pi BO
+            prior_norm = (prior_map - torch.min(prior_map)) / (torch.max(prior_map) - torch.min(prior_map))
 
             prior_map_max = torch.max(prior_map)
             prior_map_save = prior_map.detach().clone()
             prior_map_max_save = torch.max(prior_map_save)
 
-            next_query_pins = models.get_next_query_pins(torch.flatten(prior_map), test_x_hier)
-
-            next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
-                                                                                         test_x_hier,
-                                                                                         y_hier, noise=noise)
-            response = torch.tensor(next_query_value_random)
-            train_x_hier, train_y_hier = torch.reshape(next_query_pins, (1, 2)), torch.reshape(response, (1,))
-
             #train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
 
+            next_query_pins = torch.argmax(prior_norm)
+            train_x_hier, train_y_hier = test_x_hier[next_query_pins].reshape((1,2)), y_hier.flatten()[next_query_pins].reshape((1,))
             max_seen_resp_2D = torch.max(train_y_hier)
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
@@ -227,6 +231,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         child_2_r2.append(c2_r2)
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
+        # alpha pi BO core
+        acquisition_map = (acquisition_map - torch.min(acquisition_map))/(torch.max(acquisition_map) - torch.min(acquisition_map))
+        acquisition_map = acquisition_map * (alpha*torch.flatten(prior_norm) + (1 - alpha))
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
         next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
@@ -316,10 +323,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         for i in range(len(prior_map)):
             for j in range(len(prior_map)):
                 prior_map[i, j] = (p1[i] + p2[j]) / 2
+        prior_norm = (prior_map - torch.min(prior_map)) / (torch.max(prior_map) - torch.min(prior_map))
 
         prior_map_max = torch.max(prior_map)
 
-        master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
+        # master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
 
         master = hmodel.update_kernel_parameters(master, sub1, sub2)
 
@@ -408,12 +416,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals,
-                       data_name, data_creation_func, eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1):
+                       data_name, data_creation_func, eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1, alpha=0.75):
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
 
     elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-        model_name = "Lossless_Efficient"
+        model_name = "apiBO"
+
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -467,7 +476,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         for i in range(nbr_repetition - 1):
                             p = pool.apply_async(run_repetition, (
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, visualize, seed[i], noise))
+                            data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children, visualize, seed[i], noise, alpha))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
@@ -476,21 +485,21 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                children=children, visualize=visualize, seed=seed[-1], noise=noise)
+                                children=children, visualize=visualize, seed=seed[-1], noise=noise, alpha=alpha)
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                     hierarchical_model,
                                     data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                    children=children, visualize=visualize, seed=seed[-1], noise=noise)
+                                    children=children, visualize=visualize, seed=seed[-1], noise=noise, alpha=alpha)
                             except:
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                         hierarchical_model,
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                                        children=children, visualize=visualize, seed=seed[-1], noise=noise)
+                                        children=children, visualize=visualize, seed=seed[-1], noise=noise, alpha=alpha)
                                 except:
                                     continue
 
@@ -517,7 +526,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                             data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                            children=children, visualize=visualize, seed=seed[i], noise=noise)
+                            children=children, visualize=visualize, seed=seed[i], noise=noise, alpha=alpha)
                         """try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
@@ -560,6 +569,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 e = str(e).replace('.', '')
                 e = str(e).replace(',', '_')
                 noi = str(noise).replace('.', ',')
+                a = str(alpha).replace('.', ',')
 
                 torch.save(master.state_dict(),
                            f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.pth')
@@ -600,19 +610,19 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.ylabel('Performance')
                 plt.xlabel('Query Number')
 
-                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
+                plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init} Alpha {alpha}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.svg')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}_a_{a}.svg')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.png')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}_a_{a}.png')
 
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'Heatmap_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                                 f'Heatmap_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}_a_{a}',
                                  model_name.lower(), folder_of_the_day, data_name)
                 vi.model_contour_3d(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'Parent_Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                                 f'Parent_Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}_a_{a}',
                                  model_name.lower(), folder_of_the_day, data_name)
 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
@@ -620,7 +630,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 re_output = np.reshape(data, y_hier.shape)
                 df = pd.DataFrame(re_output)
                 df.to_csv(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}_a_{a}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
@@ -631,7 +641,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
                             'child2_r2']
 
-                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
+                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}_a_{a}.csv')
                 np.save(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
 
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
@@ -676,12 +686,12 @@ if __name__ == '__main__':
     dimension = 15
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 30
+    nbr_repetition = 10
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
-    h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
+    multi = True
+    h = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     process = []
     nbr_rand_init = 6  # Found through HP Testing
     seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
@@ -689,8 +699,10 @@ if __name__ == '__main__':
                      445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
                      56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
                      833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
-    seed = [False]*nbr_repetition
-    for h in h_model:
+    #seed = [False]*nbr_repetition
+
+    alpha = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    for a in alpha:
         for dataset_num in [3]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
@@ -699,18 +711,18 @@ if __name__ == '__main__':
                 model_name = "Efficient"
 
             elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-                model_name = "Lossless_Efficient"
+                model_name = "apiBO"
 
-            current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+            """current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
             current_dateday = datetime.now().strftime("%Y-%m-%d")
             workspace = f"{data_name}/{model_name.lower()}"
-            folder_of_the_day = '/data-' + str(current_dateday)
+            folder_of_the_day = '/data-' + str(current_dateday)"""
 
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                    nu_vals, data_name, data_creation_func,
-                                   eps, h, multi, seed, noise=0.1)[0]
-            print('done first')
+                                   eps, h, multi, seed, noise=0.1, alpha=a)[0]
+            print(f'done alpha {a}')
             """parent_r2 = []
             child_1_r2_over = []
             child_2_r2_over = []
