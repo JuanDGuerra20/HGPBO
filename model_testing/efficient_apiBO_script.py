@@ -208,7 +208,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
             master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
-                                        prior_hierarchical_kernel,
+                                        gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=nu)),
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)
@@ -329,7 +329,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         # master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
 
-        master = hmodel.update_kernel_parameters(master, sub1, sub2)
+        #master = hmodel.update_kernel_parameters(master, sub1, sub2)
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
