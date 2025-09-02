@@ -131,19 +131,33 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub1 = children[0]
 
                 sub1_like = sub1.likelihood
-
+                """
+                Old method of transferring the full children
                 train_x_sub1 = sub1.train_inputs[0][:, 0]
+                train_y_sub1 = sub1.train_targets"""
+
+                sub1.train_inputs = sub1.train_inputs[0][-1]
+                train_x_sub1 = sub1.train_inputs
+
+                x_ind = torch.argwhere(x_sub1==train_x_sub1)[0][0]
+
+                #sub1.train_targets = sub1.train_targets[-1]
+                sub1.train_targets = torch.tensor([y_sub1[x_ind] + np.random.normal(0, noise, size=y_sub1[x_ind].shape)])
                 train_y_sub1 = sub1.train_targets
-                max_seen_resp_1_1D = torch.max(train_y_sub1)
+
+                sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[0], x_sub1)
 
                 train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed,
                                                                    noise=noise)
+                max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
                 sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / abs(max_seen_resp_2_1D), sub2_like,
                                            query_counter=sub2_qc, nu=nu)
 
                 for i in range(len(train_x_sub2)):
+
+
                     sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
 
             elif len(children) == 2:
@@ -153,11 +167,19 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub1_like = sub1.likelihood
                 sub2_like = sub2.likelihood
 
+                """
+                Old method of transferring the full children
                 train_x_sub1 = sub1.train_inputs[0][:, 0]
                 train_y_sub1 = sub1.train_targets
 
                 train_x_sub2 = sub2.train_inputs[0][:, 0]
-                train_y_sub2 = sub2.train_targets
+                train_y_sub2 = sub2.train_targets"""
+
+                train_x_sub1 = sub1.train_inputs[0][0:0, 0]
+                train_y_sub1 = sub1.train_targets[0:0]
+
+                train_x_sub2 = sub2.train_inputs[0][0:0, 0]
+                train_y_sub2 = sub2.train_targets[0:0]
 
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
