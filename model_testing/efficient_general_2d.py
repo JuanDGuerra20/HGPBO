@@ -136,15 +136,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 train_x_sub1 = sub1.train_inputs[0][:, 0]
                 train_y_sub1 = sub1.train_targets"""
 
-                sub1.train_inputs = sub1.train_inputs[0][-1]
-                train_x_sub1 = sub1.train_inputs
+                sub1.train_inputs = (sub1.train_inputs[0][-1:],)
+                train_x_sub1 = sub1.train_inputs[0][:,0]
 
-                x_ind = torch.argwhere(x_sub1==train_x_sub1)[0][0]
+                x_ind = torch.argwhere(x_sub1==train_x_sub1)[:,0]
 
                 #sub1.train_targets = sub1.train_targets[-1]
-                sub1.train_targets = torch.tensor([y_sub1[x_ind] + np.random.normal(0, noise, size=y_sub1[x_ind].shape)])
+                sub1.train_targets = y_sub1[x_ind] + np.random.normal(0, noise, size=y_sub1[x_ind].shape)
                 train_y_sub1 = sub1.train_targets
 
+                sub1.env_ind = [0]
+                sub1.bif_ind = []
                 sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[0], x_sub1)
 
                 train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed,
