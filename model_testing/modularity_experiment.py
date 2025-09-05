@@ -1124,9 +1124,9 @@ if __name__ == '__main__':
     g_vals = [3]
     nu_vals = [0.5]
 
-    two_pretrained(k_vals, g_vals, nu_vals)
+    #two_pretrained(k_vals, g_vals, nu_vals)
 
-    """for k_val in k_vals:
+    for k_val in k_vals:
         with mp.Pool(processes=4) as pool:
             p1 = pool.apply_async(two_pretrained, args=([k_val], g_vals, nu_vals))
             p2 = pool.apply_async(two_pretrained_bad, args=([k_val], g_vals, nu_vals))
@@ -1162,4 +1162,4 @@ if __name__ == '__main__':
             p1.get()
             p2.get()
             p3.get()
-            p4.get()"""
+            p4.get()
