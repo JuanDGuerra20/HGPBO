@@ -74,7 +74,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=True, noise=0.1):
+                   data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=True, noise=0.1, alpha=0):
     warnings.filterwarnings('ignore')
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
@@ -158,8 +158,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                            query_counter=sub2_qc, nu=nu)
 
                 for i in range(len(train_x_sub2)):
-
-
                     sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
 
             elif len(children) == 2:
@@ -177,13 +175,31 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 train_x_sub2 = sub2.train_inputs[0][:, 0]
                 train_y_sub2 = sub2.train_targets"""
 
-                train_x_sub1 = sub1.train_inputs[0][0:0, 0]
-                train_y_sub1 = sub1.train_targets[0:0]
+                sub1.train_inputs = (sub1.train_inputs[0][-1:],)
+                train_x_sub1 = sub1.train_inputs[0][:, 0]
 
-                train_x_sub2 = sub2.train_inputs[0][0:0, 0]
-                train_y_sub2 = sub2.train_targets[0:0]
+                x_ind = torch.argwhere(x_sub1 == train_x_sub1)[:, 0]
 
-                max_seen_resp_1_1D = torch.max(train_y_sub1)
+                # sub1.train_targets = sub1.train_targets[-1]
+                sub1.train_targets = y_sub1[x_ind] + np.random.normal(0, noise, size=y_sub1[x_ind].shape)
+                train_y_sub1 = sub1.train_targets
+
+                sub1.env_ind = [0]
+                sub1.bif_ind = []
+                sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[0], x_sub1)
+
+                sub2.train_inputs = (sub2.train_inputs[0][-1:],)
+                train_x_sub2 = sub2.train_inputs[0][:, 0]
+
+                x_ind = torch.argwhere(x_sub2 == train_x_sub2)[:, 0]
+
+                # sub1.train_targets = sub1.train_targets[-1]
+                sub2.train_targets = y_sub2[x_ind] + np.random.normal(0, noise, size=y_sub2[x_ind].shape)
+                train_y_sub2 = sub2.train_targets
+
+                sub2.env_ind = [0]
+                sub2.bif_ind = []
+                sub2_qc = sub1.increment_q_n(sub2_qc, train_x_sub2[0], x_sub2)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
 
@@ -250,6 +266,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         child_1_r2.append(c1_r2)
         child_2_r2.append(c2_r2)
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
+
+        if len(children) > 0:
+            prior_norm = (prior_map - torch.min(prior_map)) / (torch.max(prior_map) - torch.min(prior_map))
+            acquisition_map = (acquisition_map - torch.min(acquisition_map)) / (
+                        torch.max(acquisition_map) - torch.min(acquisition_map))
+            acquisition_map = acquisition_map * (alpha * torch.flatten(prior_norm) + (1 - alpha))
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
@@ -432,7 +454,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals,
-                       data_name, data_creation_func, eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1):
+                       data_name, data_creation_func, eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1, alpha=0):
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
 
