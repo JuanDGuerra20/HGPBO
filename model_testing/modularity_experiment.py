@@ -1150,7 +1150,7 @@ if __name__ == '__main__':
             try:
                 p4.get()
             except:
-                continue"""
+                continue
 
     """for g_val in g_vals:
         with mp.Pool(processes=4) as pool:
@@ -1162,4 +1162,4 @@ if __name__ == '__main__':
             p1.get()
             p2.get()
             p3.get()
-            p4.get()
+            p4.get()"""
