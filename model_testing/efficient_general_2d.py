@@ -130,20 +130,29 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             elif len(children) == 1:
                 sub1 = children[0]
 
+                # Collecting the acquisition function for the child
                 sub1_like = sub1.likelihood
-                """
-                Old method of transferring the full children
-                train_x_sub1 = sub1.train_inputs[0][:, 0]
-                train_y_sub1 = sub1.train_targets"""
 
-                sub1.train_inputs = (sub1.train_inputs[0][-1:],)
-                train_x_sub1 = sub1.train_inputs[0][:,0]
+                sub1.eval()
 
-                x_ind = torch.argwhere(x_sub1==train_x_sub1)[:,0]
+                sub1_like.eval()
 
-                #sub1.train_targets = sub1.train_targets[-1]
-                sub1.train_targets = y_sub1[x_ind] + np.random.normal(0, noise, size=y_sub1[x_ind].shape)
+                with gpytorch.settings.lazily_evaluate_kernels(state=False):
+                    observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
+                y_mu1 = observed_pred1.mean
+
+                y_conf1 = observed_pred1.stddev
+
+                p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
+
+                p1_max = torch.max(p1)
+
+                x_ind_p1 = torch.argwhere(p1 == p1_max)[:, 0]
+                sub1.train_targets = y_sub1[x_ind_p1] + np.random.normal(0, noise, size=y_sub1[x_ind_p1].shape)
                 train_y_sub1 = sub1.train_targets
+
+                sub1.train_inputs = (torch.reshape(x_sub1[x_ind_p1], (1, 1)),)
+                train_x_sub1 = x_sub1[x_ind_p1]
 
                 sub1.env_ind = [0]
                 sub1.bif_ind = []
@@ -167,6 +176,34 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub1_like = sub1.likelihood
                 sub2_like = sub2.likelihood
 
+                sub1.eval()
+                sub2.eval()
+
+                sub1_like.eval()
+                sub2_like.eval()
+
+                with gpytorch.settings.lazily_evaluate_kernels(state=False):
+                    observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
+                    observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
+                y_mu1 = observed_pred1.mean
+                y_mu2 = observed_pred2.mean
+
+                y_conf1 = observed_pred1.stddev
+                y_conf2 = observed_pred2.stddev
+
+                p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
+                p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
+
+                p1_max = torch.max(p1)
+                p2_max = torch.max(p2)
+
+                x_ind_p1 = torch.argwhere(p1==p1_max)[:, 0]
+                sub1.train_targets = y_sub1[x_ind_p1] + np.random.normal(0, noise, size=y_sub1[x_ind_p1].shape)
+                train_y_sub1 = sub1.train_targets
+
+                x_ind_p2 = torch.argwhere(p2 == p2_max)[:, 0]
+                sub2.train_targets = y_sub2[x_ind_p2] + np.random.normal(0, noise, size=y_sub2[x_ind_p2].shape)
+                train_y_sub2 = sub2.train_targets
                 """
                 Old method of transferring the full children
                 train_x_sub1 = sub1.train_inputs[0][:, 0]
@@ -175,31 +212,20 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 train_x_sub2 = sub2.train_inputs[0][:, 0]
                 train_y_sub2 = sub2.train_targets"""
 
-                sub1.train_inputs = (sub1.train_inputs[0][-1:],)
-                train_x_sub1 = sub1.train_inputs[0][:, 0]
+                sub1.train_inputs = (torch.reshape(x_sub1[x_ind_p1], (1,1)),)
+                train_x_sub1 = x_sub1[x_ind_p1]
 
-                x_ind = torch.argwhere(x_sub1 == train_x_sub1)[:, 0]
-
-                # sub1.train_targets = sub1.train_targets[-1]
-                sub1.train_targets = y_sub1[x_ind] + np.random.normal(0, noise, size=y_sub1[x_ind].shape)
-                train_y_sub1 = sub1.train_targets
+                sub2.train_inputs = (torch.reshape(x_sub2[x_ind_p2], (1, 1)),)
+                train_x_sub2 = x_sub2[x_ind_p2]
 
                 sub1.env_ind = [0]
                 sub1.bif_ind = []
                 sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[0], x_sub1)
-
-                sub2.train_inputs = (sub2.train_inputs[0][-1:],)
-                train_x_sub2 = sub2.train_inputs[0][:, 0]
-
-                x_ind = torch.argwhere(x_sub2 == train_x_sub2)[:, 0]
-
-                # sub1.train_targets = sub1.train_targets[-1]
-                sub2.train_targets = y_sub2[x_ind] + np.random.normal(0, noise, size=y_sub2[x_ind].shape)
-                train_y_sub2 = sub2.train_targets
+                max_seen_resp_1_1D = torch.max(train_y_sub1)
 
                 sub2.env_ind = [0]
                 sub2.bif_ind = []
-                sub2_qc = sub1.increment_q_n(sub2_qc, train_x_sub2[0], x_sub2)
+                sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[0], x_sub2)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
 
 
@@ -210,8 +236,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub2_like.eval()
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
-                observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
                 observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
+                observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
             y_mu1 = observed_pred1.mean
             y_mu2 = observed_pred2.mean
 
@@ -443,7 +469,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         vi.contour_plot_1D(master.sub_models, x_sub1,
                         [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
                         f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
-                        model_name.lower(), folder_of_the_day, data_name, parent=master)
+                        model_name.lower(), folder_of_the_day, data_name, parent=master, query=q, visualize=visualize)
 
 
 
@@ -722,7 +748,7 @@ if __name__ == '__main__':
     dimension = 15
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 30
+    nbr_repetition = 1
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
@@ -755,7 +781,7 @@ if __name__ == '__main__':
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                    nu_vals, data_name, data_creation_func,
-                                   eps, h, multi, seed, noise=0.1)[0]
+                                   eps, h, multi, seed, noise=0.1, visualize=True)[0]
             print('done first')
             """parent_r2 = []
             child_1_r2_over = []

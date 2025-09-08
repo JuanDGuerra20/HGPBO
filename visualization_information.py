@@ -605,7 +605,7 @@ def heatmap_r_score(data, z):
 
 
 
-def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True, parent=None):
+def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True, parent=None, visualize=False, query=0):
     true_y = (true_y - np.min(true_y)) / (np.max(true_y) - np.min(true_y))
     for i, model in enumerate(sub_models):
         model.eval()
@@ -657,7 +657,6 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
                         train_bif_scale = (train_y_bif - torch.min(train_y_bif)) / (
                                     torch.max(train_y_bif) - torch.min(train_y_bif))
                         ax.plot(train_x_bif, train_bif_scale, 'g*', label='BIF Labels')
-
                 ax.plot(test_x.numpy(), mean, 'b', label='Predicted Mean')
                 ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5, label='Uncertainty')
                 ax.plot(test_x.numpy(), true_y[i], 'r', label='Ground Truth')
@@ -669,12 +668,20 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
         plt.ylim((-0.1,1.1))
         plt.tight_layout()
         if save:
-            if neural:
-                plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.svg')
-                plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.png')
+            if visualize:
+                if neural:
+                    plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}_q_{query}.svg')
+                    plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}_q_{query}.png')
+                else:
+                    plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}_q_{query}.svg')
+                    plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}_q_{query}.png')
             else:
-                plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.svg')
-                plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.png')
+                if neural:
+                    plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.svg')
+                    plt.savefig(f'{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.png')
+                else:
+                    plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.svg')
+                    plt.savefig(f'{data_name}/{model_type}/{folder_of_the_day}/{file_name}_sub_{i}.png')
         else:
             plt.show()
         plt.close()
