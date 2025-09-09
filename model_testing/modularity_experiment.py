@@ -124,20 +124,6 @@ def two_pretrained(k_vals, g_vals, nu_vals):
         data_name, data_creation_func, eps = get_dataset_info(6)
         data_name = "modular_2D"
 
-        func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
-                                      g_vals, nu_vals, data_name, data_creation_func, eps,
-                                      h_model,
-                                      multi, seed,
-                                      children=modular_children, noise=noise, visualize=False, alpha=0.75)[
-            0]
-        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod
-
-        avg_explor_mod.append(np.mean(explor_mod, axis=0))
-        avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-        avg_r2_mod.append(r2_mod[0])
-
-        avg_r2_c1_mod.append(child_1_r2)
-        avg_r2_c2_mod.append(child_2_r2)
 
         try:
             func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,

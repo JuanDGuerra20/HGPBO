@@ -214,7 +214,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 # ========================================================================================
 
                 # doing the same for the second child
-                sub2 = children[0]
+                sub2 = children[1]
 
                 # Collecting the acquisition function for the child
                 sub2_like = sub2.likelihood
@@ -250,7 +250,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub2.bif_ind = []
                 sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[0], x_sub2)
 
-
             sub1.eval()
             sub2.eval()
 
@@ -258,8 +257,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub2_like.eval()
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
-                observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
                 observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
+                observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
             y_mu1 = observed_pred1.mean
             y_mu2 = observed_pred2.mean
 
