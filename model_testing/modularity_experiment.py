@@ -7,7 +7,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 5
+    nbr_repetition = 10
     nbr_rand_init = 6
 
     multi = False
@@ -625,9 +625,9 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
 def one_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
-    nbr_query = 30
+    nbr_query = 100
     training_iter = 10
-    nbr_repetition = 1
+    nbr_repetition = 10
     nbr_rand_init = 6
 
     multi = False
@@ -698,18 +698,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
         data_name, data_creation_func, eps = get_dataset_info(6)
         data_name = "modular_1_child"
 
-        func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
-                                      g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
-                                      children=modular_children, noise=noise, visualize=False, alpha=0.75)[0]
-        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod
-
-        avg_explor_mod.append(np.mean(explor_mod, axis=0))
-        avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-        avg_r2_mod.append(r2_mod[0])
-
-        avg_r2_c1_mod.append(child_1_r2)
-        avg_r2_c2_mod.append(child_2_r2)
-        """try:
+        try:
             func_mod = training_procedure(nbr_query, 1, nbr_rand_init, dimension, training_iter, k_vals,
                                           g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
                                           children=modular_children, noise=noise, visualize=False, alpha=0.75)[0]
@@ -793,7 +782,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
                                 avg_r2_c1_mod.append(child_1_r2)
                                 avg_r2_c2_mod.append(child_2_r2)
                             except:
-                                continue"""
+                                continue
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -1149,9 +1138,9 @@ if __name__ == '__main__':
     g_vals = [3]
     nu_vals = [0.5]
 
-    one_pretrained(k_vals, g_vals, nu_vals)
+    #one_pretrained(k_vals, g_vals, nu_vals)
 
-    """for k_val in k_vals:
+    for k_val in k_vals:
         with mp.Pool(processes=4) as pool:
             p1 = pool.apply_async(two_pretrained, args=([k_val], g_vals, nu_vals))
             p2 = pool.apply_async(two_pretrained_bad, args=([k_val], g_vals, nu_vals))
@@ -1175,7 +1164,7 @@ if __name__ == '__main__':
             try:
                 p4.get()
             except:
-                continue"""
+                continue
 
     """for g_val in g_vals:
         with mp.Pool(processes=4) as pool:

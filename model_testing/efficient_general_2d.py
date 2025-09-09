@@ -145,14 +145,20 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
                 p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
 
+                sub1.train()
+                sub1_like.train()
+
                 p1_max = torch.max(p1)
 
                 x_ind_p1 = torch.argwhere(p1 == p1_max)[:, 0]
+
+                sub1.train_inputs = (sub1.train_inputs[0][-1:],)
+                sub1.train_inputs[0][0][0] = x_sub1[x_ind_p1][0]
+                #sub1.train_inputs = (torch.reshape(x_sub1[x_ind_p1], (1, 1)),)
+                train_x_sub1 = sub1.train_inputs[0][:,0]
+
                 sub1.train_targets = y_sub1[x_ind_p1] + np.random.normal(0, noise, size=y_sub1[x_ind_p1].shape)
                 train_y_sub1 = sub1.train_targets
-
-                sub1.train_inputs = (torch.reshape(x_sub1[x_ind_p1], (1, 1)),)
-                train_x_sub1 = x_sub1[x_ind_p1]
 
                 sub1.env_ind = [0]
                 sub1.bif_ind = []
