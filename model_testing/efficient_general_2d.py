@@ -152,9 +152,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
                 x_ind_p1 = torch.argwhere(p1 == p1_max)[:, 0]
 
-                sub1.train_inputs = (sub1.train_inputs[0][-1:],)
-                sub1.train_inputs[0][0][0] = x_sub1[x_ind_p1][0]
-                #sub1.train_inputs = (torch.reshape(x_sub1[x_ind_p1], (1, 1)),)
+                """sub1.train_inputs = (sub1.train_inputs[0][-1:],)
+                sub1.train_inputs[0][0][0] = x_sub1[x_ind_p1][0]"""
+                sub1.train_inputs = (torch.reshape(x_sub1[x_ind_p1], (1, 1)),)
                 train_x_sub1 = sub1.train_inputs[0][:,0]
 
                 sub1.train_targets = y_sub1[x_ind_p1] + np.random.normal(0, noise, size=y_sub1[x_ind_p1].shape)
@@ -177,62 +177,78 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             elif len(children) == 2:
                 sub1 = children[0]
-                sub2 = children[1]
 
+                # Collecting the acquisition function for the child
                 sub1_like = sub1.likelihood
-                sub2_like = sub2.likelihood
 
                 sub1.eval()
-                sub2.eval()
 
                 sub1_like.eval()
-                sub2_like.eval()
 
                 with gpytorch.settings.lazily_evaluate_kernels(state=False):
                     observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
-                    observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
                 y_mu1 = observed_pred1.mean
-                y_mu2 = observed_pred2.mean
 
                 y_conf1 = observed_pred1.stddev
-                y_conf2 = observed_pred2.stddev
 
                 p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-                p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
+
+                sub1.train()
+                sub1_like.train()
 
                 p1_max = torch.max(p1)
-                p2_max = torch.max(p2)
 
-                x_ind_p1 = torch.argwhere(p1==p1_max)[:, 0]
+                x_ind_p1 = torch.argwhere(p1 == p1_max)[:, 0]
+
+                """sub1.train_inputs = (sub1.train_inputs[0][-1:],)
+                sub1.train_inputs[0][0][0] = x_sub1[x_ind_p1][0]"""
+                sub1.train_inputs = (torch.reshape(x_sub1[x_ind_p1], (1, 1)),)
+                train_x_sub1 = sub1.train_inputs[0][:, 0]
+
                 sub1.train_targets = y_sub1[x_ind_p1] + np.random.normal(0, noise, size=y_sub1[x_ind_p1].shape)
                 train_y_sub1 = sub1.train_targets
-
-                x_ind_p2 = torch.argwhere(p2 == p2_max)[:, 0]
-                sub2.train_targets = y_sub2[x_ind_p2] + np.random.normal(0, noise, size=y_sub2[x_ind_p2].shape)
-                train_y_sub2 = sub2.train_targets
-                """
-                Old method of transferring the full children
-                train_x_sub1 = sub1.train_inputs[0][:, 0]
-                train_y_sub1 = sub1.train_targets
-
-                train_x_sub2 = sub2.train_inputs[0][:, 0]
-                train_y_sub2 = sub2.train_targets"""
-
-                sub1.train_inputs = (torch.reshape(x_sub1[x_ind_p1], (1,1)),)
-                train_x_sub1 = x_sub1[x_ind_p1]
-
-                sub2.train_inputs = (torch.reshape(x_sub2[x_ind_p2], (1, 1)),)
-                train_x_sub2 = x_sub2[x_ind_p2]
 
                 sub1.env_ind = [0]
                 sub1.bif_ind = []
                 sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[0], x_sub1)
-                max_seen_resp_1_1D = torch.max(train_y_sub1)
+                # ========================================================================================
+
+                # doing the same for the second child
+                sub2 = children[0]
+
+                # Collecting the acquisition function for the child
+                sub2_like = sub2.likelihood
+
+                sub2.eval()
+
+                sub2_like.eval()
+
+                with gpytorch.settings.lazily_evaluate_kernels(state=False):
+                    observed_pred2 = models.make_prediction(sub2, x_sub2, sub2_like)
+                y_mu2 = observed_pred2.mean
+
+                y_conf2 = observed_pred2.stddev
+
+                p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
+
+                sub2.train()
+                sub2_like.train()
+
+                p2_max = torch.max(p2)
+
+                x_ind_p2 = torch.argwhere(p2 == p2_max)[:, 0]
+
+                """sub1.train_inputs = (sub1.train_inputs[0][-1:],)
+                sub1.train_inputs[0][0][0] = x_sub1[x_ind_p1][0]"""
+                sub2.train_inputs = (torch.reshape(x_sub2[x_ind_p2], (1, 1)),)
+                train_x_sub2 = sub2.train_inputs[0][:, 0]
+
+                sub2.train_targets = y_sub2[x_ind_p2] + np.random.normal(0, noise, size=y_sub2[x_ind_p2].shape)
+                train_y_sub2 = sub2.train_targets
 
                 sub2.env_ind = [0]
                 sub2.bif_ind = []
                 sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[0], x_sub2)
-                max_seen_resp_2_1D = torch.max(train_y_sub2)
 
 
             sub1.eval()

@@ -139,7 +139,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
         avg_r2_c1_mod.append(child_1_r2)
         avg_r2_c2_mod.append(child_2_r2)
 
-        """try:
+        try:
             func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
                                        g_vals, nu_vals, data_name, data_creation_func, eps, h_model, multi, seed,
                                        children=modular_children, noise=noise, visualize=False, alpha=0.75)[0]
@@ -223,7 +223,9 @@ def two_pretrained(k_vals, g_vals, nu_vals):
                                 avg_r2_c1_mod.append(child_1_r2)
                                 avg_r2_c2_mod.append(child_2_r2)
                             except:
-                                continue"""
+                                print("failed modular")
+
+                                continue
 
 
 
@@ -498,18 +500,21 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
                         avg_r2_c1_mod.append(child_1_r2)
                         avg_r2_c2_mod.append(child_2_r2)
                     except:
-                        func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
-                                                      g_vals, nu_vals, data_name, data_creation_func, eps, h_model,
-                                                      multi, seed,
-                                                      children=modular_children, noise=noise, visualize=False, alpha=0.75)[0]
+                        try:
+                            func_mod = training_procedure(nbr_query, 1, 0, dimension, training_iter, k_vals,
+                                                          g_vals, nu_vals, data_name, data_creation_func, eps, h_model,
+                                                          multi, seed,
+                                                          children=modular_children, noise=noise, visualize=False, alpha=0.75)[0]
 
-                        name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod
+                            name_mod, parent_mod, explor_mod, exploit_mod, r2_mod, child_1_r2, child_2_r2 = func_mod
 
-                        avg_explor_mod.append(np.mean(explor_mod, axis=0))
-                        avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
-                        avg_r2_mod.append(r2_mod[0])
-                        avg_r2_c1_mod.append(child_1_r2)
-                        avg_r2_c2_mod.append(child_2_r2)
+                            avg_explor_mod.append(np.mean(explor_mod, axis=0))
+                            avg_exploit_mod.append(np.mean(exploit_mod, axis=0))
+                            avg_r2_mod.append(r2_mod[0])
+                            avg_r2_c1_mod.append(child_1_r2)
+                            avg_r2_c2_mod.append(child_2_r2)
+                        except:
+                            print("failed modular")
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
@@ -782,6 +787,8 @@ def one_pretrained(k_vals, g_vals, nu_vals):
                                 avg_r2_c1_mod.append(child_1_r2)
                                 avg_r2_c2_mod.append(child_2_r2)
                             except:
+                                print("failed modular")
+
                                 continue
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
@@ -1037,6 +1044,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
                                 avg_r2_c1_mod.append(child_1_r2)
                                 avg_r2_c2_mod.append(child_2_r2)
                             except:
+                                print("failed modular")
                                 continue
 
     if h_model == hmodel.Efficient_UCB_Hierarchical_GP:
@@ -1138,9 +1146,9 @@ if __name__ == '__main__':
     g_vals = [3]
     nu_vals = [0.5]
 
-    #one_pretrained(k_vals, g_vals, nu_vals)
+    two_pretrained(k_vals, g_vals, nu_vals)
 
-    for k_val in k_vals:
+    """for k_val in k_vals:
         with mp.Pool(processes=4) as pool:
             p1 = pool.apply_async(two_pretrained, args=([k_val], g_vals, nu_vals))
             p2 = pool.apply_async(two_pretrained_bad, args=([k_val], g_vals, nu_vals))
@@ -1164,7 +1172,7 @@ if __name__ == '__main__':
             try:
                 p4.get()
             except:
-                continue
+                continue"""
 
     """for g_val in g_vals:
         with mp.Pool(processes=4) as pool:
