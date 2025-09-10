@@ -7,7 +7,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_rand_init = 6
 
     multi = False
@@ -330,7 +330,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_rand_init = 6
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -618,7 +618,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_rand_init = 6
 
     multi = False
@@ -875,7 +875,7 @@ def one_pretrained_bad(k_vals, g_vals, nu_vals):
     dimension = 15
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 10
+    nbr_repetition = 20
     nbr_rand_init = 6
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
@@ -1132,9 +1132,9 @@ if __name__ == '__main__':
     g_vals = [3]
     nu_vals = [0.5]
 
-    two_pretrained(k_vals, g_vals, nu_vals)
+    #two_pretrained(k_vals, g_vals, nu_vals)
 
-    """for k_val in k_vals:
+    for k_val in k_vals:
         with mp.Pool(processes=4) as pool:
             p1 = pool.apply_async(two_pretrained, args=([k_val], g_vals, nu_vals))
             p2 = pool.apply_async(two_pretrained_bad, args=([k_val], g_vals, nu_vals))
@@ -1158,7 +1158,7 @@ if __name__ == '__main__':
             try:
                 p4.get()
             except:
-                continue"""
+                continue
 
     """for g_val in g_vals:
         with mp.Pool(processes=4) as pool:
