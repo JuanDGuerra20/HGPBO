@@ -314,7 +314,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         child_2_r2.append(c2_r2)
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
-        if len(children) > 0:
+        if len(children) == 2:
             prior_norm = (prior_map - torch.min(prior_map)) / (torch.max(prior_map) - torch.min(prior_map))
             acquisition_map = (acquisition_map - torch.min(acquisition_map)) / (
                         torch.max(acquisition_map) - torch.min(acquisition_map))
