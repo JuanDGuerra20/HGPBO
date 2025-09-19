@@ -821,14 +821,14 @@ def generate_3d_2_dataset(dimension, eps):
     return x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier
 
 def generate_modularity_dataset(dimension, eps):
-    x_sub1 = torch.linspace(0, 2, dimension).double()
+    x_sub1 = torch.linspace(0, dimension, dimension).double()
     y_sub1 = torch.zeros(x_sub1.shape)
 
     for i, x in enumerate(x_sub1):
-        y_sub1[i] = -(x - 2) ** 2 + 2
+        y_sub1[i] = -(x + 2) ** 2 + 2
     y_sub1 = y_sub1.double()
 
-    x_sub2 = torch.linspace(0, 2, dimension).double()
+    x_sub2 = torch.linspace(0, dimension, dimension).double()
     y_sub2 = torch.sin(x_sub2 * (2 * math.pi)) / (x_sub2 - 1) + 2
     y_sub2 = torch.where(y_sub2 == -torch.inf, 6.283, y_sub2)  # solved the overflow by limits
 

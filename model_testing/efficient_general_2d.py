@@ -250,6 +250,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 sub2.bif_ind = []
                 sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[0], x_sub2)
 
+                pretrained_prior = torch.zeros(dimension, dimension)
+
+                for i in range(len(pretrained_prior)):
+                    for j in range(len(pretrained_prior)):
+                        pretrained_prior[i, j] = (p1[i] + p2[j]) / 2
+
             sub1.eval()
             sub2.eval()
 
@@ -315,7 +321,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
         if len(children) > 0:
-            prior_norm = (prior_map - torch.min(prior_map)) / (torch.max(prior_map) - torch.min(prior_map))
+            prior_norm = (pretrained_prior - torch.min(pretrained_prior)) / (torch.max(pretrained_prior) - torch.min(pretrained_prior))
             acquisition_map = (acquisition_map - torch.min(acquisition_map)) / (
                         torch.max(acquisition_map) - torch.min(acquisition_map))
             acquisition_map = acquisition_map * (alpha * torch.flatten(prior_norm) + (1 - alpha))
@@ -766,10 +772,10 @@ if __name__ == '__main__':
 
     #warnings.filterwarnings('ignore')
 
-    dimension = 15
+    dimension = 30
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 1
+    nbr_repetition = 15
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
@@ -784,7 +790,7 @@ if __name__ == '__main__':
                      833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
     seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [3]:
+        for dataset_num in [6]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

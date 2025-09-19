@@ -4,10 +4,10 @@ import multiprocessing as mp
 from efficient_general_2d import *
 
 def two_pretrained(k_vals, g_vals, nu_vals):
-    dimension = 15
+    dimension = 20
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 20
+    nbr_repetition = 10
     nbr_rand_init = 6
 
     multi = False
@@ -327,7 +327,7 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
 
 def two_pretrained_bad(k_vals, g_vals, nu_vals):
-    dimension = 15
+    dimension = 20
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
@@ -615,7 +615,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
 
 def one_pretrained(k_vals, g_vals, nu_vals):
-    dimension = 15
+    dimension = 20
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
@@ -872,7 +872,7 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
 
 def one_pretrained_bad(k_vals, g_vals, nu_vals):
-    dimension = 15
+    dimension = 20
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
@@ -1132,35 +1132,29 @@ if __name__ == '__main__':
     g_vals = [3]
     nu_vals = [0.5]
 
-    #two_pretrained(k_vals, g_vals, nu_vals)
+    two_pretrained(k_vals, g_vals, nu_vals)
 
-    for k_val in k_vals:
-        with mp.Pool(processes=4) as pool:
+    """for k_val in k_vals:
+        with mp.Pool(processes=2) as pool:
             p1 = pool.apply_async(two_pretrained, args=([k_val], g_vals, nu_vals))
-            p2 = pool.apply_async(two_pretrained_bad, args=([k_val], g_vals, nu_vals))
+            #p2 = pool.apply_async(two_pretrained_bad, args=([k_val], g_vals, nu_vals))
             p3 = pool.apply_async(one_pretrained, args=([k_val], g_vals, nu_vals))
-            p4 = pool.apply_async(one_pretrained_bad, args=([k_val], g_vals, nu_vals))
+            #p4 = pool.apply_async(one_pretrained_bad, args=([k_val], g_vals, nu_vals))
 
             try:
                 p1.get()
-            except:
-                continue
-            try:
-                p2.get()
             except:
                 continue
 
             try:
                 p3.get()
             except:
-                continue
+                continue"""
 
-            try:
-                p4.get()
-            except:
-                continue
 
-    """for g_val in g_vals:
+
+    """
+    for g_val in g_vals:
         with mp.Pool(processes=4) as pool:
             p1 = pool.apply_async(two_pretrained, args=([7.5], [g_val], nu_vals))
             p2 = pool.apply_async(two_pretrained_bad, args=([7.5], [g_val], nu_vals))
