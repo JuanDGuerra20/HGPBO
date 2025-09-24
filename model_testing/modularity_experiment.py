@@ -4,7 +4,7 @@ import multiprocessing as mp
 from efficient_general_2d import *
 
 def two_pretrained(k_vals, g_vals, nu_vals):
-    dimension = 30
+    dimension = 32
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 10
