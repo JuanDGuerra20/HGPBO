@@ -204,11 +204,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
         plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
         plt.savefig(
-            f'{data_name}/vanilla{folder_of_the_day}/differentiable_plots/vanilla_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}.svg')
+            f'{data_name}/vanilla{folder_of_the_day}/differentiable_plots/vanilla_Prop_{data_name}_HGP-BO_{nbr_repetition}_dim_{dimension}_repetitions_kappa_{k}.svg')
 
         plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
         plt.savefig(
-            f'{data_name}/vanilla{folder_of_the_day}/png/vanilla_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}.png')
+            f'{data_name}/vanilla{folder_of_the_day}/png/vanilla_Prop_{data_name}_HGP-BO_{nbr_repetition}_dim_{dimension}_repetitions_kappa_{k}.png')
         plt.close()
 
         vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
@@ -224,7 +224,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2']
 
         df.to_csv(
-            f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
+            f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_dim_{dimension}_repetitions_{nbr_repetition}')
 
     # Joint Section
 
@@ -233,14 +233,15 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
 if __name__ == '__main__':
 
-    dimension = 15
+    dimension = 31
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 1
     k_vals = [2]
 
-    for dataset_num in [10]:
+
+    for dataset_num in [6]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

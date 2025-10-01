@@ -163,9 +163,15 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
     i = 0
     for indices, pins in enumerate(X):
         # find pins of ((x, y), (x, y)) coordinates in X
-        if pins[0] == next_query_pins[0] and pins[1] == next_query_pins[1]:
-            new_training_values_tampon[i] = reshape_y[indices]
-            i += 1
+        if next_query_pins.ndim == 0:
+            # This is for when we are trying to train the children
+            if pins == next_query_pins:
+                new_training_values_tampon[i] = reshape_y[indices]
+                i += 1
+        else:
+            if pins[0] == next_query_pins[0] and pins[1] == next_query_pins[1]:
+                new_training_values_tampon[i] = reshape_y[indices]
+                i += 1
 
     # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
     # (most of the time is 10 in 2D dataset because they took 10 emg responses from monkeys)
@@ -178,10 +184,8 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
         new_training_values[x] = new_training_values_tampon[x]
 
     new_query_value_mean = np.mean(new_training_values)
-    try:
-        new_query_value_random = np.random.choice(new_training_values)
-    except:
-        print("wa wa wa i suck bal bla bla")
+    new_query_value_random = np.random.choice(new_training_values)
+
 
     new_query_value_mean += np.random.normal(0, noise, size=new_query_value_mean.shape) * (np.max(reshape_y.numpy())-np.min(reshape_y.numpy()))
     new_query_value_random += np.random.normal(0, noise, size=new_query_value_random.shape) * (np.max(reshape_y.numpy())-np.min(reshape_y.numpy()))
@@ -371,8 +375,7 @@ def get_exploration_score(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_poin
 
     Comments: X and Y represent the coord and respective values of GT, size of nbr_rdm_points_data
     """
-    new_training_values_tampon = np.zeros(nbr_rdm_points_data)
-    i = 0
+    new_training_values_tampon = []
     mu = y_mu
     argmax_mu = torch.where(mu.reshape(len(mu)) == torch.max(mu.reshape(len(mu))))
 
@@ -391,22 +394,20 @@ def get_exploration_score(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_poin
         # find pins of ((x, y), (x, y)) coordinates in X
         for indices_y, sub_pin in enumerate(pins):
             if sub_pin[0] == next_query_pins[0] and sub_pin[1] == next_query_pins[1]:
-                new_training_values_tampon[i] = Y[indices_x, indices_y]
-                i += 1
+                new_training_values_tampon.append(Y[indices_x, indices_y])
 
     # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
     # (most of the time is 10 in 2D dataset because they took 10 emg responses from monkeys)
     # but it can be 11 or 9. More elegant way is to use len(ys) in make_dataset function
     # but here it works by taking fixing the length of new_training_values_tampon to 11
     # and taking the real length of non zero elements, then using a new array
-    len_non_zero = np.count_nonzero(new_training_values_tampon)
-    new_training_values = np.zeros(len_non_zero)
-    for x in range(len_non_zero):
-        new_training_values[x] = new_training_values_tampon[x]
-
-    mean_value = np.mean(new_training_values)
-    exploration_score = mean_value / ground_truth_max
-    return exploration_score, next_query_pins
+    new_training_values_tampon = np.array(new_training_values_tampon)
+    mean_value = np.mean(new_training_values_tampon)
+    max_Y = torch.max(Y)
+    min_Y = torch.min(Y)/max_Y
+    exploration_score = mean_value / max_Y
+    resized_explor = (exploration_score - min_Y)/(1 - min_Y)
+    return resized_explor, next_query_pins
 
 
 def get_exploitation_score(mean_value, ground_truth_max):
@@ -567,5 +568,70 @@ def update_max_seen_response_no_norm(next_query_value_random, max_seen_resp):
     # next_query_value_random = next_query_value_random / max_seen_resp
     return next_query_value_random, max_seen_resp
 
+def startup_children(child, child_like, train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, kappa):
+
+    for q in range(nbr_query):
+        if q == 0:
+            max_seen_resp = torch.max(train_y_child)
+
+            optimizer = torch.optim.Adam(child.parameters(), lr=1e-3)
+            mll = gpytorch.mlls.ExactMarginalLogLikelihood(child_like, child)
+
+            child.eval()
+            child_like.eval()
+
+        with gpytorch.settings.lazily_evaluate_kernels(state=False):
+            observed_pred = make_prediction(child, x_child, child_like)
+
+        acquisition_map, hierar_y_mu = get_acquisition_map(kappa, observed_pred, child_qc)
+
+        next_query_pins = get_next_query_pins(acquisition_map, x_child)
+
+        next_query_value_random, next_query_value_mean = get_next_query_value(next_query_pins,
+                                                                                     x_child,
+                                                                                     y_child, noise=noise)
+
+        next_query_value_random, max_seen_resp = update_max_seen_response_no_norm(next_query_value_random,
+                                                                                    max_seen_resp)
+
+        response = torch.tensor(next_query_value_random)
+
+        train_x_child, train_y_child = child.update_training_data(train_x_child, train_y_child, next_query_pins, response,
+                                                      env=True)  # has to be 1D dataset
+        # Update the model with the new training data
+
+        div_y = train_y_child.clone()
+        if torch.max(div_y[child.env_ind]) - torch.min(div_y[child.env_ind]) == 0:
+            div_y[child.env_ind] = div_y[child.env_ind] / torch.max(div_y[child.env_ind])
+
+        else:
+            div_y[child.env_ind] = (div_y[child.env_ind] - torch.min(div_y[child.env_ind])) / (
+                        torch.max(div_y[child.env_ind]) - torch.min(div_y[child.env_ind]))
+        if len(child.bif_ind) > 1:
+            div_y[child.bif_ind] = (div_y[child.bif_ind] - torch.min(div_y[child.bif_ind])) / (
+                        torch.max(div_y[child.bif_ind]) - torch.min(div_y[child.bif_ind]))
+
+        child.set_train_data(train_x_child, div_y, strict=False)
+
+        """
+        train_x_child, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
+
+        child.train()
+        child_like.train()
+        for i in range(training_iter):
+            # Find optimal model hyperparameters
+            optimizer.zero_grad()
+
+            output = child(train_x_child)
+
+            loss = -mll(output, train_y_child)
+
+            loss.backward()
+            optimizer.step()
+            # Get into evaluation (predictive posterior) mode
+        child.eval()
+        child_like.eval()
+
+    return child, child_like, train_x_child, train_y_child, child_qc
 
 name_code = 'HGP_BO-test6-priorMAP-1model1D'

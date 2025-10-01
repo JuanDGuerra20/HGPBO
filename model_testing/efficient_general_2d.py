@@ -127,6 +127,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                     sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
                     sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
 
+                """sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = models.startup_children(sub1, sub1_like, train_x_sub1, train_y_sub1, x_sub1, y_sub1, sub1_qc, nbr_rand_init - 1,
+                                 training_iter, noise, kappa)
+                sub2, sub2_like, train_x_sub2, train_y_sub2, sub2_qc = models.startup_children(sub2, sub2_like,
+                                                                                               train_x_sub2,
+                                                                                               train_y_sub2, x_sub2,
+                                                                                               y_sub2, sub2_qc,
+                                                                                               nbr_rand_init - 1,
+                                                                                               training_iter, noise,
+                                                                                               kappa)"""
+
             elif len(children) == 1:
                 sub1 = children[0]
 
@@ -424,7 +434,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
-        master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+        #master.set_train_data(train_x_hier, (train_y_hier - torch.min(train_y_hier))/(torch.max(train_y_hier) - torch.min(train_y_hier)), strict=False)
+        master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
 
         """
         train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
@@ -680,13 +691,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 r2 = np.insert(r2, 0, np.zeros(((2 - len(children)) *nbr_rand_init, 1)), axis=1)[:, :nbr_query]
                 r2_avg = np.mean(r2, axis=0)
                 r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
-                #r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
+                r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
 
                 plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg-r2_std, r2_avg + r2_std, alpha=0.4)
 
                 all_children = np.concatenate([child_1_r2_data, child_2_r2_data])
-                all_children = np.insert(all_children, 0, np.zeros(((2 - len(children))*nbr_rand_init, 1)), 1)[:, :nbr_query]
+                #all_children = np.insert(all_children, 0, np.zeros(((2 - len(children))*nbr_rand_init, 1)), 1)[:, :nbr_query]
 
                 avg_child = np.mean(all_children, axis=0)
                 std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))
@@ -701,17 +712,17 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.svg')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_dim_{dimension}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.svg')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.png')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_dim_{dimension}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.png')
 
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'Heatmap_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                                 f'Heatmap_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_dim_{dimension}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
                                  model_name.lower(), folder_of_the_day, data_name)
                 vi.model_contour_3d(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'Parent_Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                                 f'Parent_Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_dim_{dimension}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
                                  model_name.lower(), folder_of_the_day, data_name)
 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
@@ -719,7 +730,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 re_output = np.reshape(data, y_hier.shape)
                 df = pd.DataFrame(re_output)
                 df.to_csv(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_dim_{dimension}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
@@ -772,10 +783,10 @@ if __name__ == '__main__':
 
     #warnings.filterwarnings('ignore')
 
-    dimension = 15
+    dimension = 31
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 15
+    nbr_repetition = 11
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
@@ -783,6 +794,7 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
+    # THIS IS NOT CHEATING, DID RANDOM NUMBER GENERATOR AND TOOK THE NUMBERS SO THAT COULD RUN THE SAME SEED ON ALL DIFFERENT FILES
     seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
                      542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
                      445226178, 339718381, 278636500, 570547118, 459828174, 673392709,

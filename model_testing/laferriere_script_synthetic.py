@@ -450,18 +450,18 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.title(
                     f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.svg')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_dim_{dimension}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.svg')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.png')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_dim_{dimension}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.png')
 
                 plt.close()
 
                 vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                                 f'Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}',
+                                 f'Heatmap_{data_name}_{model_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_dim_{dimension}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}',
                                  model_name.lower(), folder_of_the_day, data_name)
 
                 vi.model_contour_3d(heatmap_data[:, -1, :], x_hier, y_hier,
-                                    f'Parent_Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                                    f'Parent_Contour_{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_dim_{dimension}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
                                     model_name.lower(), folder_of_the_day, data_name)
 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
@@ -469,7 +469,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 re_output = np.reshape(data, y_hier.shape)
                 df = pd.DataFrame(re_output)
                 df.to_csv(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.csv')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_dim_{dimension}_eps_{e}_kappa_{k}_gamma_{g}_nu_{n}_noise_{noi}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
@@ -484,7 +484,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                             'child2_r2']
 
                 df.to_csv(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}_noise_{noi}')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}_dim_{dimension}_repetitions_{nbr_repetition}_noise_{noi}')
 
                 np.save(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
 
@@ -530,7 +530,7 @@ if __name__ == '__main__':
 
     warnings.filterwarnings('ignore')
 
-    dimension = 15
+    dimension = 31
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
     nbr_repetition = 30
@@ -546,11 +546,11 @@ if __name__ == '__main__':
        445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
         56896553, 749380297, 635521450,  19699771, 351850900, 520687372,
        833438344, 355138099, 382604277,  40529313, 441069895, 797772191])
-    # seed = [False] * nbr_repetition
+    seed = [False] * nbr_repetition
 
     model_name = "laferriere_model"
     for h in h_model:
-        for dataset_num in [3]:
+        for dataset_num in [6]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
