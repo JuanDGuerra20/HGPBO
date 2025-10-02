@@ -1010,7 +1010,8 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
     likelihood.train()
 
     model, likelihood = optimize(model, likelihood, training_iter, train_x, div_y, verbose=False)
-
+    model.eval()
+    likelihood.eval()
     return model, likelihood, train_x, train_y
 
 
@@ -1156,3 +1157,41 @@ def decompose_hkernel_loss(model, loss, train_x):
         # Use numerical computing approximation to find the roots of the method (this is approximately the inverse)
 
     # note total_cover = covar_1 + covar_2 as defined
+def optimize(model, likelihood, training_iter, train_x, train_y, verbose=True, hierarchical=False):
+    """
+    Optimize the GP model.
+
+    Parameters:
+    - model: GP model.
+    - likelihood: Likelihood function.
+    - training_iter (int): Number of optimization iterations.
+    - train_x (torch.Tensor): Training input data. . If 1D [x, y], if 2D [x1, y1, x2, y2]
+    - train_y (torch.Tensor): Training output data: EMG values
+    - verbose (bool): Whether to print optimization progress.
+
+    Returns:
+    - model: Optimized GP model.
+    - likelihood: Optimized likelihood function.
+    """
+    # Use the adam optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)  # Includes GaussianLikelihood parameters
+
+    # "Loss" for GPs - the marginal log likelihood
+    mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+
+    for i in range(training_iter):
+        # Zero gradients from previous iteration
+        optimizer.zero_grad()
+        # Output from model
+        output = model(train_x)
+        # Calc loss and backprop gradients
+        loss = -mll(output, train_y)
+        loss.sum().backward()
+        if verbose:
+            print('Iter %d/%d - Loss: %.3f   lengthscale: %.3f   noise: %.3f' % (
+                i + 1, training_iter, loss.item(),
+                model.covar_module.base_kernel.lengthscale.item(),
+                model.likelihood.noise.item()
+            ))
+        optimizer.step()
+    return model, likelihood

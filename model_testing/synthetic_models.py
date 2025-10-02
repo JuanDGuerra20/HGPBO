@@ -9,6 +9,8 @@ from dataset_actions import *
 import gpytorch
 import time
 import math
+import visualization_information as vi
+import hmodel_synthetic as hmodel
 
 """
 Class definitions mainly GP models in this file
@@ -569,7 +571,7 @@ def update_max_seen_response_no_norm(next_query_value_random, max_seen_resp):
     return next_query_value_random, max_seen_resp
 
 def startup_children(child, child_like, train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, kappa):
-
+    over = []
     for q in range(nbr_query):
         if q == 0:
             max_seen_resp = torch.max(train_y_child)
@@ -600,16 +602,7 @@ def startup_children(child, child_like, train_x_child, train_y_child, x_child, y
                                                       env=True)  # has to be 1D dataset
         # Update the model with the new training data
 
-        div_y = train_y_child.clone()
-        if torch.max(div_y[child.env_ind]) - torch.min(div_y[child.env_ind]) == 0:
-            div_y[child.env_ind] = div_y[child.env_ind] / torch.max(div_y[child.env_ind])
-
-        else:
-            div_y[child.env_ind] = (div_y[child.env_ind] - torch.min(div_y[child.env_ind])) / (
-                        torch.max(div_y[child.env_ind]) - torch.min(div_y[child.env_ind]))
-        if len(child.bif_ind) > 1:
-            div_y[child.bif_ind] = (div_y[child.bif_ind] - torch.min(div_y[child.bif_ind])) / (
-                        torch.max(div_y[child.bif_ind]) - torch.min(div_y[child.bif_ind]))
+        div_y = (train_y_child - torch.min(y_child))/(torch.max(y_child) - torch.min(y_child))
 
         child.set_train_data(train_x_child, div_y, strict=False)
 
@@ -631,7 +624,36 @@ def startup_children(child, child_like, train_x_child, train_y_child, x_child, y
             # Get into evaluation (predictive posterior) mode
         child.eval()
         child_like.eval()
+        with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
+            c1_r2 = vi.child_contour_r2([child], x_child,
+                                        [y_child / torch.max(y_child)])
+        over.append(c1_r2[0])
+    print(over)
     return child, child_like, train_x_child, train_y_child, child_qc
 
+def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, kappa):
+    for q in range(nbr_query):
+        if q == 0:
+            # Need to initialize the model - Will be random in this method
+
+            max_seen_response = torch.max(train_y_child)
+            child.eval()
+            child_like.eval()
+
+        with gpytorch.settings.lazily_evaluate_kernels(state=False):
+            observed_pred = make_prediction(child, x_child, child_like)
+
+        acquisition_map, y_mu = get_acquisition_map(kappa, observed_pred, child_qc)
+
+        next_query = torch.argmax(acquisition_map)
+
+        q_x, q_y = x_child[next_query], y_child[next_query]
+
+        response, max_seen_response = update_max_seen_response_no_norm(q_y, max_seen_response)
+        child_qc = child.increment_q_n(child_qc, q_x, x_child)
+        child, child_like, train_x_child, train_y_child = hmodel.update_model1_1D_max_seen(child, child_like, train_x_child, train_y_child, q_x, response, env=True, training_iter=training_iter)
+        child.eval()
+        child_like.eval()
+    return child, child_like, train_x_child, train_y_child, child_qc
 name_code = 'HGP_BO-test6-priorMAP-1model1D'

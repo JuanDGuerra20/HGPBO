@@ -605,13 +605,14 @@ def heatmap_r_score(data, z):
 
 
 
-def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True, parent=None, visualize=False, query=0):
+def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True, parent=None, visualize=False, query=0):
     true_y = (true_y - np.min(true_y)) / (np.max(true_y) - np.min(true_y))
     for i, model in enumerate(sub_models):
         model.eval()
 
         likelihood = model.likelihood
         likelihood.eval()
+        test_x = true_x[i]
 
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
