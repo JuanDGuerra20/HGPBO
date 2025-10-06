@@ -650,6 +650,8 @@ def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_
 
         q_x, q_y = x_child[next_query], y_child[next_query]
 
+        q_y += (torch.max(y_child)-torch.min(y_child)) * np.random.normal(0, noise)
+
         response, max_seen_response = update_max_seen_response_no_norm(q_y, max_seen_response)
         child_qc = child.increment_q_n(child_qc, q_x, x_child)
         child, child_like, train_x_child, train_y_child = hmodel.update_model1_1D_max_seen(child, child_like, train_x_child, train_y_child, q_x, response, env=True, training_iter=training_iter)
