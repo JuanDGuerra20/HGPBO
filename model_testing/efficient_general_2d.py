@@ -322,8 +322,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
         if q == 1:
             vi.contour_plot_1D(master.sub_models, [x_sub1, x_sub2],
-                               [(y_sub1 - torch.min(y_sub1)) / (torch.max(y_sub1) - torch.min(y_sub1)),
-                                (y_sub2 - torch.min(y_sub2)) / (torch.max(y_sub2) - torch.min(y_sub2))],
+                               [y_sub1, y_sub2],
                                f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_pre_children_no_norm',
                                model_name.lower(), folder_of_the_day, data_name, parent=master, query=q,
                                visualize=visualize)
@@ -440,8 +439,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
-        master.set_train_data(train_x_hier, (train_y_hier - torch.min(train_y_hier))/(torch.max(train_y_hier) - torch.min(train_y_hier)), strict=False)
+        #master.set_train_data(train_x_hier, (train_y_hier - torch.min(train_y_hier))/(torch.max(train_y_hier) - torch.min(train_y_hier)), strict=False)
         #master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+        master.set_train_data(train_x_hier, train_y_hier, strict=False)
 
         """
         train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
@@ -453,14 +453,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             # start = time.time()
 
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                  train_y_hier,
+                                                  verbose=False)
             """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
                                                   train_y_hier / max_seen_resp_2D,
                                                   verbose=False)"""
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
                                                   (train_y_hier - torch.min(train_y_hier)) / (
                                                               torch.max(train_y_hier) - torch.min(train_y_hier)),
-                                                  verbose=False)
+                                                  verbose=False)"""
 
             """t = time.time() - start
             h_opt_time.append(t)
@@ -796,14 +799,14 @@ if __name__ == '__main__':
     dimension = 31
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 5
+    nbr_repetition = 10
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    nbr_rand_init = 6  # Found through HP Testing
+    nbr_rand_init = 10  # Found through HP Testing
     noise = 0.1
     # THIS IS NOT CHEATING, DID RANDOM NUMBER GENERATOR AND TOOK THE NUMBERS SO THAT COULD RUN THE SAME SEED ON ALL DIFFERENT FILES
     seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
@@ -813,7 +816,7 @@ if __name__ == '__main__':
                      833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
     #seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [6]:
+        for dataset_num in [3,2]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

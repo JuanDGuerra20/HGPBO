@@ -559,7 +559,7 @@ def select_random_queries(num_queries, x, y, seed=False, noise=0):
     indices = np.random.randint(len(x), size=(num_queries))
     train_x = x[indices]
     train_y = y[indices]
-    train_y += (torch.max(y)-torch.min(y)) * np.random.normal(0, noise, size=train_y.shape)
+    train_y += np.random.normal(0, noise, size=train_y.shape)
 
     return train_x, train_y
 

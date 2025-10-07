@@ -606,13 +606,14 @@ def heatmap_r_score(data, z):
 
 
 def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True, parent=None, visualize=False, query=0):
-    true_y = (true_y - np.min(true_y)) / (np.max(true_y) - np.min(true_y))
     for i, model in enumerate(sub_models):
         model.eval()
 
         likelihood = model.likelihood
         likelihood.eval()
         test_x = true_x[i]
+        test_y = true_y[i]
+        test_y = (test_y - torch.min(test_y)) / (torch.max(test_y) - torch.min(test_y))
 
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
@@ -621,7 +622,7 @@ def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of
             f, ax = plt.subplots(1, 1)
 
             mean = observed_pred.mean.numpy()
-            mean = mean/np.max(mean)
+            mean = (mean - np.min(mean)) / (np.max(mean) - np.min(mean))
             std = observed_pred.stddev.numpy() / np.sqrt(model.query_counter.numpy())
             train_x = model.train_inputs[0]
             train_y = model.train_targets
@@ -630,7 +631,7 @@ def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of
             div1[model.env_ind] = div1[model.env_ind]/model.env_max_seen
             div1[model.bif_ind] = div1[model.bif_ind]/model.bif_max_seen"""
 
-            mean = (mean - np.min(mean))/(np.max(mean) - np.min(mean))
+
 
             if neural:
                 temp_x = list(range(len(test_x)))
@@ -641,26 +642,26 @@ def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of
 
                 #ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 
-                ax.plot(temp_x, true_y[i], 'r', label='Ground Truth')
+                ax.plot(temp_x, test_y, 'r', label='Ground Truth')
             else:
 
                 if parent is not None:
-                    train_y_env = train_y[model.env_ind] / abs(model.env_max_seen)
-                    train_y_bif = train_y[model.bif_ind] / abs(model.bif_max_seen)
+                    train_y_env = (train_y[model.env_ind] - torch.min(train_y[model.env_ind]))/(torch.max(train_y[model.env_ind])-torch.min(train_y[model.env_ind]))
+                    train_y_bif = (train_y[model.bif_ind] - torch.min(train_y[model.bif_ind]))/(torch.max(train_y[model.bif_ind])-torch.min(train_y[model.bif_ind]))
 
                     train_x_env = train_x[model.env_ind]
                     train_x_bif = train_x[model.bif_ind]
 
-                    train_env_scale = (train_y_env - torch.min(train_y_env)) / (torch.max(train_y_env) - torch.min(train_y_env))
+                    #train_env_scale = (train_y_env - torch.min(train_y_env)) / (torch.max(train_y_env) - torch.min(train_y_env))
 
-                    ax.plot(train_x_env, train_env_scale, 'k*', label='True Labels')
+                    ax.plot(train_x_env, train_y_env, 'k*', label='True Labels')
                     if train_y_bif.shape[0] > 0:
                         train_bif_scale = (train_y_bif - torch.min(train_y_bif)) / (
                                     torch.max(train_y_bif) - torch.min(train_y_bif))
                         ax.plot(train_x_bif, train_bif_scale, 'g*', label='BIF Labels')
                 ax.plot(test_x.numpy(), mean, 'b', label='Predicted Mean')
                 ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5, label='Uncertainty')
-                ax.plot(test_x.numpy(), true_y[i], 'r', label='Ground Truth')
+                ax.plot(test_x.numpy(), test_y, 'r', label='Ground Truth')
 
             ax.legend()
         plt.xlabel("Input Space")

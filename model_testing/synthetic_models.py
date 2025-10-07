@@ -189,8 +189,8 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
     new_query_value_random = np.random.choice(new_training_values)
 
 
-    new_query_value_mean += np.random.normal(0, noise, size=new_query_value_mean.shape) * (np.max(reshape_y.numpy())-np.min(reshape_y.numpy()))
-    new_query_value_random += np.random.normal(0, noise, size=new_query_value_random.shape) * (np.max(reshape_y.numpy())-np.min(reshape_y.numpy()))
+    new_query_value_mean += np.random.normal(0, noise, size=new_query_value_mean.shape)
+    new_query_value_random += np.random.normal(0, noise, size=new_query_value_random.shape)
 
     return new_query_value_random, new_query_value_mean
 
@@ -648,9 +648,9 @@ def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_
 
         next_query = torch.argmax(acquisition_map)
 
-        q_x, q_y = x_child[next_query], y_child[next_query].item()
+        q_x, q_y = x_child[next_query], y_child[next_query].clone()
 
-        q_y += (torch.max(y_child)-torch.min(y_child)) * np.random.normal(0, noise)
+        q_y += torch.normal(0, noise, size = q_y.shape)
 
         response, max_seen_response = update_max_seen_response_no_norm(q_y, max_seen_response)
         child_qc = child.increment_q_n(child_qc, q_x, x_child)
