@@ -648,7 +648,7 @@ def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_
 
         next_query = torch.argmax(acquisition_map)
 
-        q_x, q_y = x_child[next_query], y_child[next_query]
+        q_x, q_y = x_child[next_query], y_child[next_query].item()
 
         q_y += (torch.max(y_child)-torch.min(y_child)) * np.random.normal(0, noise)
 
