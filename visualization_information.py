@@ -613,7 +613,7 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
         likelihood.eval()
         test_x = true_x[i]
         test_y = true_y[i]
-        norm_test_y = (test_y - torch.min(test_y)) / (torch.max(test_y) - torch.min(test_y))
+        norm_test_y = (test_y - torch.mean(test_y)) / torch.std(test_y)
         raw_train_y = raw_y[i]
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
@@ -622,7 +622,7 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
             f, ax = plt.subplots(1, 1)
 
             mean = observed_pred.mean.numpy()
-            mean = (mean - np.min(mean)) / (np.max(mean) - np.min(mean))
+            mean = (mean - np.mean(mean)) / np.std(mean)
             std = observed_pred.stddev.numpy() / np.sqrt(model.query_counter.numpy())
             train_x = model.train_inputs[0]
             train_y = model.train_targets
@@ -646,8 +646,11 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
             else:
 
                 if parent is not None:
-                    train_y_env = (raw_train_y[model.env_ind] - torch.min(test_y))/(torch.max(test_y)-torch.min(test_y))
-                    train_y_bif = (train_y[model.bif_ind] - torch.min(train_y[model.bif_ind]))/(torch.max(train_y[model.bif_ind])-torch.min(train_y[model.bif_ind]))
+                    train_y_env = (raw_train_y[model.env_ind] - torch.mean(test_y))/torch.std(test_y)
+                    if len(model.bif_ind) < 2:
+                        train_y_bif = (train_y[model.bif_ind] - torch.mean(train_y[model.bif_ind]))
+                    else:
+                        train_y_bif = (train_y[model.bif_ind] - torch.mean(train_y[model.bif_ind]))/torch.std(train_y[model.bif_ind])
 
                     train_x_env = train_x[model.env_ind]
                     train_x_bif = train_x[model.bif_ind]
@@ -667,7 +670,6 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
         plt.xlabel("Input Space")
         plt.ylabel("Output Value")
         plt.title(f"{model_type} SubModel {i} Contour Map for Respective Data")
-        plt.ylim((-0.1,1.1))
         plt.tight_layout()
         if save:
             if visualize:

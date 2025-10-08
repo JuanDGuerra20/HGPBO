@@ -660,7 +660,13 @@ def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_
 
         response, max_seen_response = update_max_seen_response_no_norm(q_y, max_seen_response)
         child_qc = child.increment_q_n(child_qc, q_x, x_child)
-        child, child_like, train_x_child, train_y_child = new_child_update_model_1D_max_seen(child, child_like, train_x_child, train_y_child, child_qc, nu, q_x, response, env=True, training_iter=training_iter)
+        #child, child_like, train_x_child, train_y_child = new_child_update_model_1D_max_seen(child, child_like, train_x_child, train_y_child, child_qc, nu, q_x, response, env=True, training_iter=training_iter)
+        child, child_like, train_x_child, train_y_child = hmodel.update_model1_1D_max_seen(child, child_like,
+                                                                                             train_x_child,
+                                                                                             train_y_child,
+                                                                                             q_x, response,
+                                                                                             env=True,
+                                                                                             training_iter=training_iter)
         child.eval()
         child_like.eval()
     return child, child_like, train_x_child, train_y_child, child_qc
@@ -707,13 +713,14 @@ def new_child_update_model_1D_max_seen(model, likelihood, train_x, train_y, chil
 
     div_y = train_y.clone()
     if not env:
-        if torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]) == 0:
-            div_y[model.env_ind] = div_y[model.env_ind]/torch.max(div_y[model.env_ind])
+        div_y[model.env_ind] = (div_y[model.env_ind] - torch.mean(div_y[model.env_ind])) / torch.std(
+            div_y[model.env_ind])
+        if len(model.bif_ind) < 2:
+            div_y[model.bif_ind] = div_y[model.bif_ind] - torch.mean(div_y[model.bif_ind])
 
         else:
-            div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
-        if len(model.bif_ind) > 1:
-            div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))
+            div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.mean(div_y[model.bif_ind])) / torch.std(
+                div_y[model.bif_ind])
 
     new_model = ExactGPModel(train_x, div_y, likelihood,
                                            query_counter=child_qc, nu=nu)

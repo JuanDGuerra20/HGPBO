@@ -534,8 +534,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                         f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}_pid_{pid}',
                         model_name.lower(), folder_of_the_day, data_name, parent=master, query=q, visualize=visualize)
 
-
-
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
     else:
@@ -811,7 +809,7 @@ if __name__ == '__main__':
     dimension = 31
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 10
+    nbr_repetition = 9
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
