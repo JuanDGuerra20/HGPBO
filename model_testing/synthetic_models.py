@@ -5,12 +5,18 @@ import torch
 import sys
 import os
 
+from Cython.Shadow import boundscheck
+from botorch.models import SingleTaskGP
+
 from dataset_actions import *
 import gpytorch
 import time
 import math
 import visualization_information as vi
 import hmodel_synthetic as hmodel
+from botorch.acquisition.analytic import UpperConfidenceBound
+from botorch.optim import optimize_acqf
+from botorch.fit import fit_gpytorch_mll
 
 """
 Class definitions mainly GP models in this file
@@ -45,6 +51,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
 
         self.bif_max_seen = torch.tensor(-9999999, dtype=torch.float64)
         self.bif_ind = []
+        self.num_outputs = 1
 
     def forward(self, x):
         """
@@ -114,6 +121,9 @@ class ExactGPModel(gpytorch.models.ExactGP):
             self.bif_ind.append(next_q_val)
 
         return train_x, train_y
+
+    def transform_inputs(self, X):
+        return X
 
 
 """
@@ -632,15 +642,11 @@ def startup_children(child, child_like, train_x_child, train_y_child, x_child, y
     print(over)
     return child, child_like, train_x_child, train_y_child, child_qc
 
-def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, kappa):
+def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, kappa, nu):
+    max_seen_response = torch.max(train_y_child)
+    child.eval()
+    child_like.eval()
     for q in range(nbr_query):
-        if q == 0:
-            # Need to initialize the model - Will be random in this method
-
-            max_seen_response = torch.max(train_y_child)
-            child.eval()
-            child_like.eval()
-
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             observed_pred = make_prediction(child, x_child, child_like)
 
@@ -654,8 +660,75 @@ def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_
 
         response, max_seen_response = update_max_seen_response_no_norm(q_y, max_seen_response)
         child_qc = child.increment_q_n(child_qc, q_x, x_child)
-        child, child_like, train_x_child, train_y_child = hmodel.update_model1_1D_max_seen(child, child_like, train_x_child, train_y_child, q_x, response, env=True, training_iter=training_iter)
+        child, child_like, train_x_child, train_y_child = new_child_update_model_1D_max_seen(child, child_like, train_x_child, train_y_child, child_qc, nu, q_x, response, env=True, training_iter=training_iter)
         child.eval()
         child_like.eval()
     return child, child_like, train_x_child, train_y_child, child_qc
+
+def botorch_pretrain(train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, beta, nu):
+    bounds = torch.tensor([[torch.min(x_child)], [torch.max(x_child)]])
+
+    for q in range(nbr_query):
+        child_like = gpytorch.likelihoods.GaussianLikelihood()
+        gp = ExactGPModel(train_x_child, train_y_child, child_like,
+                                           query_counter=child_qc, nu=nu)
+        mll = gpytorch.mlls.ExactMarginalLogLikelihood(child_like, gp)
+
+        fit_gpytorch_mll(mll)
+
+        acq_func = UpperConfidenceBound(model=gp, beta=beta)
+
+        candidate, acq_value = optimize_acqf(
+            acq_function=acq_func,
+            bounds=bounds,
+            q=1,
+            num_restarts=10
+        )
+
+        new_y = print(candidate)
+
+def new_child_update_model_1D_max_seen(model, likelihood, train_x, train_y, child_qc, nu, next_query_pin, response1, env, training_iter=10):
+    """
+    Used to update the submodel within the hierarchical model
+    :param model: the child model that will be updated
+    :param likelihood: the likelihood associated to param model
+    :param train_x: x input
+    :param train_y: y output
+    :param next_query_pins: which pins will be queried next
+    :param response1: EMG response of first target
+    :param response2: EMG response of second target
+    :param training_iter: number of training iterations
+    :return:
+    """
+
+    # Update training data by adding next_query_value to the train dataset
+    train_x, train_y = model.update_training_data(train_x, train_y, next_query_pin, response1, env)  # has to be 1D dataset
+    # Update the model with the new training data
+
+    div_y = train_y.clone()
+    if not env:
+        if torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]) == 0:
+            div_y[model.env_ind] = div_y[model.env_ind]/torch.max(div_y[model.env_ind])
+
+        else:
+            div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
+        if len(model.bif_ind) > 1:
+            div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))
+
+    new_model = ExactGPModel(train_x, div_y, likelihood,
+                                           query_counter=child_qc, nu=nu)
+
+    new_model.bif_ind = model.bif_ind
+    new_model.env_ind = model.env_ind
+    new_model.bif_max_seen = model.bif_max_seen
+    new_model.env_ind = model.env_ind
+    # Find optimal model hyperparameters
+    new_model.train()
+    likelihood.train()
+
+    model, likelihood = optimize(new_model, likelihood, training_iter, train_x, div_y, verbose=False)
+    model.eval()
+    likelihood.eval()
+    return model, likelihood, train_x, train_y
+
 name_code = 'HGP_BO-test6-priorMAP-1model1D'

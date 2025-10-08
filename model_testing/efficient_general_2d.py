@@ -77,7 +77,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                    data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], visualize=True, seed=True, noise=0.1, alpha=0):
     warnings.filterwarnings('ignore')
     x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
-
+    pid = os.getpid()
     prior_map = torch.zeros(dimension, dimension)
 
     ground_truth_max_1 = torch.max(y_sub1)
@@ -126,16 +126,28 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 for i in range(len(train_x_sub1)):
                     sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
                     sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
+                sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = models.train_submodels(sub1, sub1_like,
+                                                                                                  train_x_sub1,
+                                                                                                  train_y_sub1, x_sub1,
+                                                                                                  y_sub1, sub1_qc,
+                                                                                                  nbr_rand_init - 1,
+                                                                                                  training_iter, noise, kappa, nu)
                 sub2, sub2_like, train_x_sub2, train_y_sub2, sub2_qc = models.train_submodels(sub2, sub2_like,
                                                                                               train_x_sub2,
                                                                                               train_y_sub2, x_sub2,
                                                                                               y_sub2, sub2_qc,
                                                                                               nbr_rand_init - 1,
                                                                                               training_iter, noise,
-                                                                                              kappa)
-                sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = models.train_submodels(sub1, sub1_like, train_x_sub1, train_y_sub1, x_sub1, y_sub1, sub1_qc, nbr_rand_init - 1,
-                                 training_iter, noise, kappa)
+                                                                                              kappa, nu)
 
+
+                """sub2, sub2_like, train_x_sub2, train_y_sub2, sub2_qc = models.botorch_pretrain(train_x_sub2,
+                                                                                              train_y_sub2, x_sub2,
+                                                                                              y_sub2, sub2_qc,
+                                                                                              nbr_query,
+                                                                                              training_iter, noise,
+                                                                                              kappa, nu)
+                sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = models.botorch_pretrain(train_x_sub1, train_y_sub1, x_sub1, y_sub1, sub1_qc, nbr_query, training_iter, noise, kappa, nu)"""
 
             elif len(children) == 1:
                 sub1 = children[0]
@@ -322,8 +334,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
         if q == 1:
             vi.contour_plot_1D(master.sub_models, [x_sub1, x_sub2],
-                               [y_sub1, y_sub2],
-                               f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_pre_children_no_norm',
+                               [y_sub1, y_sub2], [train_y_sub1, train_y_sub2],
+                               f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_pre_children_no_norm_pid_{pid}',
                                model_name.lower(), folder_of_the_day, data_name, parent=master, query=q,
                                visualize=visualize)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
@@ -518,8 +530,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         noi = str(noise).replace('.', ',')
 
 
-        vi.contour_plot_1D(master.sub_models, [x_sub1,x_sub2],[(y_sub1 - torch.min(y_sub1)) / (torch.max(y_sub1) - torch.min(y_sub1)),(y_sub2 - torch.min(y_sub2)) / (torch.max(y_sub2) - torch.min(y_sub2))],
-                        f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+        vi.contour_plot_1D(master.sub_models, [x_sub1,x_sub2],[y_sub1,y_sub2], [train_y_sub1, train_y_sub2],
+                        f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}_pid_{pid}',
                         model_name.lower(), folder_of_the_day, data_name, parent=master, query=q, visualize=visualize)
 
 
@@ -807,16 +819,16 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 10  # Found through HP Testing
-    noise = 0.1
+    noise = 0
     # THIS IS NOT CHEATING, DID RANDOM NUMBER GENERATOR AND TOOK THE NUMBERS SO THAT COULD RUN THE SAME SEED ON ALL DIFFERENT FILES
     seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
                      542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
                      445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
                      56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
                      833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
-    #seed = [False]*nbr_repetition
+    seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [3,2]:
+        for dataset_num in [6]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

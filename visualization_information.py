@@ -605,7 +605,7 @@ def heatmap_r_score(data, z):
 
 
 
-def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True, parent=None, visualize=False, query=0):
+def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True, parent=None, visualize=False, query=0):
     for i, model in enumerate(sub_models):
         model.eval()
 
@@ -613,8 +613,8 @@ def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of
         likelihood.eval()
         test_x = true_x[i]
         test_y = true_y[i]
-        test_y = (test_y - torch.min(test_y)) / (torch.max(test_y) - torch.min(test_y))
-
+        norm_test_y = (test_y - torch.min(test_y)) / (torch.max(test_y) - torch.min(test_y))
+        raw_train_y = raw_y[i]
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
         
@@ -642,11 +642,11 @@ def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of
 
                 #ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 
-                ax.plot(temp_x, test_y, 'r', label='Ground Truth')
+                ax.plot(temp_x, norm_test_y, 'r', label='Ground Truth')
             else:
 
                 if parent is not None:
-                    train_y_env = (train_y[model.env_ind] - torch.min(train_y[model.env_ind]))/(torch.max(train_y[model.env_ind])-torch.min(train_y[model.env_ind]))
+                    train_y_env = (raw_train_y[model.env_ind] - torch.min(test_y))/(torch.max(test_y)-torch.min(test_y))
                     train_y_bif = (train_y[model.bif_ind] - torch.min(train_y[model.bif_ind]))/(torch.max(train_y[model.bif_ind])-torch.min(train_y[model.bif_ind]))
 
                     train_x_env = train_x[model.env_ind]
@@ -661,7 +661,7 @@ def contour_plot_1D(sub_models, true_x, true_y, file_name, model_type, folder_of
                         ax.plot(train_x_bif, train_bif_scale, 'g*', label='BIF Labels')
                 ax.plot(test_x.numpy(), mean, 'b', label='Predicted Mean')
                 ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5, label='Uncertainty')
-                ax.plot(test_x.numpy(), test_y, 'r', label='Ground Truth')
+                ax.plot(test_x.numpy(), norm_test_y, 'r', label='Ground Truth')
 
             ax.legend()
         plt.xlabel("Input Space")
