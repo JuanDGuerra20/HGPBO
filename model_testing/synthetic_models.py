@@ -660,13 +660,13 @@ def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_
 
         response, max_seen_response = update_max_seen_response_no_norm(q_y, max_seen_response)
         child_qc = child.increment_q_n(child_qc, q_x, x_child)
-        #child, child_like, train_x_child, train_y_child = new_child_update_model_1D_max_seen(child, child_like, train_x_child, train_y_child, child_qc, nu, q_x, response, env=True, training_iter=training_iter)
-        child, child_like, train_x_child, train_y_child = hmodel.update_model1_1D_max_seen(child, child_like,
+        child, child_like, train_x_child, train_y_child = new_child_update_model_1D_max_seen(child, child_like, train_x_child, train_y_child, child_qc, nu, q_x, response, env=True, training_iter=training_iter)
+        """child, child_like, train_x_child, train_y_child = hmodel.update_model1_1D_max_seen(child, child_like,
                                                                                              train_x_child,
                                                                                              train_y_child,
                                                                                              q_x, response,
                                                                                              env=True,
-                                                                                             training_iter=training_iter)
+                                                                                             training_iter=training_iter)"""
         child.eval()
         child_like.eval()
     return child, child_like, train_x_child, train_y_child, child_qc

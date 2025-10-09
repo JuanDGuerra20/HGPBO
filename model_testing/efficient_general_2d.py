@@ -816,8 +816,8 @@ if __name__ == '__main__':
     multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    nbr_rand_init = 10  # Found through HP Testing
-    noise = 0
+    nbr_rand_init = 6  # Found through HP Testing
+    noise = 0.1
     # THIS IS NOT CHEATING, DID RANDOM NUMBER GENERATOR AND TOOK THE NUMBERS SO THAT COULD RUN THE SAME SEED ON ALL DIFFERENT FILES
     seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
                      542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
