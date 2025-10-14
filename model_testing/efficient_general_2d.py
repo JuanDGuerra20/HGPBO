@@ -341,7 +341,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                visualize=visualize)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
-            c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
+            c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, [x_sub1, x_sub2],
                                                [(y_sub1 - torch.mean(y_sub1))/(torch.std(y_sub1)), (y_sub2 - torch.mean(y_sub2))/(torch.std(y_sub2))])
 
         child_1_r2.append(c1_r2)
@@ -810,7 +810,7 @@ if __name__ == '__main__':
     dimension = 31
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 11
+    nbr_repetition = 10
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
@@ -827,7 +827,7 @@ if __name__ == '__main__':
                      833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
     #seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [3]:
+        for dataset_num in [6]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

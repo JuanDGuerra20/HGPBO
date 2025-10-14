@@ -689,13 +689,14 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
             plt.show()
         plt.close()
 
-def child_contour_r2(sub_models, test_x, true_y):
+def child_contour_r2(sub_models, true_x, true_y):
     children = []
     for i, model in enumerate(sub_models):
         model.eval()
 
         likelihood = model.likelihood
         likelihood.eval()
+        test_x = true_x[i]
 
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
