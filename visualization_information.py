@@ -687,10 +687,11 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
             plt.show()
         plt.close()
 
-def child_contour_r2(sub_models, test_x, true_y):
+def child_contour_r2(sub_models, true_x, true_y):
     children = []
     for i, model in enumerate(sub_models):
         model.eval()
+        test_x = true_x[i]
 
         likelihood = model.likelihood
         likelihood.eval()
