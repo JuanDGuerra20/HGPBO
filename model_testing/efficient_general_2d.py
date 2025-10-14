@@ -103,15 +103,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     h_opt_time = []
     h_pred_time = []
     prior_map_save = []
-    for q in tqdm(range(nbr_query)):
+    pbar = tqdm(range(nbr_query))
+    for q in pbar:
 
         if q == 0:
             if children == []:
 
                 # Need to initialize the model - Will be random in this method
-                train_x_sub1, train_y_sub1 = select_random_queries(1, x_sub1, y_sub1, seed=seed,
+                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed,
                                                                    noise=noise)
-                train_x_sub2, train_y_sub2 = select_random_queries(1, x_sub2, y_sub2, seed=seed,
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed,
                                                                    noise=noise)
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
@@ -126,19 +127,19 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 for i in range(len(train_x_sub1)):
                     sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
                     sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
-                sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = models.train_submodels(sub1, sub1_like,
+                """sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = models.train_submodels(sub1, sub1_like,
                                                                                                   train_x_sub1,
                                                                                                   train_y_sub1, x_sub1,
                                                                                                   y_sub1, sub1_qc,
                                                                                                   nbr_rand_init - 1,
-                                                                                                  training_iter, noise, kappa, nu)
+                                                                                                  2, noise, kappa, nu)
                 sub2, sub2_like, train_x_sub2, train_y_sub2, sub2_qc = models.train_submodels(sub2, sub2_like,
                                                                                               train_x_sub2,
                                                                                               train_y_sub2, x_sub2,
                                                                                               y_sub2, sub2_qc,
                                                                                               nbr_rand_init - 1,
-                                                                                              training_iter, noise,
-                                                                                              kappa, nu)
+                                                                                              2, noise,
+                                                                                              kappa, nu)"""
 
 
                 """sub2, sub2_like, train_x_sub2, train_y_sub2, sub2_qc = models.botorch_pretrain(train_x_sub2,
@@ -341,7 +342,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
             c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+                                               [(y_sub1 - torch.mean(y_sub1))/(torch.std(y_sub1)), (y_sub2 - torch.mean(y_sub2))/(torch.std(y_sub2))])
 
         child_1_r2.append(c1_r2)
         child_2_r2.append(c2_r2)
@@ -513,7 +514,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         better_exploitation_score.append(exploitation_score_2D)
 
         heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
-
+        pbar.set_postfix({'Child 1': c1_r2, "Child 2": c1_r2})
 
 
     if visualize:
@@ -809,7 +810,7 @@ if __name__ == '__main__':
     dimension = 31
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 9
+    nbr_repetition = 11
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
@@ -824,9 +825,9 @@ if __name__ == '__main__':
                      445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
                      56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
                      833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
-    seed = [False]*nbr_repetition
+    #seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [6]:
+        for dataset_num in [3]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

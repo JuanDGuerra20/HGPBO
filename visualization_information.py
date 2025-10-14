@@ -648,9 +648,9 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
                 if parent is not None:
                     train_y_env = (raw_train_y[model.env_ind] - torch.mean(test_y))/torch.std(test_y)
                     if len(model.bif_ind) < 2:
-                        train_y_bif = (train_y[model.bif_ind] - torch.mean(train_y[model.bif_ind]))
+                        train_y_bif = (train_y[model.bif_ind] - torch.mean(test_y))
                     else:
-                        train_y_bif = (train_y[model.bif_ind] - torch.mean(train_y[model.bif_ind]))/torch.std(train_y[model.bif_ind])
+                        train_y_bif = (train_y[model.bif_ind] - torch.mean(test_y))/torch.std(test_y)
 
                     train_x_env = train_x[model.env_ind]
                     train_x_bif = train_x[model.bif_ind]
@@ -659,8 +659,7 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
 
                     ax.plot(train_x_env, train_y_env, 'k*', label='True Labels')
                     if train_y_bif.shape[0] > 0:
-                        train_bif_scale = (train_y_bif - torch.min(train_y_bif)) / (
-                                    torch.max(train_y_bif) - torch.min(train_y_bif))
+                        train_bif_scale = (train_y_bif - torch.mean(train_y_bif)) / torch.std(train_y_bif)
                         ax.plot(train_x_bif, train_bif_scale, 'g*', label='BIF Labels')
                 ax.plot(test_x.numpy(), mean, 'b', label='Predicted Mean')
                 ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5, label='Uncertainty')

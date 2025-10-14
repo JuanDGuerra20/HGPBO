@@ -669,6 +669,8 @@ def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_
                                                                                              training_iter=training_iter)"""
         child.eval()
         child_like.eval()
+
+        #print(f"Query {q} R2 child: {vi.child_contour_r2([child], x_child,[(y_child - torch.mean(y_child))/torch.std(y_child)])[0]:.4f}")
     return child, child_like, train_x_child, train_y_child, child_qc
 
 def botorch_pretrain(train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, beta, nu):
