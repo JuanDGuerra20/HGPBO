@@ -821,7 +821,7 @@ def generate_3d_2_dataset(dimension, eps):
     return x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier
 
 def generate_modularity_dataset(dimension, eps):
-    x_sub1 = torch.linspace(0, 2, dimension).double()
+    x_sub1 = torch.linspace(1, 3, dimension).double()
     y_sub1 = torch.zeros(x_sub1.shape)
 
     for i, x in enumerate(x_sub1):

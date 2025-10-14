@@ -604,23 +604,25 @@ def heatmap_r_score(data, z):
     return r_scores
 
 
-
-def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of_the_day, data_name, neural=False, save=True, parent=None, visualize=False, query=0):
-    true_y = (true_y - np.min(true_y)) / (np.max(true_y) - np.min(true_y))
+def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, folder_of_the_day, data_name,
+                    neural=False, save=True, parent=None, visualize=False, query=0):
     for i, model in enumerate(sub_models):
         model.eval()
 
         likelihood = model.likelihood
         likelihood.eval()
-
+        test_x = true_x[i]
+        test_y = true_y[i]
+        norm_test_y = (test_y - torch.mean(test_y)) / torch.std(test_y)
+        raw_train_y = raw_y[i]
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             observed_pred = likelihood(model(test_x))
-        
+
         with torch.no_grad():
             f, ax = plt.subplots(1, 1)
 
             mean = observed_pred.mean.numpy()
-            mean = mean/np.max(mean)
+            mean = (mean - np.mean(mean)) / np.std(mean)
             std = observed_pred.stddev.numpy() / np.sqrt(model.query_counter.numpy())
             train_x = model.train_inputs[0]
             train_y = model.train_targets
@@ -629,43 +631,42 @@ def contour_plot_1D(sub_models, test_x, true_y, file_name, model_type, folder_of
             div1[model.env_ind] = div1[model.env_ind]/model.env_max_seen
             div1[model.bif_ind] = div1[model.bif_ind]/model.bif_max_seen"""
 
-            mean = (mean - np.min(mean))/(np.max(mean) - np.min(mean))
-
             if neural:
                 temp_x = list(range(len(test_x)))
                 new_train = map_neural_to_list(train_x.numpy())
-                #ax.plot(new_train, train_y.numpy(), 'k*')
+                # ax.plot(new_train, train_y.numpy(), 'k*')
                 ax.plot(temp_x, mean, 'b', label='Predicted Mean')
-                ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5, label='Uncertainty')
+                ax.fill_between(test_x.numpy(), mean - std, mean + std, alpha=0.5, label='Uncertainty')
 
-                #ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
+                # ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 
-                ax.plot(temp_x, true_y[i], 'r', label='Ground Truth')
+                ax.plot(temp_x, norm_test_y, 'r', label='Ground Truth')
             else:
 
                 if parent is not None:
-                    train_y_env = train_y[model.env_ind] / abs(model.env_max_seen)
-                    train_y_bif = train_y[model.bif_ind] / abs(model.bif_max_seen)
+                    train_y_env = (raw_train_y[model.env_ind] - torch.mean(test_y)) / torch.std(test_y)
+                    if len(model.bif_ind) < 2:
+                        train_y_bif = (train_y[model.bif_ind] - torch.mean(test_y))
+                    else:
+                        train_y_bif = (train_y[model.bif_ind] - torch.mean(test_y)) / torch.std(test_y)
 
                     train_x_env = train_x[model.env_ind]
                     train_x_bif = train_x[model.bif_ind]
 
-                    train_env_scale = (train_y_env - torch.min(train_y_env)) / (torch.max(train_y_env) - torch.min(train_y_env))
+                    # train_env_scale = (train_y_env - torch.min(train_y_env)) / (torch.max(train_y_env) - torch.min(train_y_env))
 
-                    ax.plot(train_x_env, train_env_scale, 'k*', label='True Labels')
+                    ax.plot(train_x_env, train_y_env, 'k*', label='True Labels')
                     if train_y_bif.shape[0] > 0:
-                        train_bif_scale = (train_y_bif - torch.min(train_y_bif)) / (
-                                    torch.max(train_y_bif) - torch.min(train_y_bif))
+                        train_bif_scale = (train_y_bif - torch.mean(train_y_bif)) / torch.std(train_y_bif)
                         ax.plot(train_x_bif, train_bif_scale, 'g*', label='BIF Labels')
                 ax.plot(test_x.numpy(), mean, 'b', label='Predicted Mean')
-                ax.fill_between(test_x.numpy(), mean-std, mean+std, alpha=0.5, label='Uncertainty')
-                ax.plot(test_x.numpy(), true_y[i], 'r', label='Ground Truth')
+                ax.fill_between(test_x.numpy(), mean - std, mean + std, alpha=0.5, label='Uncertainty')
+                ax.plot(test_x.numpy(), norm_test_y, 'r', label='Ground Truth')
 
             ax.legend()
         plt.xlabel("Input Space")
         plt.ylabel("Output Value")
         plt.title(f"{model_type} SubModel {i} Contour Map for Respective Data")
-        plt.ylim((-0.1,1.1))
         plt.tight_layout()
         if save:
             if visualize:

@@ -308,7 +308,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
             c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+                                               [y_sub1, y_sub2])
 
         child_1_r2.append(c1_r2)
         child_2_r2.append(c2_r2)
@@ -486,11 +486,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         noi = str(noise).replace('.', ',')
 
-
-        vi.contour_plot_1D(master.sub_models, x_sub1,
-                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)],
-                        f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
-                        model_name.lower(), folder_of_the_day, data_name, parent=master, query=q, visualize=visualize)
+        vi.contour_plot_1D(master.sub_models, [x_sub1, x_sub2], [y_sub1, y_sub2], [train_y_sub1, train_y_sub2],
+                           f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                           model_name.lower(), folder_of_the_day, data_name, parent=master, query=q,
+                           visualize=visualize)
 
 
 
@@ -764,16 +763,16 @@ def hp_plotting(scores, hp_name, hp_list, model_name, folder_of_the_day):
 
 if __name__ == '__main__':
 
-    #warnings.filterwarnings('ignore')
+    warnings.filterwarnings('ignore')
 
-    dimension = 15
+    dimension = 31
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 1
+    nbr_repetition = 12
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
@@ -782,9 +781,9 @@ if __name__ == '__main__':
                      445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
                      56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
                      833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
-    seed = [False]*nbr_repetition
+    #seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [3]:
+        for dataset_num in [6, 2, 3]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
