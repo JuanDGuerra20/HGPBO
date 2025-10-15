@@ -29,10 +29,16 @@ class ExactGPModel(gpytorch.models.ExactGP):
         - train_y (torch.Tensor): Training output data: EMG values
         - likelihood: Likelihood function.
         """
-        if len(train_y) == 1:
+
+        """if len(train_y) == 1:
             scaled_y = train_y/max(train_y)
         else:
-            scaled_y = (train_y - torch.min(train_y)) / (torch.max(train_y) - torch.min(train_y))
+            scaled_y = (train_y - torch.min(train_y)) / (torch.max(train_y) - torch.min(train_y))"""
+
+        if len(train_y) == 1:
+            scaled_y = train_y - torch.mean(train_y)
+        else:
+            scaled_y = (train_y - torch.mean(train_y)) / torch.std(train_y)
 
         super(ExactGPModel, self).__init__(train_x, scaled_y, likelihood)
         self.mean_module = gpytorch.means.ConstantMean()
