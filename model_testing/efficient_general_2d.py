@@ -116,11 +116,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1, sub1_like,
+                sub1 = models.ExactGPModel(train_x_sub1, (train_y_sub1 - torch.mean(train_y_sub1))/torch.std(train_y_sub1), sub1_like,
                                            query_counter=sub1_qc, nu=nu)
 
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like,
+                sub2 = models.ExactGPModel(train_x_sub2, (train_y_sub2 - torch.mean(train_y_sub2))/torch.std(train_y_sub2), sub2_like,
                                            query_counter=sub2_qc, nu=nu)
 
                 for i in range(len(train_x_sub1)):
@@ -169,7 +169,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
                 sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / abs(max_seen_resp_2_1D), sub2_like,
+                sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 , sub2_like,
                                            query_counter=sub2_qc, nu=nu)
 
                 for i in range(len(train_x_sub2)):
@@ -290,7 +290,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier, x_hier, likelihood,
+            master = hierarchical_model(train_x_hier, train_y_hier / torch.max(train_y_hier), x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
@@ -418,7 +418,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
-        master.set_train_data(train_x_hier, train_y_hier, strict=False)
+        master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2_1D, strict=False)
 
         """
         train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
@@ -431,7 +431,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             # start = time.time()
 
             master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  train_y_hier,
+                                                  train_y_hier / max_seen_resp_2D,
                                                   verbose=False)
 
             """t = time.time() - start
@@ -768,7 +768,7 @@ if __name__ == '__main__':
     dimension = 31
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 12
+    nbr_repetition = 10
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing

@@ -1004,6 +1004,13 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
     if len(model.bif_ind) > 1:
         div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))
 
+
+    div_y[model.env_ind] = (div_y[model.env_ind] - torch.mean(div_y[model.env_ind])) / (torch.std(div_y[model.env_ind]))
+    if len(model.bif_ind) > 1:
+        div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.mean(div_y[model.bif_ind])) / (torch.std(div_y[model.bif_ind]))
+    else:
+        div_y[model.bif_ind] = div_y[model.bif_ind] - torch.mean(div_y[model.bif_ind])
+
     model.set_train_data(train_x, div_y, strict=False)
     # Find optimal model hyperparameters
     model.train()
