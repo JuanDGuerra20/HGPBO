@@ -109,9 +109,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             if children == []:
 
                 # Need to initialize the model - Will be random in this method
-                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed,
+                train_x_sub1, train_y_sub1 = select_random_queries(1, x_sub1, y_sub1, seed=seed,
                                                                    noise=noise)
-                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed,
+                train_x_sub2, train_y_sub2 = select_random_queries(1, x_sub2, y_sub2, seed=seed,
                                                                    noise=noise)
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
@@ -126,6 +126,22 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 for i in range(len(train_x_sub1)):
                     sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
                     sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
+
+                sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = hmodel.train_submodels(sub1, sub1_like,
+                                                                                              train_x_sub1,
+                                                                                              train_y_sub1, x_sub1,
+                                                                                              y_sub1, sub1_qc,
+                                                                                              nbr_rand_init - 1,
+                                                                                              2, noise, kappa, nu)
+                sub2, sub2_like, train_x_sub2, train_y_sub2, sub2_qc = hmodel.train_submodels(sub2, sub2_like,
+                                                                                              train_x_sub2,
+                                                                                              train_y_sub2, x_sub2,
+                                                                                              y_sub2, sub2_qc,
+                                                                                              nbr_rand_init - 1,
+                                                                                              2, noise,
+                                                                                              kappa, nu)
+
+
 
             elif len(children) == 1:
                 sub1 = children[0]
@@ -679,7 +695,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.fill_between(range(len(r2_std)), r2_avg-r2_std, r2_avg + r2_std, alpha=0.4)
 
                 all_children = np.concatenate([child_1_r2_data, child_2_r2_data])
-                all_children = np.insert(all_children, 0, np.zeros(((2 - len(children))*nbr_rand_init, 1)), 1)[:, :nbr_query]
+                #all_children = np.insert(all_children, 0, np.zeros(((2 - len(children))*nbr_rand_init, 1)), 1)[:, :nbr_query]
 
                 avg_child = np.mean(all_children, axis=0)
                 std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))

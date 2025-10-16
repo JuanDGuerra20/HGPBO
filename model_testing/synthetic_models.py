@@ -30,15 +30,15 @@ class ExactGPModel(gpytorch.models.ExactGP):
         - likelihood: Likelihood function.
         """
 
-        """if len(train_y) == 1:
+        if len(train_y) == 1:
             scaled_y = train_y/max(train_y)
         else:
-            scaled_y = (train_y - torch.min(train_y)) / (torch.max(train_y) - torch.min(train_y))"""
+            scaled_y = (train_y - torch.min(train_y)) / (torch.max(train_y) - torch.min(train_y))
 
-        if len(train_y) == 1:
+        """if len(train_y) == 1:
             scaled_y = train_y - torch.mean(train_y)
         else:
-            scaled_y = (train_y - torch.mean(train_y)) / torch.std(train_y)
+            scaled_y = (train_y - torch.mean(train_y)) / torch.std(train_y)"""
 
         super(ExactGPModel, self).__init__(train_x, scaled_y, likelihood)
         self.mean_module = gpytorch.means.ConstantMean()
@@ -570,5 +570,33 @@ def update_max_seen_response_no_norm(next_query_value_random, max_seen_resp):
     # next_query_value_random = next_query_value_random / max_seen_resp
     return next_query_value_random, max_seen_resp
 
+def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, kappa, nu):
+    max_seen_response = torch.max(train_y_child)
+    child.eval()
+    child_like.eval()
+    for q in range(nbr_query):
+        with gpytorch.settings.lazily_evaluate_kernels(state=False):
+            observed_pred = make_prediction(child, x_child, child_like)
 
+        acquisition_map, y_mu = get_acquisition_map(kappa, observed_pred, child_qc)
+
+        next_query = torch.argmax(acquisition_map)
+
+        q_x, q_y = x_child[next_query], y_child[next_query].clone()
+
+        q_y += torch.normal(0, noise, size = q_y.shape)
+
+        response, max_seen_response = update_max_seen_response_no_norm(q_y, max_seen_response)
+        child_qc = child.increment_q_n(child_qc, q_x, x_child)
+        child, child_like, train_x_child, train_y_child = hmodel.update_model1_1D_max_seen(child, child_like,
+                                                                                             train_x_child,
+                                                                                             train_y_child,
+                                                                                             q_x, response,
+                                                                                             env=True,
+                                                                                             training_iter=training_iter)
+        child.eval()
+        child_like.eval()
+
+        #print(f"Query {q} R2 child: {vi.child_contour_r2([child], x_child,[(y_child - torch.mean(y_child))/torch.std(y_child)])[0]:.4f}")
+    return child, child_like, train_x_child, train_y_child, child_qc
 name_code = 'HGP_BO-test6-priorMAP-1model1D'

@@ -996,19 +996,19 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
 
     div_y = train_y.clone()
 
-    """if torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]) == 0:
+    if torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]) == 0:
         div_y[model.env_ind] = div_y[model.env_ind]/torch.max(div_y[model.env_ind])
 
     else:
         div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
     if len(model.bif_ind) > 1:
-        div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))"""
+        div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))
 
-    div_y[model.env_ind] = (div_y[model.env_ind] - torch.mean(div_y[model.env_ind])) / (torch.std(div_y[model.env_ind]))
+    """div_y[model.env_ind] = (div_y[model.env_ind] - torch.mean(div_y[model.env_ind])) / (torch.std(div_y[model.env_ind]))
     if len(model.bif_ind) > 1:
         div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.mean(div_y[model.bif_ind])) / (torch.std(div_y[model.bif_ind]))
     else:
-        div_y[model.bif_ind] = div_y[model.bif_ind] - torch.mean(div_y[model.bif_ind])
+        div_y[model.bif_ind] = div_y[model.bif_ind] - torch.mean(div_y[model.bif_ind])"""
 
     model.set_train_data(train_x, div_y, strict=False)
     # Find optimal model hyperparameters
@@ -1162,3 +1162,33 @@ def decompose_hkernel_loss(model, loss, train_x):
         # Use numerical computing approximation to find the roots of the method (this is approximately the inverse)
 
     # note total_cover = covar_1 + covar_2 as defined
+
+def train_submodels(child, child_like, train_x_child, train_y_child, x_child, y_child, child_qc, nbr_query, training_iter, noise, kappa, nu):
+    max_seen_response = torch.max(train_y_child)
+    child.eval()
+    child_like.eval()
+    for q in range(nbr_query):
+        with gpytorch.settings.lazily_evaluate_kernels(state=False):
+            observed_pred = make_prediction(child, x_child, child_like)
+
+        acquisition_map, y_mu = get_acquisition_map(kappa, observed_pred, child_qc)
+
+        next_query = torch.argmax(acquisition_map)
+
+        q_x, q_y = x_child[next_query], y_child[next_query].clone()
+
+        q_y += torch.normal(0, noise, size = q_y.shape)
+
+        response, max_seen_response = update_max_seen_response_no_norm(q_y, max_seen_response)
+        child_qc = child.increment_q_n(child_qc, q_x, x_child)
+        child, child_like, train_x_child, train_y_child = update_model1_1D_max_seen(child, child_like,
+                                                                                             train_x_child,
+                                                                                             train_y_child,
+                                                                                             q_x, response,
+                                                                                             env=True,
+                                                                                             training_iter=training_iter)
+        child.eval()
+        child_like.eval()
+
+        #print(f"Query {q} R2 child: {vi.child_contour_r2([child], x_child,[(y_child - torch.mean(y_child))/torch.std(y_child)])[0]:.4f}")
+    return child, child_like, train_x_child, train_y_child, child_qc
