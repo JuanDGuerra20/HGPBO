@@ -137,6 +137,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub3_like = gpytorch.likelihoods.GaussianLikelihood()
             sub3 = models.ExactGPModel(train_x_sub3, train_y_sub3, sub3_like, sub3_qc, nu=nu)
 
+            for i in range(len(train_x_sub1)):
+                sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
+                sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
+                sub3_qc = sub3.increment_q_n(sub3_qc, train_x_sub3[i], x_sub3)
+
             sub1.eval()
             sub2.eval()
             sub3.eval()
@@ -144,12 +149,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             sub1_like.eval()
             sub2_like.eval()
             sub3_like.eval()
-
-            for i in range(len(train_x_sub1)):
-                sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
-                sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
-                sub3_qc = sub3.increment_q_n(sub3_qc, train_x_sub3[i], x_sub3)
-
 
             with gpytorch.settings.lazily_evaluate_kernels(state=False):
                 observed_pred1 = models.make_prediction(sub1, x_sub1, sub1_like)
@@ -175,9 +174,21 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_map_max = torch.max(prior_map)
 
+            next_query_pins = models.get_next_query_pins(torch.flatten(prior_map), test_x_hier)
+
+            next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
+                                                                                         test_x_hier,
+                                                                                         y_hier, noise=noise)
+            response = torch.tensor(next_query_value_random)
+            train_x_hier, train_y_hier = torch.reshape(next_query_pins, (1, 3)), torch.reshape(response, (1,))
+
+            # train_x_hier, train_y_hier = hierarchical_select_random_queries(1, x_hier, y_hier, seed=seed, noise=noise)
+
+            max_seen_resp_2D = torch.max(train_y_hier)
+
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", [sub1, sub2, sub3])
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+            master = hierarchical_model(train_x_hier, train_y_hier - torch.mean(train_y_hier), x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2, sub3],
@@ -193,8 +204,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
-            child_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)])
+            child_r2 = vi.child_contour_r2(master.sub_models, [x_sub1, x_sub2, x_sub3],[y_sub1, y_sub2, y_sub3])
 
         children_r2.append(child_r2)
        
@@ -340,7 +350,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                             response)
-        master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+        master.set_train_data(train_x_hier, (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier), strict=False)
 
         """
         train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
@@ -351,7 +361,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master.train()
             likelihood.train()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                  (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier),
                                                     verbose=False)
 
 
@@ -363,6 +374,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             sub2.eval()
             sub2_like.eval()
+
+            sub3.eval()
+            sub3_like.eval()
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
@@ -383,11 +397,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         better_exploration_score.append(exploration_score_2D)
         better_exploitation_score.append(exploitation_score_2D)
         heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
-
-    vi.contour_plot_1D(master.sub_models, x_sub1,
-                       [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                       f'/contour/Contour_{data_name}_query_{q}_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}_{np.random.randint(99999)}',
-                       f"{model_name}", folder_of_the_day, data_name, parent=master)
+    noi = str(noise).replace('.', ',')
+    vi.contour_plot_1D(master.sub_models, [x_sub1, x_sub2, x_sub3], [y_sub1, y_sub2, y_sub3], [train_y_sub1, train_y_sub2, train_y_sub3],
+                       f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                       model_name.lower(), folder_of_the_day, data_name, parent=master, query=q)
 
     
     if final:
@@ -501,34 +514,36 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         c2_r2_data.append(children_r2[:, 1])
                         c3_r2_data.append(children_r2[:, 2])
                         print(f"Complete trial {i}/{nbr_repetition}")
+                x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier = data_creation_func(
+                    dimension, eps)
                 heatmap_data = np.array(heatmap_data)
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
-                n = str(nu).replace('.', ',')
+                n = str(nu).replace('.', '_')
+                e = str(eps).replace('[', '')
+                e = str(e).replace(']', '')
+                e = str(e).replace(' ', '')
+                e = str(e).replace('.', '')
+                e = str(e).replace(',', '_')
+                noi = str(noise).replace('.', ',')
 
-                torch.save(master.state_dict(), f'{data_name}/{model_name}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_3D_model_state_{nbr_query}_queries.pth')
-
-
-                # Currently only takes the last model of the repetitions, currently too lazy to fix
-                vi.contour_plot_1D(master.sub_models, x_sub1, [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                                   f'/contour/Contour_{data_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
-                                   f"{model_name}", folder_of_the_day, data_name, parent=master)
-
+                torch.save(master.state_dict(),
+                           f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.pth')
                 y = np.mean(better_exploration_score, axis=0)
                 y = np.insert(y, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
                 over_explor.append(y)
-                std = np.std(better_exploration_score, axis=0)
+                std = np.std(better_exploration_score, axis=0)/ np.sqrt(len(better_exploration_score))
                 std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
-                y = np.mean(better_exploitation_score, axis=0)
+                """y = np.mean(better_exploitation_score, axis=0)
                 y = np.insert(y, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
                 over_exploit.append(y)
 
                 std = np.std(better_exploitation_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
+                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]"""
 
                 #plt.plot(y, label='Exploitation')
                 #plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
@@ -542,38 +557,36 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
-                child_1_r2 = np.mean(c1_r2_data, axis=0)
-                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
-
-                child_2_r2 = np.mean(c2_r2_data, axis=0)
-                child_3_r2 = np.mean(c3_r2_data, axis=0)
-
-                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
-                child_3_r2 = np.insert(child_3_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
 
                 """
                 plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")
                 plt.plot(child_3_r2, label="Child 3 R2")"""
 
-                avg_child = (child_1_r2 + child_2_r2 + child_3_r2) / 3
+                all_children = np.concatenate([c1_r2_data, c2_r2_data, c3_r2_data])
+                all_children = np.insert(all_children, 0, np.zeros((3*nbr_rand_init, 1)), axis=1)[:, :nbr_query]
+
+                avg_child = np.mean(all_children, axis=0)
+                std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))
+
                 plt.plot(avg_child, label='Child Avg R2')
+                plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
 
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
 
                 plt.title(
-                    f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
+                    f'{model_name} HGP-BO 3D {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/BIF_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_kappa_{k}_gamma_{g}_nu_{n}.svg')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.svg')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/BIF_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_kappa_{k}_gamma_{g}_nu_{n}.png')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.png')
 
                 plt.close()
 
                 df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-                                      master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
-                                      child_2_r2, child_3_r2])
+                                      master, better_exploration_score, better_exploitation_score, r2, c1_r2_data,
+                                      c2_r2_data, c3_r2_data])
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
                             'child2_r2', 'child3_r2']
 
@@ -582,8 +595,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 np.save(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
                 list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-                                       master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
-                                       child_2_r2, child_3_r2])
+                                       master, better_exploration_score, better_exploitation_score, r2, c1_r2_data,
+                                       c2_r2_data, c3_r2_data])
 
             # Joint Section
             '''joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
@@ -634,10 +647,10 @@ if __name__ == '__main__':
     seed = np.arange(nbr_repetition)
     #seed = [False] * nbr_repetition
     for h in h_model:
-        for dataset_num in [6]:
+        for dataset_num in [4, 5, 6]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
 
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2, child_2_r2 = \
+            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2, child_3_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                    g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0.1)[0]

@@ -100,9 +100,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
     child_2_r2 = []
 
     heatmap_rep = []
-    h_opt_time = []
-    h_pred_time = []
-    prior_map_save = []
     for q in tqdm(range(nbr_query)):
 
         if q == 0:

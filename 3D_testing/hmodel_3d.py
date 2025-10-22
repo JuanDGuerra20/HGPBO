@@ -812,8 +812,12 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
 
     div_y = train_y.clone()
 
-    div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (
-                torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
+    if torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]) == 0:
+        div_y[model.env_ind] = div_y[model.env_ind] / torch.max(div_y[model.env_ind])
+
+    else:
+        div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (
+                    torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
     if len(model.bif_ind) > 1:
         div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (
                     torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))

@@ -27,14 +27,17 @@ class ExactGPModel(gpytorch.models.ExactGP):
         - likelihood: Likelihood function.
         """
 
-        scaled_y = (train_y - torch.min(train_y)) / (torch.max(train_y) - torch.min(train_y))
+        if len(train_y) == 1:
+            scaled_y = train_y/max(train_y)
+        else:
+            scaled_y = (train_y - torch.min(train_y)) / (torch.max(train_y) - torch.min(train_y))
 
         super(ExactGPModel, self).__init__(train_x, scaled_y, likelihood)
         self.mean_module = gpytorch.means.ConstantMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=nu))
         self.query_counter = query_counter
         self.env_max_seen = torch.max(train_y)
-        self.env_ind = list(range(0, len(train_x) - 1))
+        self.env_ind = list(range(0, len(train_x)))
 
         self.bif_max_seen = torch.tensor(-9999999, dtype=torch.float64)
         self.bif_ind = []
@@ -176,8 +179,11 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
     new_query_value_mean = np.mean(new_training_values)
     new_query_value_random = np.random.choice(new_training_values)
 
-    new_query_value_mean += np.random.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_mean.shape)
-    new_query_value_random += np.random.normal(0, noise*(torch.max(reshape_y)-torch.min(reshape_y)), size=new_query_value_random.shape)
+    new_query_value_mean += np.random.normal(0, noise, size=new_query_value_mean.shape) * (
+                np.max(reshape_y.numpy()) - np.min(reshape_y.numpy()))
+    new_query_value_random += np.random.normal(0, noise, size=new_query_value_random.shape) * (
+                np.max(reshape_y.numpy()) - np.min(reshape_y.numpy()))
+
 
     return new_query_value_random, new_query_value_mean
 
