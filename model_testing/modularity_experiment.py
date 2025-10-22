@@ -4,7 +4,7 @@ import multiprocessing as mp
 from efficient_general_2d import *
 
 def two_pretrained(k_vals, g_vals, nu_vals):
-    dimension = 15
+    dimension = 32
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
@@ -12,7 +12,12 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
-    seed = [False]*nbr_repetition
+    seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
+                     542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
+                     445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
+                     56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
+                     833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
+    # seed = [False]*nbr_repetition
     noise = 0.1
 
     avg_explor_1 = []
@@ -327,14 +332,20 @@ def two_pretrained(k_vals, g_vals, nu_vals):
 
 
 def two_pretrained_bad(k_vals, g_vals, nu_vals):
-    dimension = 15
+    dimension = 32
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
     nbr_rand_init = 6
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
-    seed = [False]*nbr_repetition
+
+    seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
+                     542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
+                     445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
+                     56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
+                     833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
+    #seed = [False]*nbr_repetition
     noise = 0.1
 
     avg_explor_1 = []
@@ -615,7 +626,7 @@ def two_pretrained_bad(k_vals, g_vals, nu_vals):
 
 
 def one_pretrained(k_vals, g_vals, nu_vals):
-    dimension = 15
+    dimension = 32
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 20
@@ -623,7 +634,12 @@ def one_pretrained(k_vals, g_vals, nu_vals):
 
     multi = False
     h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
-    seed = [False] * nbr_repetition
+    seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
+                     542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
+                     445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
+                     56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
+                     833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
+    # seed = [False]*nbr_repetition
     noise = 0.1
 
     avg_explor_1 = []
@@ -1132,31 +1148,19 @@ if __name__ == '__main__':
     g_vals = [3]
     nu_vals = [0.5]
 
-    #two_pretrained(k_vals, g_vals, nu_vals)
+    #one_pretrained(k_vals, g_vals, nu_vals)
 
     for k_val in k_vals:
         with mp.Pool(processes=4) as pool:
             p1 = pool.apply_async(two_pretrained, args=([k_val], g_vals, nu_vals))
-            p2 = pool.apply_async(two_pretrained_bad, args=([k_val], g_vals, nu_vals))
             p3 = pool.apply_async(one_pretrained, args=([k_val], g_vals, nu_vals))
-            p4 = pool.apply_async(one_pretrained_bad, args=([k_val], g_vals, nu_vals))
 
             try:
                 p1.get()
             except:
                 continue
             try:
-                p2.get()
-            except:
-                continue
-
-            try:
                 p3.get()
-            except:
-                continue
-
-            try:
-                p4.get()
             except:
                 continue
 

@@ -109,9 +109,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             if children == []:
 
                 # Need to initialize the model - Will be random in this method
-                train_x_sub1, train_y_sub1 = select_random_queries(1, x_sub1, y_sub1, seed=seed,
+                train_x_sub1, train_y_sub1 = select_random_queries(nbr_rand_init, x_sub1, y_sub1, seed=seed,
                                                                    noise=noise)
-                train_x_sub2, train_y_sub2 = select_random_queries(1, x_sub2, y_sub2, seed=seed,
+                train_x_sub2, train_y_sub2 = select_random_queries(nbr_rand_init, x_sub2, y_sub2, seed=seed,
                                                                    noise=noise)
                 max_seen_resp_1_1D = torch.max(train_y_sub1)
                 max_seen_resp_2_1D = torch.max(train_y_sub2)
@@ -127,7 +127,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                     sub1_qc = sub1.increment_q_n(sub1_qc, train_x_sub1[i], x_sub1)
                     sub2_qc = sub2.increment_q_n(sub2_qc, train_x_sub2[i], x_sub2)
 
-                sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = hmodel.train_submodels(sub1, sub1_like,
+                """sub1, sub1_like, train_x_sub1, train_y_sub1, sub1_qc = hmodel.train_submodels(sub1, sub1_like,
                                                                                               train_x_sub1,
                                                                                               train_y_sub1, x_sub1,
                                                                                               y_sub1, sub1_qc,
@@ -139,7 +139,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                               y_sub2, sub2_qc,
                                                                                               nbr_rand_init - 1,
                                                                                               2, noise,
-                                                                                              kappa, nu)
+                                                                                              kappa, nu)"""
 
 
 
@@ -695,7 +695,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.fill_between(range(len(r2_std)), r2_avg-r2_std, r2_avg + r2_std, alpha=0.4)
 
                 all_children = np.concatenate([child_1_r2_data, child_2_r2_data])
-                #all_children = np.insert(all_children, 0, np.zeros(((2 - len(children))*nbr_rand_init, 1)), 1)[:, :nbr_query]
+                all_children = np.insert(all_children, 0, np.zeros(((2 - len(children))*nbr_rand_init, 1)), 1)[:, :nbr_query]
 
                 avg_child = np.mean(all_children, axis=0)
                 std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))
@@ -781,14 +781,14 @@ if __name__ == '__main__':
 
     warnings.filterwarnings('ignore')
 
-    dimension = 31
+    dimension = 32
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 10
+    nbr_repetition = 30
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = True
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 6  # Found through HP Testing
@@ -799,7 +799,7 @@ if __name__ == '__main__':
                      833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
     #seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [6, 2, 3]:
+        for dataset_num in [10]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

@@ -728,7 +728,7 @@ def generate_sub_dataset(dimension, eps):
 
     for i in range(len(y_sub1)):
         for j in range(len(y_sub2)):
-            y_hier[i, j] = y_sub1[i]  - y_sub2[j] +1
+            y_hier[i, j] = y_sub1[i]  - y_sub2[j] + 5e-5
 
     y_hier = y_hier.double()
 
