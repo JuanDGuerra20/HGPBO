@@ -54,7 +54,7 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, dimensio
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
-                           eps):
+                           eps, noise):
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -95,7 +95,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             heatmap_rep = []
             for q in tqdm(range(nbr_query)):
                 if q == 0:
-                    train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier)
+                    train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier, noise=noise)
                     max_seen_resp_2D = torch.max(train_y_hier)
 
 
@@ -117,7 +117,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
                                                                                              test_x_hier,
-                                                                                             y_hier)
+                                                                                             y_hier, noise=noise)
 
                 next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
                                                                                             max_seen_resp_2D)
@@ -126,7 +126,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                                   response)
-                master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+                master.set_train_data(train_x_hier, train_y_hier, strict=False)
 
                 """
                 train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
@@ -182,7 +182,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
         y = np.mean(exploration_scores, axis=0)
         over_explor.append(y)
-        std = np.std(exploration_scores, axis=0)
+        std = np.std(exploration_scores, axis=0) / np.sqrt(len(exploration_scores))
         plt.plot(y, label='Exploration')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
@@ -238,9 +238,10 @@ if __name__ == '__main__':
     nbr_repetition = 30
     nbr_rand_init = 1
     k_vals = [2]
+    noise = 0.1
 
     for dataset_num in [6]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
-                           eps)
+                           eps, noise=noise)

@@ -193,8 +193,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
 
-            child_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                        [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)])
+            child_r2 = vi.child_contour_r2(master.sub_models, [x_sub1, x_sub2, x_sub3],
+                        [y_sub1, y_sub2, y_sub3])
 
         children_r2.append(child_r2)
        
@@ -280,7 +280,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                            f'/contour/Contour_{data_name}_query_{q}_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
                            f"{model_name}", folder_of_the_day, data_name, parent=master)"""
 
-    
+    noi = str(noise).replace('.', ',')
+    vi.contour_plot_1D(master.sub_models, [x_sub1, x_sub2, x_sub3], [y_sub1, y_sub2, y_sub3],
+                       [train_y_sub1, train_y_sub2, train_y_sub3],
+                       f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}_noise_{noi}',
+                       model_name.lower(), folder_of_the_day, data_name, parent=master, query=q)
     if final:
         return master, sub1, sub2, sub3, better_exploration_score, better_exploitation_score, heatmap_rep, children_r2
     else:
@@ -384,40 +388,42 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         c2_r2_data.append(children_r2[:, 1])
                         c3_r2_data.append(children_r2[:, 2])
 
+                x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier = data_creation_func(
+                    dimension, eps)
                 heatmap_data = np.array(heatmap_data)
                 k = str(kappa).replace('.', ',')
                 g = str(gamma).replace('.', ',')
-                n = str(nu).replace('.', ',')
+                n = str(nu).replace('.', '_')
+                e = str(eps).replace('[', '')
+                e = str(e).replace(']', '')
+                e = str(e).replace(' ', '')
+                e = str(e).replace('.', '')
+                e = str(e).replace(',', '_')
+                noi = str(noise).replace('.', ',')
 
-                torch.save(master.state_dict(), f'{data_name}/{model_name}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_3D_model_state_{nbr_query}_queries.pth')
-
-
-                # Currently only takes the last model of the repetitions, currently too lazy to fix
-                vi.contour_plot_1D(master.sub_models, x_sub1, [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2), y_sub3 / torch.max(y_sub3)],
-                                   f'/contour/Contour_{data_name}_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}_gamma_{g}_nu_{n}',
-                                   f"{model_name}", folder_of_the_day, data_name, parent=master)
-
+                torch.save(master.state_dict(),
+                           f'{data_name}/{model_name.lower()}{folder_of_the_day}/models/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.pth')
                 y = np.mean(better_exploration_score, axis=0)
-                y = np.insert(y, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
+                y = np.insert(y, 0, np.zeros(3 * nbr_rand_init))[:nbr_query]
                 over_explor.append(y)
-                std = np.std(better_exploration_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
+                std = np.std(better_exploration_score, axis=0) / np.sqrt(len(better_exploration_score))
+                std = np.insert(std, 0, np.zeros(3 * nbr_rand_init))[:nbr_query]
 
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
-                y = np.mean(better_exploitation_score, axis=0)
+                """y = np.mean(better_exploitation_score, axis=0)
                 y = np.insert(y, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
                 over_exploit.append(y)
 
                 std = np.std(better_exploitation_score, axis=0)
-                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
+                std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]"""
 
-                #plt.plot(y, label='Exploitation')
-                #plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
+                # plt.plot(y, label='Exploitation')
+                # plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-                r2 = np.insert(r2, 0, np.zeros((3*nbr_rand_init, 1)), axis=1)[:, :nbr_query]
+                r2 = np.insert(r2, 0, np.zeros((3 * nbr_rand_init, 1)), axis=1)[:, :nbr_query]
                 r2_avg = np.mean(r2, axis=0)
                 r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
                 # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
@@ -425,49 +431,47 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
-                child_1_r2 = np.mean(c1_r2_data, axis=0)
-                child_1_r2 = np.insert(child_1_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
-
-                child_2_r2 = np.mean(c2_r2_data, axis=0)
-                child_3_r2 = np.mean(c3_r2_data, axis=0)
-
-                child_2_r2 = np.insert(child_2_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
-                child_3_r2 = np.insert(child_3_r2, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
-
                 """
                 plt.plot(child_1_r2, label="Child 1 R2")
                 plt.plot(child_2_r2, label="Child 2 R2")
                 plt.plot(child_3_r2, label="Child 3 R2")"""
 
-                avg_child = (child_1_r2 + child_2_r2 + child_3_r2) / 3
+                all_children = np.concatenate([c1_r2_data, c2_r2_data, c3_r2_data])
+                all_children = np.insert(all_children, 0, np.zeros((3 * nbr_rand_init, 1)), axis=1)[:, :nbr_query]
+
+                avg_child = np.mean(all_children, axis=0)
+                std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))
+
                 plt.plot(avg_child, label='Child Avg R2')
+                plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
 
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
 
                 plt.title(
-                    f'{model_name} HGP-BO {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
+                    f'{model_name} HGP-BO 3D {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/BIF_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_kappa_{k}_gamma_{g}_nu_{n}.svg')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/differentiable_plots/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.svg')
                 plt.savefig(
-                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/BIF_{data_name}_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_training_iter_{training_iter}_kappa_{k}_gamma_{g}_nu_{n}.png')
+                    f'{data_name}/{model_name.lower()}{folder_of_the_day}/png/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.png')
 
                 plt.close()
 
-                df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-                                      master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
-                                      child_2_r2, child_3_r2])
+                df = pd.DataFrame(
+                    [f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+                     master, better_exploration_score, better_exploitation_score, r2, c1_r2_data,
+                     c2_r2_data, c3_r2_data])
                 df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
-                            'child2_r2', "child3_r2"]
+                            'child2_r2', 'child3_r2']
 
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
 
                 np.save(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
-
-                list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-                                       master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
-                                       child_2_r2])
+                list_models.append(
+                    [f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+                     master, better_exploration_score, better_exploitation_score, r2, c1_r2_data,
+                     c2_r2_data, c3_r2_data])
 
             # Joint Section
             '''joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
@@ -505,7 +509,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 30
+    nbr_repetition = 1
     nbr_rand_init = 6
     k_vals = [9.5] # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
@@ -521,8 +525,7 @@ if __name__ == '__main__':
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
 
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-                training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
+            list_info = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
                                    g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0.1)[0]
             """
             current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
