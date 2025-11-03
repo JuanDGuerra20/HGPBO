@@ -10,6 +10,97 @@ from models import *
 from scipy.special import jn
 from scipy.optimize import root_scalar
 
+class HashTable:
+
+    # Create empty bucket list of given size
+    def __init__(self, size):
+        self.size = size
+        self.hash_table = self.create_buckets()
+
+    def create_buckets(self):
+        return [[] for _ in range(self.size)]
+
+    # Insert values into hash map
+    def set_val(self, key, val):
+
+        # Get the index from the key
+        # using hash function
+        hashed_key = hash(key) % self.size
+
+        # Get the bucket corresponding to index
+        bucket = self.hash_table[hashed_key]
+
+        found_key = False
+        for index, record in enumerate(bucket):
+            record_key, record_val = record
+
+            # check if the bucket has same key as
+            # the key to be inserted
+            if record_key[0] == key[0] and record_key[1] == key[1] and record_key[2] == key[2]:
+                found_key = True
+                break
+
+        # If the bucket has same key as the key to be inserted,
+        # Update the key value
+        # Otherwise append the new key-value pair to the bucket
+        if found_key:
+            bucket[index] = (key, val)
+        else:
+            bucket.append((key, val))
+
+    # Return searched value with specific key
+    def get_val(self, key):
+
+        # Get the index from the key using
+        # hash function
+        hashed_key = hash(key) % self.size
+
+        # Get the bucket corresponding to index
+        bucket = self.hash_table[hashed_key]
+
+        found_key = False
+        for index, record in enumerate(bucket):
+            record_key, record_val = record
+
+            # check if the bucket has same key as
+            # the key being searched
+            if record_key[0] == key[0] and record_key[1] == key[1]:
+                found_key = True
+                break
+
+        # If the bucket has same key as the key being searched,
+        # Return the value found
+        # Otherwise indicate there was no record found
+        if found_key:
+            return record_val
+        else:
+            return "No record found"
+
+    # Remove a value with specific key
+    def delete_val(self, key):
+
+        # Get the index from the key using
+        # hash function
+        hashed_key = hash(key) % self.size
+
+        # Get the bucket corresponding to index
+        bucket = self.hash_table[hashed_key]
+
+        found_key = False
+        for index, record in enumerate(bucket):
+            record_key, record_val = record
+
+            # check if the bucket has same key as
+            # the key to be deleted
+            if record_key == key:
+                found_key = True
+                break
+        if found_key:
+            bucket.pop(index)
+        return
+
+    def __str__(self):
+        return "".join(str(item) for item in self.hash_table)
 
 class PriorMean(gpytorch.means.Mean):  # PMF
     """
@@ -17,9 +108,15 @@ class PriorMean(gpytorch.means.Mean):  # PMF
     to the hierarchical one. Saves a mean map and then when doing inference, the new mean is just looked up for that
     point by looking up the prior map passed from the submodules
     """
-    def __init__(self, prior_map):
+
+    def __init__(self, prior_map, test_x, device="cpu"):
         super().__init__()
-        self.register_parameter('map', torch.nn.Parameter(prior_map, requires_grad=False))
+        self.register_parameter('map', torch.nn.Parameter(prior_map.to(device), requires_grad=False))
+        self.hash_map = HashTable(np.prod(test_x.shape[:-1]))
+        self.device = device
+
+        for i in range(len(test_x)):
+            self.hash_map.set_val(str(test_x[i]), i)
 
     def forward(self, input):
         Xmean_1D = [[1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [0, 0], [0, 1], [0, 2], [0, 3], [0, 4]]
@@ -52,6 +149,14 @@ class PriorMean(gpytorch.means.Mean):  # PMF
                 new_prior[i] = self.map[indice_1, indice_2]
 
         return new_prior
+
+    """def forward(self, input):
+        new_prior = torch.zeros(input.shape[0], device=self.device)
+        for i in range(input.shape[0]):
+            look_up = self.hash_map.get_val(str(input[i]))
+            new_prior[i] = self.map[look_up]
+
+        return new_prior"""
 
 
 class Hierarchical_GP(gpytorch.models.ExactGP):
@@ -161,12 +266,12 @@ class Hierarchical_GP(gpytorch.models.ExactGP):
 
 class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
-    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter):
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
         super(Efficient_UCB_Hierarchical_GP, self).__init__(train_x, train_y, likelihood)
 
         self.sub_models = sub_models  # This will be useful for creating the training procedure
         self.kernel_op = kernel_op
-        self.mean_module = PriorMean(prior_map)
+        self.mean_module = PriorMean(prior_map, test_x)
         self.mean_module.requires_grad = False
         self.covar_module = hierarchical_kernel
         self.kappa = kappa
@@ -252,8 +357,10 @@ class Efficient_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 
 
 class Lossless_Efficient_UCB_Hierarchical_GP(Efficient_UCB_Hierarchical_GP):
-    def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=None):
-        super().__init__(train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa, query_counter=query_counter)
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models,
+                 kappa, query_counter=None, device="cpu"):
+        super().__init__(train_x, train_y, test_x, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models,
+                         kappa, query_counter=query_counter)
 
     def Hoptimize(self, likelihood, training_iter, train_x, train_y, verbose=True):
         """
@@ -369,10 +476,11 @@ def random_initialization(random_sample, emg, trainsC, max_seen_resp, dt, max_up
         # Add of if statement and max seen resp in the case of several initialization points
         if (reponse > max_seen_resp) or (max_seen_resp == 0):
             max_seen_resp = reponse
-        if not max_seen_resp:
+        Y.append(reponse)
+        """if not max_seen_resp:
             Y.append(reponse / max_seen_resp)  # need for normalization between 0 and 1
         else:
-            Y.append(reponse)
+            Y.append(reponse)"""
 
     return X, Y
 
@@ -560,17 +668,16 @@ def update_model1_1D_max_seen(model, likelihood, train_x, train_y, next_query_pi
     else:
         div_y[model.env_ind] = div_y[model.env_ind]/1e-5
         div_y[model.bif_ind] = div_y[model.bif_ind]/1e-5"""
-    div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (
-                torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
+    div_y = train_y.clone()
+
     if torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]) == 0:
-        div_y[model.env_ind] = div_y[model.env_ind] / torch.max(div_y[model.env_ind])
+        div_y[model.env_ind] = div_y[model.env_ind]/torch.max(div_y[model.env_ind])
 
     else:
-        div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (
-                    torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
+        div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / (torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
     if len(model.bif_ind) > 1:
-        div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (
-                    torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))
+        div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / (torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))
+
 
     model.set_train_data(train_x, div_y, strict=False)
     # Find optimal model hyperparameters

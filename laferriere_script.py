@@ -217,7 +217,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, likelihood,
+            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, test_x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
@@ -301,8 +301,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-            c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, x_sub1,
-                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+            c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, [x_sub1, x_sub2],
+                                               [y_sub1, y_sub2])
 
             child_1_r2.append(c1_r2)
             child_2_r2.append(c2_r2)

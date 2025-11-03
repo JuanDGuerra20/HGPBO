@@ -636,7 +636,7 @@ def contour_plot_1D(sub_models, true_x, true_y, raw_y, file_name, model_type, fo
                 new_train = map_neural_to_list(train_x.numpy())
                 # ax.plot(new_train, train_y.numpy(), 'k*')
                 ax.plot(temp_x, mean, 'b', label='Predicted Mean')
-                ax.fill_between(test_x.numpy(), mean - std, mean + std, alpha=0.5, label='Uncertainty')
+                ax.fill_between(temp_x, mean - std, mean + std, alpha=0.5, label='Uncertainty')
 
                 # ax.fill_between(temp_x, mean-std, mean+std, alpha=0.5)
 

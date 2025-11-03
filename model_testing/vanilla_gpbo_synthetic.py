@@ -184,7 +184,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         std = np.std(exploration_scores, axis=0) / np.sqrt(len(exploration_scores))
         plt.plot(y, label='Exploration')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
-
+        print(f"y {y[-1]}")
         y = np.mean(exploitation_scores, axis=0)
         over_exploit.append(y)
 
@@ -197,7 +197,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
         plt.plot(r2_avg, label="Parent R2")
         plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
-
+        print(f"r2 = {r2_avg[-1]}")
         plt.legend()
         plt.ylim(-0.1, 1.1)
         k = str(kappa).replace('.', ',')
@@ -233,14 +233,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
 if __name__ == '__main__':
 
-    dimension = 15
+    dimension = 32
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 30
     nbr_rand_init = 1
     k_vals = [2]
 
-    for dataset_num in [10]:
+    for dataset_num in [3]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

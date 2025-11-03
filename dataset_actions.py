@@ -333,11 +333,12 @@ def random_initialization_1D(random_sample, trainsC, max_seen_resp, dt=DT, emg=E
         Y.append(response)  # need to Normalization between 0 and 1
 
     X = torch.tensor(X, dtype=torch.float64)
-    if max_update:
+    Y = torch.tensor(Y, dtype=torch.float64)
+    """if max_update:
         Y = torch.tensor(Y, dtype=torch.float64)
 
     else:
-        Y = torch.tensor(Y, dtype=torch.float64)/max_seen_resp
+        Y = torch.tensor(Y, dtype=torch.float64)/max_seen_resp"""
 
     return X, Y
 
@@ -559,7 +560,7 @@ def select_random_queries(num_queries, x, y, seed=False, noise=0):
     indices = np.random.randint(len(x), size=(num_queries))
     train_x = x[indices]
     train_y = y[indices]
-    train_y += (torch.max(y)-torch.min(y)) * np.random.normal(0, noise, size=train_y.shape)
+    train_y += np.random.normal(0, noise, size=train_y.shape)
 
     return train_x, train_y
 
