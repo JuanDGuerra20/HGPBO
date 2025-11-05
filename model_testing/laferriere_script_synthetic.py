@@ -110,11 +110,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             max_seen_resp_1_1D = torch.max(train_y_sub1)
             max_seen_resp_2_1D = torch.max(train_y_sub2)
             sub1_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1 / abs(max_seen_resp_1_1D), sub1_like,
+            sub1 = models.ExactGPModel(train_x_sub1, train_y_sub1, sub1_like,
                                        query_counter=sub1_qc, nu=nu)
 
             sub2_like = gpytorch.likelihoods.GaussianLikelihood()
-            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2 / abs(max_seen_resp_2_1D), sub2_like,
+            sub2 = models.ExactGPModel(train_x_sub2, train_y_sub2, sub2_like,
                                        query_counter=sub2_qc, nu=nu)
 
             sub1.eval()
@@ -147,11 +147,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+            master = hierarchical_model(train_x_hier, train_y_hier - torch.mean(train_y_hier), x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)
+            """master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2],
+                                        kappa=kappa, query_counter=hier_qc)"""
             # for i in range(nbr_rand_init):
 
             master.eval()
@@ -161,7 +166,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             c1_r2, c2_r2 = vi.child_contour_r2(master.sub_models, [x_sub1, x_sub2],
-                                               [y_sub1 / torch.max(y_sub1), y_sub2 / torch.max(y_sub2)])
+                                               [y_sub1, y_sub2])
             child_1_r2.append(c1_r2)
             child_2_r2.append(c2_r2)
 
@@ -204,7 +209,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
-        master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+        #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+        master.set_train_data(train_x_hier, (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier), strict=False)
+
 
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             # Find optimal model hyperparameters
@@ -213,8 +220,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             # start = time.time()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
                                                   train_y_hier / max_seen_resp_2D,
+                                                  verbose=False)"""
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                  (train_y_hier - torch.mean(train_y_hier)) / torch.std(train_y_hier),
                                                   verbose=False)
 
             # Get into evaluation (predictive posterior) mode
@@ -227,13 +237,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
-        exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
+        """exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
                                                                                             ground_truth_max_hier,
                                                                                             test_x_hier,
-                                                                                            x_hier, y_hier)
+                                                                                            x_hier, y_hier)"""
+        instantaneous_regret, next_query_pins_exploration_2D = models.get_instantaneous_regret(hierar_y_mu,
+                                                                                               ground_truth_max_hier,
+                                                                                               test_x_hier,
+                                                                                               x_hier, y_hier)
         exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_hier)
 
-        better_exploration_score.append(exploration_score_2D)
+        better_exploration_score.append(instantaneous_regret)
         better_exploitation_score.append(exploitation_score_2D)
 
         heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
@@ -419,7 +433,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0) / np.sqrt(len(better_exploration_score))
                 std = np.insert(std, 0, np.zeros((2 - len(children)) * nbr_rand_init))[:nbr_query]
-                plt.plot(y, label='Exploration')
+                plt.plot(y, label='Instantaneous Regret')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
                 y = np.mean(better_exploitation_score, axis=0)
@@ -484,7 +498,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                       f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',
                                       master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
                                       child_2_r2])
-                df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
+                df.index = ['name', 'master', 'instantaneous_regret', 'exploitation_score', 'parent_r2', 'child1_r2',
                             'child2_r2']
 
                 df.to_csv(
@@ -537,24 +551,24 @@ if __name__ == '__main__':
     dimension = 32
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 30
+    nbr_repetition = 10
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    nbr_rand_init = 6  # Found through HP Testing
+    nbr_rand_init = 3  # Found through HP Testing
     seed = np.array([901112484, 798576827, 862109006, 256960071,  67686131, 960919614,
        542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
        445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
         56896553, 749380297, 635521450,  19699771, 351850900, 520687372,
        833438344, 355138099, 382604277,  40529313, 441069895, 797772191])
-    # seed = [False] * nbr_repetition
+    seed = [False] * nbr_repetition
 
     model_name = "laferriere_model"
     for h in h_model:
-        for dataset_num in [3]:
+        for dataset_num in [3,2,6,10]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

@@ -149,7 +149,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
-                exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
+                """exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
+                                                                                                    ground_truth_max_hier,
+                                                                                                    test_x_hier,
+                                                                                                    x_hier, y_hier)"""
+                instantaneous_regret, next_query_pins_exploration_2D = models.get_instantaneous_regret(hierar_y_mu,
                                                                                                     ground_truth_max_hier,
                                                                                                     test_x_hier,
                                                                                                     x_hier, y_hier)
@@ -160,7 +164,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 print(f'Exploration_Score: {torch.round(exploration_score_2D, decimals=4)}')
                 print(f'Exploitation_Score: {torch.round(exploitation_score_2D, decimals=4)}')"""
 
-                better_exploration_score.append(exploration_score_2D)
+                better_exploration_score.append(instantaneous_regret)
                 better_exploitation_score.append(exploitation_score_2D)
 
                 pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
@@ -168,7 +172,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 heatmap_rep.append(master_like.mean)
 
             heatmap_data.append(heatmap_rep)
-            print(f'\nRepetition {repetition} complete!\n')
+            #print(f'\nRepetition {repetition} complete!\n')
 
 
         exploration_scores = []
@@ -182,7 +186,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         y = np.mean(exploration_scores, axis=0)
         over_explor.append(y)
         std = np.std(exploration_scores, axis=0) / np.sqrt(len(exploration_scores))
-        plt.plot(y, label='Exploration')
+        plt.plot(y, label='Instantaneous Regret')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
         print(f"y {y[-1]}")
         y = np.mean(exploitation_scores, axis=0)
@@ -221,7 +225,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         df = pd.DataFrame([
                               f'kappa_{k}_model_state_{nbr_query}_queries_eps_init_{nbr_rand_init}_train_iter_{training_iter}',
                               master, better_exploration_score, better_exploitation_score, r2])
-        df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2']
+        df.index = ['name', 'master', 'instantaneous_regret', 'exploitation_score', 'parent_r2']
 
         df.to_csv(
             f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
