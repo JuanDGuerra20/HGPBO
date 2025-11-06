@@ -99,7 +99,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
 
                     likelihood = gpytorch.likelihoods.GaussianLikelihood()
-                    master = ExactGPModel(train_x_hier, train_y_hier, likelihood)
+                    master = ExactGPModel(train_x_hier, train_y_hier/ max_seen_resp_2D, likelihood)
 
                     optimizer = torch.optim.Adam(master.parameters(), lr=1e-3)
                     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, master)

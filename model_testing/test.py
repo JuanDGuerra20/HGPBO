@@ -50,5 +50,8 @@ if __name__ == '__main__':
                                    eps, ))
                 processes.append(p)
 
-        for p in processes:
-            p.get()
+        for i, p in enumerate(processes):
+            try:
+                p.get()
+            except:
+                print(f"Process {i} failed")
