@@ -127,7 +127,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                                   response)
                 """master.set_train_data(train_x_hier, train_y_hier, strict=False)"""
-                master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+                #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+                master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std(), strict=False)
 
                 """
                 train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""

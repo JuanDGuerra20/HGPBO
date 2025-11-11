@@ -54,7 +54,7 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, dimensio
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
-                           eps):
+                           eps, seed):
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -94,12 +94,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             heatmap_rep = []
             for q in tqdm(range(nbr_query)):
                 if q == 0:
-                    train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier)
+                    train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier, seed=seed[repetition])
                     max_seen_resp_2D = torch.max(train_y_hier)
 
 
                     likelihood = gpytorch.likelihoods.GaussianLikelihood()
-                    master = ExactGPModel(train_x_hier, train_y_hier/ max_seen_resp_2D, likelihood)
+                   # master = ExactGPModel(train_x_hier, train_y_hier/ max_seen_resp_2D, likelihood)
+                    master = ExactGPModel(train_x_hier, train_y_hier - train_y_hier.mean(), likelihood)
 
                     optimizer = torch.optim.Adam(master.parameters(), lr=1e-3)
                     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, master)
@@ -125,7 +126,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                                   response)
-                master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+                #master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+                master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std() , strict=False)
 
                 """
                 train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
@@ -243,9 +245,14 @@ if __name__ == '__main__':
     nbr_repetition = 30
     nbr_rand_init = 1
     k_vals = [2]
-
+    seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
+                     542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
+                     445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
+                     56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
+                     833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
+    # seed = [False] * nbr_repetition
     for dataset_num in [3,2,6,10]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
-                           eps)
+                           eps, seed)

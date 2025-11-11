@@ -147,16 +147,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            """master = hierarchical_model(train_x_hier, train_y_hier - torch.mean(train_y_hier), x_hier, likelihood,
-                                        prior_hierarchical_kernel,
-                                        prior_map / prior_map_max, kernel_op='add_kernel',
-                                        sub_models=[sub1, sub2],
-                                        kappa=kappa, query_counter=hier_qc)"""
-            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+            master = hierarchical_model(train_x_hier, train_y_hier - torch.mean(train_y_hier), x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)
+            """master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2],
+                                        kappa=kappa, query_counter=hier_qc)"""
             # for i in range(nbr_rand_init):
 
             master.eval()
@@ -209,8 +209,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
-        master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
-        #master.set_train_data(train_x_hier, (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier), strict=False)
+        #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+        master.set_train_data(train_x_hier, (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier), strict=False)
 
 
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
@@ -220,12 +220,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             # start = time.time()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  train_y_hier / max_seen_resp_2D,
-                                                  verbose=False)
             """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  (train_y_hier - torch.mean(train_y_hier)) / torch.std(train_y_hier),
+                                                  train_y_hier / max_seen_resp_2D,
                                                   verbose=False)"""
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                  (train_y_hier - torch.mean(train_y_hier)) / torch.std(train_y_hier),
+                                                  verbose=False)
 
             # Get into evaluation (predictive posterior) mode
             master.eval()
@@ -564,7 +564,7 @@ if __name__ == '__main__':
        445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
         56896553, 749380297, 635521450,  19699771, 351850900, 520687372,
        833438344, 355138099, 382604277,  40529313, 441069895, 797772191])
-    seed = [False] * nbr_repetition
+    #seed = [False] * nbr_repetition
 
     model_name = "laferriere_model"
     for h in h_model:
