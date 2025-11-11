@@ -11,7 +11,7 @@ if __name__ == '__main__':
     dimension = 32
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 30
+    nbr_repetition = 5
     k_vals = [7.5]
     g_vals = [3]
     nu_vals = [0.5]  # Found through HP Testing

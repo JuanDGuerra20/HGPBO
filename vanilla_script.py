@@ -98,13 +98,18 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         print("Model folder created")
         os.mkdir(workspace + folder_of_the_day + '/models')
 
-    ground_truth_max_hier = torch.max(y_hier)
-
     heatmap_data = []
     list_max_seen_2D = []
 
     over_exploit = []
     over_explor = []
+    trainsC = Trains(clean_thresh=0.06)
+    X_2D, Y_2D, Xmean_2D, Ymean_2D = make_dataset_2d(trainsC)
+
+    y_hier = torch.from_numpy(Y_2D[:, 0].copy())
+
+    test_x_hier = torch.tensor(Xmean_2D)
+    test_y_hier = torch.tensor(Ymean_2D)
 
     hier_qc = torch.ones(len(test_x_hier))
     for kappa in k_vals:

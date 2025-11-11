@@ -244,7 +244,7 @@ if __name__ == '__main__':
     nbr_rand_init = 1
     k_vals = [2]
 
-    for dataset_num in [3]:
+    for dataset_num in [3,2,6,10]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

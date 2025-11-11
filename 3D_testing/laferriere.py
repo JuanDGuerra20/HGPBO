@@ -509,7 +509,7 @@ if __name__ == '__main__':
     dimension = 10
     nbr_query = 100
     training_iter = 10
-    nbr_repetition = 1
+    nbr_repetition = 30
     nbr_rand_init = 6
     k_vals = [9.5] # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
@@ -519,7 +519,11 @@ if __name__ == '__main__':
     process = []
 
     multi = False
-    seed = np.arange(nbr_repetition)
+    seed = np.array([901112484, 798576827, 862109006, 256960071,  67686131, 960919614,
+       542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
+       445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
+        56896553, 749380297, 635521450,  19699771, 351850900, 520687372,
+       833438344, 355138099, 382604277,  40529313, 441069895, 797772191])
     for h in h_model:
         for dataset_num in [6]:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)

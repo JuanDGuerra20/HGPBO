@@ -419,6 +419,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
     current_dateday = datetime.now().strftime("%Y-%m-%d")
     workspace = f"{model_name.lower()}"
     folder_of_the_day = '/data-' + str(current_dateday)
+    trainsC = Trains(clean_thresh=0.06)
+    X_2D, Y_2D, Xmean_2D, Ymean_2D = make_dataset_2d(trainsC)
+
+    y_hier = torch.from_numpy(Y_2D[:, 0].copy())
+
+    test_x_hier = torch.tensor(Xmean_2D)
+    test_y_hier = torch.tensor(Ymean_2D)
+
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
     else:
@@ -493,14 +501,48 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 else:
 
                     for i in range(nbr_repetition ):
-                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
-                            kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
-                            model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
-                        better_exploration_score.append(rep_exploration_score)
-                        better_exploitation_score.append(rep_exploitation_score)
-                        heatmap_data.append(heatmap_rep)
-                        child_1_r2_data.append(child_1_r2)
-                        child_2_r2_data.append(child_2_r2)
+                        try:
+                            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
+                                model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                            better_exploration_score.append(rep_exploration_score)
+                            better_exploitation_score.append(rep_exploitation_score)
+                            heatmap_data.append(heatmap_rep)
+                            child_1_r2_data.append(child_1_r2)
+                            child_2_r2_data.append(child_2_r2)
+                        except:
+                            try:
+                                master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                    kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
+                                    model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                better_exploration_score.append(rep_exploration_score)
+                                better_exploitation_score.append(rep_exploitation_score)
+                                heatmap_data.append(heatmap_rep)
+                                child_1_r2_data.append(child_1_r2)
+                                child_2_r2_data.append(child_2_r2)
+                            except:
+                                try:
+                                    master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                        kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
+                                        model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                    better_exploration_score.append(rep_exploration_score)
+                                    better_exploitation_score.append(rep_exploitation_score)
+                                    heatmap_data.append(heatmap_rep)
+                                    child_1_r2_data.append(child_1_r2)
+                                    child_2_r2_data.append(child_2_r2)
+                                except:
+                                    try:
+                                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                            kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
+                                            hierarchical_model,
+                                            model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                        better_exploration_score.append(rep_exploration_score)
+                                        better_exploitation_score.append(rep_exploitation_score)
+                                        heatmap_data.append(heatmap_rep)
+                                        child_1_r2_data.append(child_1_r2)
+                                        child_2_r2_data.append(child_2_r2)
+                                    except:
+                                        continue
 
 
                 k = str(kappa).replace('.', ',')
@@ -650,19 +692,19 @@ if __name__ == '__main__':
     nbr_query = 100
     training_iter = 10
     nbr_repetition = 30
-    nbr_rand_init = 6
+    nbr_rand_init = 3
     k_vals = [4]  # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
     nu_vals = [0.5]
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
-                     542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
-                     445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
-                     56896553, 749380297, 635521450, 19699771, 351850900, 520687372,
-                     833438344, 355138099, 382604277, 40529313, 441069895, 797772191])
-    # seed = [False]*nbr_repetition
+    """seed = np.array([901112484, 798576827, 862109006, 256960071,  67686131, 960919614,
+       542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
+       445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
+        56896553, 749380297, 635521450,  19699771, 351850900, 520687372,
+       833438344, 355138099, 382604277,  40529313, 441069895, 797772191])"""
+    seed = [False]*nbr_repetition
     for h in h_model:
         if h == hmodel.Efficient_UCB_Hierarchical_GP:
             model_name = "Efficient"
