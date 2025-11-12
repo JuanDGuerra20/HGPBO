@@ -217,7 +217,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, test_x_hier, likelihood,
+            """master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, test_x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2],
+                                        kappa=kappa, query_counter=hier_qc)"""
+            master = hierarchical_model(train_x_hier, train_y_hier - train_y_hier.mean(), test_x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
@@ -285,15 +290,18 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
-        master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
-
+        #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+        master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std(), strict=False)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             # Find optimal model hyperparameters
             master.train()
             likelihood.train()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
                                                   train_y_hier / max_seen_resp_2D,
+                                                  verbose=False)"""
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                  (train_y_hier - train_y_hier.mean())/train_y_hier.std(),
                                                   verbose=False)
             # Get into evaluation (predictive posterior) mode
             master.eval()

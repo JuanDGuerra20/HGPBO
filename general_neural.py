@@ -226,7 +226,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
             max_seen_resp_2D = torch.max(train_y_hier)
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier/max_seen_resp_2D, test_x_hier, likelihood,
+            """master = hierarchical_model(train_x_hier, train_y_hier/max_seen_resp_2D, test_x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2],
+                                        kappa=kappa, query_counter=hier_qc)"""
+            master = hierarchical_model(train_x_hier, train_y_hier - train_y_hier.mean(), test_x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
@@ -342,15 +347,18 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                             response)
-        master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
-
+        #master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+        master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean()) / train_y_hier.std(), strict=False)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             # Find optimal model hyperparameters
             master.train()
             likelihood.train()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
-                                                    verbose=False)
+            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
+                                                    verbose=False)"""
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                  (train_y_hier - train_y_hier.mean()) / train_y_hier.std(),
+                                                  verbose=False)
             # Get into evaluation (predictive posterior) mode
             master.eval()
             likelihood.eval()
@@ -699,12 +707,12 @@ if __name__ == '__main__':
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    """seed = np.array([901112484, 798576827, 862109006, 256960071,  67686131, 960919614,
+    seed = np.array([901112484, 798576827, 862109006, 256960071,  67686131, 960919614,
        542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
        445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
         56896553, 749380297, 635521450,  19699771, 351850900, 520687372,
-       833438344, 355138099, 382604277,  40529313, 441069895, 797772191])"""
-    seed = [False]*nbr_repetition
+       833438344, 355138099, 382604277,  40529313, 441069895, 797772191])
+    #seed = [False]*nbr_repetition
     for h in h_model:
         if h == hmodel.Efficient_UCB_Hierarchical_GP:
             model_name = "Efficient"

@@ -130,7 +130,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                     max_seen_resp_2D = torch.max(train_y_hier)
 
                     likelihood = gpytorch.likelihoods.GaussianLikelihood()
-                    master = ExactGPModel(train_x_hier, train_y_hier, likelihood)
+                    master = ExactGPModel(train_x_hier, train_y_hier - train_y_hier.mean(), likelihood)
 
                     optimizer = torch.optim.Adam(master.parameters(), lr=1e-3)
                     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, master)
@@ -161,8 +161,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                                   response)
-                master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
-
+                #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+                master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std() , strict=False)
 
                 master.train()
                 likelihood.train()
@@ -172,7 +172,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                     output = master(train_x_hier)
 
-                    loss = -mll(output, train_y_hier)
+                    loss = -mll(output, (train_y_hier - train_y_hier.mean())/train_y_hier.std())
 
                     loss.backward()
                     optimizer.step()
