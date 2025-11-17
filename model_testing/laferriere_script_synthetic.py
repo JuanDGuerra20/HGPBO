@@ -147,16 +147,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier - torch.mean(train_y_hier), x_hier, likelihood,
-                                        prior_hierarchical_kernel,
-                                        prior_map / prior_map_max, kernel_op='add_kernel',
-                                        sub_models=[sub1, sub2],
-                                        kappa=kappa, query_counter=hier_qc)
-            """master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+            """master = hierarchical_model(train_x_hier, train_y_hier - torch.mean(train_y_hier), x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)"""
+            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2],
+                                        kappa=kappa, query_counter=hier_qc)
             # for i in range(nbr_rand_init):
 
             master.eval()
@@ -209,8 +209,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                           response)
-        #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
-        master.set_train_data(train_x_hier, (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier), strict=False)
+        master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+        #master.set_train_data(train_x_hier, (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier), strict=False)
 
 
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
@@ -220,12 +220,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             # start = time.time()
 
-            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  train_y_hier / max_seen_resp_2D,
-                                                  verbose=False)"""
             master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  (train_y_hier - torch.mean(train_y_hier)) / torch.std(train_y_hier),
+                                                  train_y_hier / max_seen_resp_2D,
                                                   verbose=False)
+            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                  (train_y_hier - torch.mean(train_y_hier)) / torch.std(train_y_hier),
+                                                  verbose=False)"""
 
             # Get into evaluation (predictive posterior) mode
             master.eval()
@@ -435,18 +435,18 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 std = np.insert(std, 0, np.zeros((2 - len(children)) * nbr_rand_init))[:nbr_query]
                 plt.plot(y, label='Instantaneous Regret')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
-
-                y = np.mean(better_exploitation_score, axis=0)
+                print(f"explor {y[-1]}")
+                """y = np.mean(better_exploitation_score, axis=0)
                 y = np.insert(y, 0, np.zeros((2 - len(children)) * nbr_rand_init))[:nbr_query]
 
-                over_exploit.append(y)
+                over_exploit.append(y)"""
 
                 r2 = vi.heatmap_r_score(heatmap_data, y_hier)
                 r2 = np.insert(r2, 0, np.zeros(((2 - len(children)) * nbr_rand_init, 1)), axis=1)[:, :nbr_query]
                 r2_avg = np.mean(r2, axis=0)
                 r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
                 # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
-
+                print(f"r2 {r2_avg[-1]}")
                 plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
@@ -456,7 +456,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 avg_child = np.mean(all_children, axis=0)
                 std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))
-
+                print(f"child r2 {avg_child[-1]}")
                 plt.plot(avg_child, label='Child Avg R2')
                 plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
 
@@ -491,8 +491,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
-
-                print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
+                auc = y + avg_child + r2_avg
+                print(f"AUC {np.sum(auc)}")
+                print(f'\n{data_name} {model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
 
                 df = pd.DataFrame([
                                       f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',
@@ -512,11 +513,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                        child_2_r2])
 
             # Joint Section
-            joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
+            """joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
                               nbr_repetition, data_name, model_name)
 
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
-                        nbr_repetition, data_name, model_name)
+                        nbr_repetition, data_name, model_name)"""
 
     return list_models
 

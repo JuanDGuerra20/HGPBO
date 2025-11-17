@@ -487,7 +487,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 torch.save(master.state_dict(),
                            f'{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
-                y = np.mean(better_exploration_score, axis=0)
+                y = np.mean(better_exploration_score, axis=0)[:nbr_query]
                 y = np.insert(y, 0, np.zeros(2 * nbr_rand_init))
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0) / np.sqrt(len(better_exploration_score))
@@ -496,18 +496,18 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 plt.plot(y[:nbr_query], label='Exploration')
                 plt.fill_between(range(len(y[:nbr_query])), y[:nbr_query] - std[:nbr_query],
                                  y[:nbr_query] + std[:nbr_query], alpha=0.4)
-
-                y = np.mean(better_exploitation_score, axis=0)
+                print(f"explor {y[-1]}")
+                """y = np.mean(better_exploitation_score, axis=0)
                 y = np.insert(y, 0, np.zeros(2 * nbr_rand_init))
 
-                over_exploit.append(y)
+                over_exploit.append(y)"""
 
                 r2 = vi.heatmap_r_score(heatmap_data, test_y_hier)
                 r2 = np.insert(r2, 0, np.zeros((nbr_rand_init * 2, 1)), axis=1)[:, :nbr_query]
                 r2_avg = np.mean(r2, axis=0)
                 r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
                 # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
-
+                print(f"R2 avg {r2_avg[-1]}")
                 plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
@@ -516,10 +516,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 avg_child = np.mean(all_children, axis=0)
                 std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))
-
+                print(f"avg_child {avg_child[-1]}")
                 plt.plot(avg_child, label='Child Avg R2')
                 plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
-
+                auc = np.sum(y + avg_child + r2_avg)
+                print(f"auc {auc}")
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
                 plt.title(f'{model_name} HGP-BO {nbr_repetition} repetitions with Kappa {k} Gamma {g} Nu {n}')

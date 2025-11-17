@@ -542,7 +542,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0)/ np.sqrt(len(better_exploration_score))
                 std = np.insert(std, 0, np.zeros(3*nbr_rand_init))[:nbr_query]
-
+                print(f"explor {y[-1]}")
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
@@ -561,7 +561,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 r2_avg = np.mean(r2, axis=0)
                 r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
                 # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
-
+                print(f"r2 {r2_avg[-1]}")
                 plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
@@ -579,7 +579,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.plot(avg_child, label='Child Avg R2')
                 plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
-
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
 
@@ -592,6 +591,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.close()
 
+                print(f"child r2 {avg_child[-1]}")
+                auc = np.sum(avg_child + y + r2_avg)
+                print(f"AUC {auc}")
                 df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
                                       master, better_exploration_score, better_exploitation_score, r2, c1_r2_data,
                                       c2_r2_data, c3_r2_data])

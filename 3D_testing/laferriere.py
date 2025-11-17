@@ -417,7 +417,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0) / np.sqrt(len(better_exploration_score))
                 std = np.insert(std, 0, np.zeros(3 * nbr_rand_init))[:nbr_query]
-
+                print(f"Explor {y[-1]}")
                 plt.plot(y, label='Exploration')
                 plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
@@ -436,7 +436,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 r2_avg = np.mean(r2, axis=0)
                 r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
                 # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
-
+                print(f"R2 {r2_avg[-1]}")
                 plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
@@ -453,10 +453,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 plt.plot(avg_child, label='Child Avg R2')
                 plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
-
+                print(f"child avg {avg_child[-1]}")
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
-
+                auc = np.sum(y + avg_child + r2_avg)
+                print(f"AUC {auc}")
                 plt.title(
                     f'{model_name} HGP-BO 3D {nbr_repetition} repetitions with kappa {k} Gamma {g} Nu {n} Init {nbr_rand_init}')
                 plt.savefig(

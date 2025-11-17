@@ -188,10 +188,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         plt.plot(y, label='Exploration')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
         print(f"y {y[-1]}")
-        y = np.mean(exploitation_scores, axis=0)
+        """y = np.mean(exploitation_scores, axis=0)
         over_exploit.append(y)
 
-        std = np.std(exploitation_scores, axis=0)
+        std = np.std(exploitation_scores, axis=0)"""
         #plt.plot(y, label='Exploitation')
         #plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
@@ -199,10 +199,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         r2_avg = np.mean(r2, axis=0)
         r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
         # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
-        print(f"r2 {r2[-1]}")
+        print(f"r2 {r2_avg[-1]}")
         plt.plot(r2_avg, label="Parent R2")
         plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
-
+        auc = np.sum(r2_avg + y)
+        print(f"AUC {auc}")
         plt.legend()
         plt.ylim(-0.1, 1.1)
         k = str(kappa).replace('.', ',')
