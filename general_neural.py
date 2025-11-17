@@ -378,10 +378,14 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
-        exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
+        """exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
                                                                                             ground_truth_max_2D,
                                                                                             test_x_hier,
-                                                                                            x_hier, y_hier)
+                                                                                            x_hier, y_hier)"""
+        instantaneous_regret, next_query_pins_exploration_2D = models.get_instantaneous_regret(hierar_y_mu,
+                                                                                               ground_truth_max_2D,
+                                                                                               test_x_hier,
+                                                                                               x_hier, y_hier)
         exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_2D)
         """print(f'\nQuery Number: {q}')
         print(f'Next Query Pins: {next_query_pins_exploration_2D}')
@@ -389,7 +393,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
         print(f'Exploration_Score: {torch.round(exploration_score_2D, decimals=4)}')
         print(f'Exploitation_Score: {torch.round(exploitation_score_2D, decimals=4)}')"""
 
-        better_exploration_score.append(exploration_score_2D)
+        better_exploration_score.append(instantaneous_regret)
         better_exploitation_score.append(exploitation_score_2D)
         master_like = master.likelihood(observed_pred)
         heatmap_rep.append(master_like.mean.detach().cpu().numpy())
