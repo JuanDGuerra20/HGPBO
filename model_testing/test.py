@@ -11,9 +11,9 @@ if __name__ == '__main__':
     dimension = 32
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 5
-    k_vals = [7.5]
-    g_vals = [3]
+    nbr_repetition = 15
+    k_vals = [1, 2, 3, 4, 5, 6, 7, 7.5, 8, 9, 10]
+    g_vals = [1, 2, 3, 4, 5, 6, 7, 7.5, 8, 9, 10]
     nu_vals = [0.5]  # Found through HP Testing
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
