@@ -54,7 +54,7 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, dimensio
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
-                           eps, seed):
+                           eps, seed, disable_tqdm=False):
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -84,15 +84,16 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
     over_exploit = []
     over_explor = []
-    heatmap_data = []
+
 
     for kappa in k_vals:
         better_exploration_score = []
         better_exploitation_score = []
+        heatmap_data = []
         for repetition in range(nbr_repetition):
             max_seen_resp_2D = 0
             heatmap_rep = []
-            for q in tqdm(range(nbr_query)):
+            for q in tqdm(range(nbr_query), disable=disable_tqdm):
                 if q == 0:
                     train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier, seed=seed[repetition])
                     max_seen_resp_2D = torch.max(train_y_hier)
@@ -190,7 +191,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         std = np.std(exploration_scores, axis=0) / np.sqrt(len(exploration_scores))
         plt.plot(y, label='Instantaneous Regret')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
-        print(f"y {y[-1]}")
         """y = np.mean(exploitation_scores, axis=0)
         over_exploit.append(y)"""
 
@@ -203,14 +203,18 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
         plt.plot(r2_avg, label="Parent R2")
         plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
-        print(f"r2 = {r2_avg[-1]}")
         plt.legend()
         plt.ylim(-0.1, 1.1)
         k = str(kappa).replace('.', ',')
 
         auc = y  + r2_avg
-        print(f"AUC {np.sum(auc)}")
-        print(f'\n{data_name}  complete!\n')
+        if not disable_tqdm:
+            print(f"y {y[-1]}")
+
+            print(f"r2 = {r2_avg[-1]}")
+
+            print(f"AUC {np.sum(auc)}")
+            print(f'\n{data_name}  complete!\n')
 
         plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
         plt.savefig(
@@ -228,13 +232,17 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                          f'/parent_contour_{data_name}_vanilla_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
                          "vanilla", folder_of_the_day, data_name)
 
-        df = pd.DataFrame([
+        """df = pd.DataFrame([
                               f'kappa_{k}_model_state_{nbr_query}_queries_eps_init_{nbr_rand_init}_train_iter_{training_iter}',
                               master, better_exploration_score, better_exploitation_score, r2])
         df.index = ['name', 'master', 'instantaneous_regret', 'exploitation_score', 'parent_r2']
 
         df.to_csv(
-            f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
+            f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')"""
+        df = pd.DataFrame(
+            [f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+             y[-1], r2_avg[-1], auc])
+        df.index = ['name', 'instantaneous_regret', 'parent_r2', 'auc']
 
     # Joint Section
 
@@ -244,11 +252,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 if __name__ == '__main__':
 
     dimension = 32
-    nbr_query = 100
+    nbr_query = 2
     training_iter = 10
-    nbr_repetition = 30
+    nbr_repetition = 2
     nbr_rand_init = 1
-    k_vals = [2]
+    k_vals = [4,5,6,7,7.5,8,9,10]
     seed = np.array([9049607, 2402697, 6510749,  758529, 3523986, 3224638, 9729091,
        5830471, 5343420, 2417321, 9891788, 9314146, 9488226, 2697408,
        5135059, 6813578,  430826, 6192331, 8026546, 6735254, 1112898,
