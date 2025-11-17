@@ -488,7 +488,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                            f'{model_name.lower()}{folder_of_the_day}/models/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries.pth')
 
                 y = np.mean(better_exploration_score, axis=0)[:nbr_query]
-                y = np.insert(y, 0, np.zeros(2 * nbr_rand_init))
+                y = np.insert(y, 0, np.zeros(2 * nbr_rand_init))[:nbr_query]
                 over_explor.append(y)
                 std = np.std(better_exploration_score, axis=0) / np.sqrt(len(better_exploration_score))
                 std = np.insert(std, 0, np.zeros(2 * nbr_rand_init))

@@ -399,7 +399,57 @@ def get_exploration_score(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_poin
     exploration_score = mean_value / ground_truth_max
     return exploration_score, next_query_pins
 
+def get_instantaneous_regret(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_points_data=20):
+    """
+    Compute the exploration score.
 
+    Parameters:
+    - y_mu (torch.Tensor): Mean of the predictive distribution.
+    - ground_truth_max (float): Maximum ground truth value.
+    - coord_pins (numpy.ndarray): Coordinates of pins.
+    - Y (list): List of values for the corresponding pins.
+
+    Returns:
+    - exploration_score (float): Exploration score.
+    - next_query_pins (torch.Tensor): Coordinates of the next query pins to explore.
+
+    Comments: X and Y represent the coord and respective values of GT, size of nbr_rdm_points_data
+    """
+    new_training_values_tampon = np.zeros(nbr_rdm_points_data)
+    i = 0
+    mu = y_mu
+    argmax_mu = torch.where(mu.reshape(len(mu)) == torch.max(mu.reshape(len(mu))))
+
+    # randomly choose a query if there are multiple max values
+    if len(argmax_mu[0]) > 1:  # si plusieurs fois la valeur max, choisir random parmis ces valeurs max
+        indice_next_query = np.random.randint(len(
+            argmax_mu[0]))  # récupère l'indice de la next query aléatoirement parmis les indices offrant la max value
+        next_query = argmax_mu[0][indice_next_query]  # coordonnées x,y correspondant à la val max sélectionnée
+        next_query_pins = torch.as_tensor(coord_pins[next_query],
+                                          dtype=torch.float64)  # récupère les coord des pins et la valeur correpsondante
+    else:
+        next_query = argmax_mu[0][0]
+        next_query_pins = torch.as_tensor(coord_pins[next_query], dtype=torch.float64)
+
+    for indices_x, pins in enumerate(X):
+        # find pins of ((x, y), (x, y)) coordinates in X
+        if pins[0] == next_query_pins[0] and pins[1] == next_query_pins[1] and pins[2] == next_query_pins[2] and pins[3] == next_query_pins[3]:
+            new_training_values_tampon[i] = Y[indices_x]
+            i += 1
+
+    # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
+    # (most of the time is 10 in 2D dataset because they took 10 emg responses from monkeys)
+    # but it can be 11 or 9. More elegant way is to use len(ys) in make_dataset function
+    # but here it works by taking fixing the length of new_training_values_tampon to 11
+    # and taking the real length of non zero elements, then using a new array
+    len_non_zero = np.count_nonzero(new_training_values_tampon)
+    new_training_values = np.zeros(len_non_zero)
+    for x in range(len_non_zero):
+        new_training_values[x] = new_training_values_tampon[x]
+
+    mean_value = np.mean(new_training_values)
+    regret = (mean_value - Y.min()) / (ground_truth_max - Y.min())
+    return regret, next_query_pins
 def get_exploitation_score(mean_value, ground_truth_max):
     """
     Compute the exploitation score.

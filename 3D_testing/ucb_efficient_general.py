@@ -391,10 +391,14 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
 
-        exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
+        """exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
                                                                                             ground_truth_max_hier,
                                                                                             test_x_hier,
-                                                                                            x_hier, y_hier)
+                                                                                            x_hier, y_hier)"""
+        instantaneous_regret, next_query_pins_exploration_2D = models.get_instantaneous_regret(hierar_y_mu,
+                                                                                               ground_truth_max_hier,
+                                                                                               test_x_hier,
+                                                                                               x_hier, y_hier)
         exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_hier)
         """print(f'\nQuery Number: {q}')
         print(f'Next Query Pins: {next_query_pins_exploration_2D}')
@@ -402,7 +406,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         print(f'Exploration_Score: {torch.round(exploration_score_2D, decimals=4)}')
         print(f'Exploitation_Score: {torch.round(exploitation_score_2D, decimals=4)}')"""
 
-        better_exploration_score.append(exploration_score_2D)
+        better_exploration_score.append(instantaneous_regret)
         better_exploitation_score.append(exploitation_score_2D)
         heatmap_rep.append(observed_pred.mean.detach().cpu().numpy())
     noi = str(noise).replace('.', ',')
