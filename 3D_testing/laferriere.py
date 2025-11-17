@@ -486,6 +486,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     [f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
                      master, better_exploration_score, better_exploitation_score, r2, c1_r2_data,
                      c2_r2_data, c3_r2_data])
+                df = pd.DataFrame([
+                    f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+                    master, y[-1], r2[-1], avg_child[-1], auc])
+                df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'avg_child_r2',
+                            'auc']
+                df.to_csv(
+                    f"{data_name}/{model_name.lower()}{folder_of_the_day}/csv/final_scores_kappa_{k}_gamma_{g}_nu_{n}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
 
             # Joint Section
             '''joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)

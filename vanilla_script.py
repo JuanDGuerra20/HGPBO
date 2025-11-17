@@ -259,6 +259,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
         df.to_csv(
             f'vanilla{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}.csv')
+        df = pd.DataFrame([
+            f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+            master, y[-1], r2[-1], auc])
+        df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'auc']
+        df.to_csv(
+            f"vanilla{folder_of_the_day}/csv/final_scores_kappa_{k}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
 
         # Joint Section
 

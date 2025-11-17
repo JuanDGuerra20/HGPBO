@@ -630,13 +630,17 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                                       f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
                                       master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
                                       child_2_r2])
-                df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'child1_r2',
-                            'child2_r2']
-
+                df.index = ['name', 'master', 'exploration_score', 'parent_r2', 'avg_child_r2', 'auc']
 
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
                 np.save(f'{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
+                df = pd.DataFrame([
+                    f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+                    master, y[-1], r2[-1], avg_child[-1], auc])
+                df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2', 'avg_child_r2',
+                            'auc']
+                df.to_csv(f"{model_name.lower()}{folder_of_the_day}/csv/final_scores_kappa_{k}_gamma_{g}_nu_{n}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
 
             # Joint Section
 
