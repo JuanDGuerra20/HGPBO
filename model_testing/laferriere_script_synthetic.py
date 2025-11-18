@@ -511,6 +511,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     [f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',
                      y[-1], r2_avg[-1], avg_child[-1], auc])
                 df.index = ['name', 'instantaneous_regret', 'parent_r2', 'avg_child_r2', 'auc']
+                df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
 
                 """list_models.append([
                                        f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}',

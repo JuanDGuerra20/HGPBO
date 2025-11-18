@@ -36,7 +36,7 @@ if __name__ == '__main__':
     #seed = np.random.randint(999999999, size=nbr_repetition)
     datasets = [3, 2, 6, 10]
     processes = []
-    with mp.Pool(processes=len(datasets)) as pool:
+    with mp.Pool(processes=15) as pool:
         for h in h_model:
             # Kappa block
             for kappa in k_vals:
@@ -73,12 +73,12 @@ if __name__ == '__main__':
             for gamma in g_vals:
                 for dataset_num in datasets:
                     data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                    p = pool.apply_async(gen.training_procedure,
+                    """p = pool.apply_async(gen.training_procedure,
                                          (nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
                                           [gamma],
                                           nu_vals, data_name, data_creation_func,
                                           eps, h, multi, seed, [], True, 0.1, 0, True,))
-                    processes.append(p)
+                    processes.append(p)"""
                     p = pool.apply_async(laf.training_procedure,
                                          (nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
                                           [gamma],

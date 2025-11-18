@@ -243,7 +243,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             [f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
              y[-1], r2_avg[-1], auc])
         df.index = ['name', 'instantaneous_regret', 'parent_r2', 'auc']
-
+        df.to_csv(
+            f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
     # Joint Section
 
     #joint_plots(over_exploit, over_explor, k_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
