@@ -444,12 +444,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 r2 = np.insert(r2, 0, np.zeros(((2 - len(children)) * nbr_rand_init, 1)), axis=1)[:, :nbr_query]
                 r2_avg = np.mean(r2, axis=0)
                 r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
-                # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
+                r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
+                plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
 
                 all_children = np.concatenate([child_1_r2_data, child_2_r2_data])
-                all_children = np.insert(all_children, 0, np.zeros(((2 - len(children)) * nbr_rand_init, 1)), 1)[:,
-                               :nbr_query]
+                all_children = np.insert(all_children, 0, np.zeros(((2 - len(children)) * nbr_rand_init, 1)), 1)[:,:nbr_query]
 
                 avg_child = np.mean(all_children, axis=0)
                 std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))

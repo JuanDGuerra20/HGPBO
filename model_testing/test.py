@@ -17,7 +17,7 @@ if __name__ == '__main__':
     base_g = [3.5]
     base_train = 10
     base_rand = 3
-    k_vals = [4, 5, 6, 7, 7.5, 8, 9, 10]
+    k_vals = [4, 5, 6, 7, 7.5, 8, 9]
     g_vals = [1, 2, 3, 3.5, 4, 5, 6]
     nu_vals = [0.5]  # Found through HP Testing
     multi = False
@@ -39,25 +39,26 @@ if __name__ == '__main__':
     with mp.Pool(processes=len(datasets)) as pool:
         for h in h_model:
             # Kappa block
-            for dataset_num in datasets:
-                data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                p = pool.apply_async(gen.training_procedure,
-                                     (nbr_query, nbr_repetition, base_rand, dimension, base_train, k_vals,
-                                      base_g,
-                                      nu_vals, data_name, data_creation_func,
-                                      eps, h, multi, seed, [], True, 0.1, 0, True,))
-                processes.append(p)
-                p = pool.apply_async(laf.training_procedure,
-                                     (nbr_query, nbr_repetition, base_rand, dimension, base_train, k_vals,
-                                      base_g,
-                                      nu_vals, data_name, data_creation_func,
-                                      eps, h, multi, seed, [], True, 0.1, True,))
-                processes.append(p)
-                p = pool.apply_async(van.training_procedure,
-                                     (nbr_query, nbr_repetition, 1, dimension, base_train, k_vals,
-                                      data_name, data_creation_func,
-                                      eps, seed, True))
-                processes.append(p)
+            for kappa in k_vals:
+                for dataset_num in datasets:
+                    data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+                    p = pool.apply_async(gen.training_procedure,
+                                         (nbr_query, nbr_repetition, base_rand, dimension, base_train, [kappa],
+                                          base_g,
+                                          nu_vals, data_name, data_creation_func,
+                                          eps, h, multi, seed, [], True, 0.1, 0, True,))
+                    processes.append(p)
+                    p = pool.apply_async(laf.training_procedure,
+                                         (nbr_query, nbr_repetition, base_rand, dimension, base_train, [kappa],
+                                          base_g,
+                                          nu_vals, data_name, data_creation_func,
+                                          eps, h, multi, seed, [], True, 0.1, True,))
+                    processes.append(p)
+                    p = pool.apply_async(van.training_procedure,
+                                         (nbr_query, nbr_repetition, 1, dimension, base_train, [kappa],
+                                          data_name, data_creation_func,
+                                          eps, seed, True))
+                    processes.append(p)
             for i, p in enumerate(processes):
                 try:
                     p.get()
@@ -69,20 +70,21 @@ if __name__ == '__main__':
             print(f"Kappa Complete")
             print(f"=====================================================\n")
             # Gamme Block
-            for dataset_num in datasets:
-                data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                p = pool.apply_async(gen.training_procedure,
-                                     (nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
-                                      g_vals,
-                                      nu_vals, data_name, data_creation_func,
-                                      eps, h, multi, seed, [], True, 0.1, 0, True,))
-                processes.append(p)
-                p = pool.apply_async(laf.training_procedure,
-                                     (nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
-                                      g_vals,
-                                      nu_vals, data_name, data_creation_func,
-                                      eps, h, multi, seed, [], True, 0.1, True,))
-                processes.append(p)
+            for gamma in g_vals:
+                for dataset_num in datasets:
+                    data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+                    p = pool.apply_async(gen.training_procedure,
+                                         (nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
+                                          [gamma],
+                                          nu_vals, data_name, data_creation_func,
+                                          eps, h, multi, seed, [], True, 0.1, 0, True,))
+                    processes.append(p)
+                    p = pool.apply_async(laf.training_procedure,
+                                         (nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
+                                          [gamma],
+                                          nu_vals, data_name, data_creation_func,
+                                          eps, h, multi, seed, [], True, 0.1, True,))
+                    processes.append(p)
             for i, p in enumerate(processes):
                 try:
                     p.get()
