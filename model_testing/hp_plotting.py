@@ -2,10 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
-import re
 import glob
-import ast
-
+import os
 def hp_plotting(scores, hp_name, hp_list):
     '''for j in range(len(scores)):
         eval_name, evaluation = scores[j]
@@ -63,48 +61,88 @@ def format_data(data, new_line=False):
             raise ValueError("Shape is wrong")
         score.append(tensor)
     return np.array(score)
+
+def get_ordered_scores(file_list, hp, model, dataset):
+    parent_r2 = []
+    avg_child_r2 = []
+    explor = []
+    auc_over = []
+
+    hp_vals = []
+    for file in file_list:
+        split = file.split("_")
+        if model != "vanilla":
+            loc = split.index(hp)
+            val = split[loc+1]
+        elif dataset == "synthetic3":
+            val = split[1]
+        else:
+            val = split[2]
+        val = float(val.replace(",","."))
+        hp_vals.append(val)
+
+    combined = zip(hp_vals, file_list)
+    combined = sorted(combined)
+    hp_vals, sorted_files = zip(*combined)
+
+    for file in sorted_files:
+        df = pd.read_csv(file)
+        val = df.values
+        explor.append(float(val[1,1]))
+        parent_r2.append(float(val[2,1]))
+        if model == "vanilla":
+            if '[' in val[3,1]:
+                auc = val[3,1]
+                auc = auc.strip('[]').replace('\n',' ')
+                auc = np.fromstring(auc, dtype=float, sep=' ')
+                auc_over.append(auc.sum())
+            else:
+                auc_over.append(float(val[4,1]))
+        else:
+            avg_child_r2.append(float(val[3,1]))
+            if '[' in val[4,1]:
+                auc = val[4,1]
+                auc = auc.strip('[]').replace('\n',' ')
+                auc = np.fromstring(auc, dtype=float, sep=' ')
+                auc_over.append(auc.sum())
+            else:
+                auc_over.append(float(val[4,1]))
+
+    if not os.path.exists(f'hp_plots/{model}/{dataset}'):
+        os.mkdir(f'hp_plots/{model}/{dataset}')
+
+    plt.plot(hp_vals, explor, label=f"RO")
+    plt.plot(hp_vals, parent_r2, label="Parent R2")
+    if model != "vanilla":
+        plt.plot(hp_vals, avg_child_r2, label="Child R2")
+    #plt.plot(hp_vals, auc_over, label="AUC")
+    plt.legend()
+    plt.title(f"HP Search for {hp} {model}")
+    plt.ylim((-0.1, 1.1))
+    plt.xlabel(f"{hp} value")
+    plt.ylabel(f"Performance")
+    plt.savefig(f'hp_plots/{model}/{dataset}/{hp}_{model}.png')
+    plt.savefig(f'{hp}_{model}.svg')
+    plt.close()
+    print(f"\n==============================================================================================")
+    print(f"Dataset : {dataset}\tModel : {model}")
+    print(f"{hp} values: {hp_vals}")
+    print(f"AUC: {auc_over}")
+    best = np.argmax(auc_over)
+    print(f"Best model: {hp_vals[best]} with AUC {auc_over[best]}")
+    #return explor, parent_r2, avg_child_r2, auc_over, hp_vals
+
+
+
 if __name__ == "__main__":
     # Load the data
-
-    files = glob.glob(f"bad_modular_1_child/lossless_efficient/data-2025-05-26/csv/bad_modular_1_kappa_*_gamma_3_nu_0,5_model_state_100_queries_init_6_train_iter_10_repetitions_10_noise_0,1.csv")
-
-    parent_r2 = []
-    child_1_r2_over = []
-    child_2_r2_over = []
-    avg_child_over = []
-    explor = []
-    exploit = []
-    nbr_query = 100
-    print(files)
-
-    kappa_list = [1, 3, 5, 7, 9]
-    str_ordering = [str(i) for i in kappa_list]
-    print(str_ordering)
-
-    str_ordering = [float(i) for i in str_ordering]
-    str_ordering = np.array(str_ordering)
-    sorting = np.argsort(str_ordering)
-    rand_init = np.array(str_ordering)[sorting]
-    print(kappa_list)
-    print(str_ordering[sorting])
-
-    for file in files:
-        df = pd.read_csv(file)
-
-        data = df.values
-        better_exploration_score = np.fromstring(data[1,1].strip("[]"), sep=" ")
-        better_exploitation_score = np.fromstring(data[2,1].strip("[]"), sep=" ")
-        r2 = np.fromstring(data[3,1].strip("[]"), sep=" ")
-        child_1_r2 = np.fromstring(data[4,1].strip("[]"), sep=" ")
-        child_2_r2 = np.fromstring(data[5,1].strip("[]"), sep=" ")
-
-        avg_child = (child_1_r2 + child_2_r2) / 2
-
-        parent_r2.append(r2[:nbr_query])
-        child_1_r2_over.append(child_1_r2[:nbr_query])
-        child_2_r2_over.append(child_2_r2[:nbr_query])
-        avg_child_over.append(avg_child[:nbr_query])
-        explor.append(better_exploration_score[:nbr_query])
-        #exploit.append(np.mean(better_exploitation_score, axis=0)[:nbr_query])
-    scores = [["Exploration", np.array(explor)[sorting]], ["Parent_R2", np.array(parent_r2)[sorting]], ["Avg_Child_R2", np.array(avg_child_over)]]
-    hp_plotting(scores, "kappa", kappa_list)
+    datasets = ['synthetic3', 'synthetic_tests', "sub_2D", "modular_2D"]
+    models = ["lossless_efficient", "laferriere_model", "vanilla"]
+    for d in datasets:
+        for m in models:
+            if m == "vanilla":
+                files = glob.glob(f"{d}/{m}/data-2025-11-18/csv/kappa_*_model_state_100_queries_init_1_train_iter_10_repetitions_15")
+                get_ordered_scores(files, "kappa", m, d)
+            else:
+                files = glob.glob(f"{d}/{m}/data-2025-11-18/csv/15_rep_init_3_train_iter_10_eps_*_k_*_g_3,5_nu_0_5_noise_0,1.csv")
+                get_ordered_scores(files, "k", m, d)

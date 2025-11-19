@@ -487,7 +487,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
-                auc = y + avg_child + r2_avg
+                auc = np.sum(y + avg_child + r2_avg)
                 if not disable_tqdm:
                     print(f"explor {y[-1]}")
                     print(f"r2 avg {r2_avg[-1]}")

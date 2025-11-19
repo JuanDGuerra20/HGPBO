@@ -207,7 +207,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         plt.ylim(-0.1, 1.1)
         k = str(kappa).replace('.', ',')
 
-        auc = y  + r2_avg
+        auc = np.sum(y  + r2_avg)
         if not disable_tqdm:
             print(f"y {y[-1]}")
 
@@ -226,7 +226,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         plt.close()
 
         vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                         f'/Heatmap_{data_name}_vanilla_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
+                         f'/Heatmap_{data_name}_vanilla_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_k_{k}',
                          "vanilla", folder_of_the_day, data_name)
         vi.model_contour_3d(heatmap_data[:, -1, :], x_hier, y_hier,
                          f'/parent_contour_{data_name}_vanilla_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
