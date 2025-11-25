@@ -147,5 +147,5 @@ if __name__ == "__main__":
                 files = glob.glob(f"{d}/{m}/data-2025-11-18/csv/kappa_*_model_state_100_queries_init_1_train_iter_10_repetitions_*")
                 #get_ordered_scores(files, "kappa", m, d)
             else:
-                files = glob.glob(f"{d}/{m}/data-2025-11-18/csv/*_rep_init_3_train_iter_10_eps_*_k_*_g_3,5_nu_0_5_noise_0,1.csv")
-                get_ordered_scores(files, "k", m, d)
+                files = glob.glob(f"{d}/{m}/data-2025-11-19/csv/*_rep_init_3_train_iter_10_eps_*_k_7,5_g_*_nu_0_5_noise_0,1.csv")
+                get_ordered_scores(files, "g", m, d)
