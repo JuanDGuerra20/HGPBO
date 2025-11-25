@@ -20,7 +20,7 @@ if __name__ == '__main__':
     k_vals = [4, 5, 6, 7, 7.5, 8, 9]
     g_vals = [1, 2, 3, 3.5, 4, 5, 6]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = [1, 2, 3, 5, 10, 15, 20]  # Found through HP Testing
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     #seed = np.random.randint(999999999, size=nbr_repetition)
     datasets = [3, 2, 6, 10]
     processes = []
-    with mp.Pool(processes=10) as pool:
+    with mp.Pool(processes=15) as pool:
         for h in h_model:
             # Kappa block
             """for kappa in k_vals:
@@ -64,7 +64,7 @@ if __name__ == '__main__':
                     p.get()
                 except:
                     print(f"Kappa Process {i} failed")"""
-            processes = []
+            """processes = []
 
             print(f"\n=====================================================")
             print(f"Kappa Complete")
@@ -93,9 +93,9 @@ if __name__ == '__main__':
             processes = []
             print(f"\n=====================================================")
             print(f"Gamma Complete")
-            print(f"=====================================================\n")
+            print(f"=====================================================\n")"""
             # Rand Init Block
-            for rand_init in nbr_rand_init:
+            """for rand_init in nbr_rand_init:
                 for dataset_num in datasets:
                     data_name, data_creation_func, eps = get_dataset_info(dataset_num)
                     p = pool.apply_async(gen.training_procedure,
@@ -119,12 +119,23 @@ if __name__ == '__main__':
             print(f"\n=====================================================")
             print(f"Rand Init Complete")
             print(f"=====================================================\n")
-            # Train Iteration block
+            # Train Iteration block"""
 
             for train_iter in training_iter:
                 for dataset_num in datasets:
                     data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                    p = pool.apply_async(gen.training_procedure, (nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
+                    gen.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
+                                           base_g,
+                                           nu_vals, data_name, data_creation_func,
+                                           eps, h, multi, seed, [], True, 0.1, 0, True)
+                    laf.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
+                                           base_g,
+                                           nu_vals, data_name, data_creation_func,
+                                           eps, h, multi, seed, [], True, 0.1, True, )
+                    van.training_procedure(nbr_query, nbr_repetition, 1, dimension, train_iter, base_k,
+                                           data_name, data_creation_func,
+                                           eps, seed, True)
+                    """p = pool.apply_async(gen.training_procedure, (nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
                                            base_g,
                                            nu_vals, data_name, data_creation_func,
                                            eps, h, multi, seed, [], True, 0.1, 0, True,))
@@ -138,15 +149,15 @@ if __name__ == '__main__':
                     p = pool.apply_async(van.training_procedure, (nbr_query, nbr_repetition, 1, dimension, train_iter, base_k,
                                        data_name, data_creation_func,
                                        eps, seed, True))
-                    processes.append(p)
+                    processes.append(p)"""
 
-            for i, p in enumerate(processes):
+            """for i, p in enumerate(processes):
                 try:
                     p.get()
                 except:
                     print(f"Training Iter Process {i} failed")
                 processes = []
-
+            """
             print(f"\n=====================================================")
             print(f"Training Iter Complete")
             print(f"=====================================================\n")

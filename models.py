@@ -39,7 +39,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=nu))
         self.query_counter = query_counter
         self.env_max_seen = torch.max(train_y)
-        self.env_ind = list(range(0, len(train_x) - 1))
+        self.env_ind = list(range(len(train_x)))
 
         self.bif_max_seen = torch.tensor(-9999999, dtype=torch.float64)
         self.bif_ind = []

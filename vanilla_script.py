@@ -78,7 +78,9 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, nbr_quer
     plt.close()
 
 
-def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals):
+def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, seed=False):
+    if type(seed) != bool:
+        np.random.seed(seed)
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
     workspace = f"C:/Users/preda/PycharmProjects/HGPBO/vanilla"
@@ -104,10 +106,25 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
     over_exploit = []
     over_explor = []
     trainsC = Trains(clean_thresh=0.06)
+    X_1D, Y_1D, Xmean_1D, Ymean_1D = make_dataset_1d(trainsC)
+    test_x_1D = torch.tensor(Xmean_1D)
+    test_y_1D = torch.tensor(Ymean_1D)
+    ground_truth_max_1D = np.max(Ymean_1D)
+
+    x_sub1 = torch.from_numpy(X_1D.copy())
+    x_sub2 = torch.from_numpy(X_1D.copy())
+
+    y_sub1 = torch.from_numpy(Y_1D[:, 0].copy())
+    y_sub2 = torch.from_numpy(Y_1D[:, 0].copy())
+
     X_2D, Y_2D, Xmean_2D, Ymean_2D = make_dataset_2d(trainsC)
+    ground_truth_max_2D = np.max(Ymean_2D)
+
+    x_hier = torch.from_numpy(X_2D.copy())
 
     y_hier = torch.from_numpy(Y_2D[:, 0].copy())
 
+    # trainsC.plot_response_matrix()
     test_x_hier = torch.tensor(Xmean_2D)
     test_y_hier = torch.tensor(Ymean_2D)
 
@@ -252,17 +269,17 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                          f'/Heatmap_Neural_{nbr_repetition}_reps_k_{k}_rand_init_{nbr_rand_init}',
                          "vanilla", folder_of_the_day, "Neural", neural=True)
 
-        df = pd.DataFrame([
+        """df = pd.DataFrame([
             f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
             master, better_exploration_score, better_exploitation_score, r2])
         df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2']
 
         df.to_csv(
-            f'vanilla{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}.csv')
+            f'vanilla{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}.csv')"""
         df = pd.DataFrame([
             f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-            master, y[-1], r2[-1], auc])
-        df.index = ['name', 'master', 'exploration_score', 'parent_r2', 'auc']
+            y[-1], r2_avg[-1], auc])
+        df.index = ['name', 'exploration_score', 'parent_r2', 'auc']
         df.to_csv(
             f"vanilla{folder_of_the_day}/csv/final_scores_kappa_{k}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
 

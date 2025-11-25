@@ -62,7 +62,7 @@ def format_data(data, new_line=False):
         score.append(tensor)
     return np.array(score)
 
-def get_ordered_scores(file_list, hp, model, dataset):
+def get_ordered_scores(file_list, hp, model):
     parent_r2 = []
     avg_child_r2 = []
     explor = []
@@ -71,16 +71,9 @@ def get_ordered_scores(file_list, hp, model, dataset):
     hp_vals = []
     for file in file_list:
         split = file.split("_")
-        if model != "vanilla":
-            loc = split.index(hp)
-            val = split[loc+1]
-        elif dataset == "synthetic3" and hp == "kappa":
-            val = split[1]
-        elif hp == "kappa":
-            val = split[2]
-        else:
-            loc = split.index(hp)
-            val = split[loc + 1]
+
+        loc = split.index(hp)
+        val = split[loc + 1]
         val = float(val.replace(",","."))
         hp_vals.append(val)
 
@@ -92,15 +85,21 @@ def get_ordered_scores(file_list, hp, model, dataset):
         df = pd.read_csv(file)
         val = df.values
         explor.append(float(val[1,1]))
-        parent_r2.append(float(val[2,1]))
+        if '[' in val[2, 1]:
+            r2 = val[2, 1]
+            r2 = r2.strip('[]').replace('\n', ' ')
+            r2 = np.fromstring(r2, dtype=float, sep=' ')
+            parent_r2.append(r2[-1])
+        else:
+            parent_r2.append(float(val[2, 1]))
         if model == "vanilla":
-            if '[' in val[3,1]:
-                auc = val[3,1]
+            if '[' in val[4,1]:
+                auc = val[4,1]
                 auc = auc.strip('[]').replace('\n',' ')
                 auc = np.fromstring(auc, dtype=float, sep=' ')
                 auc_over.append(auc.sum())
             else:
-                auc_over.append(float(val[3,1]))
+                auc_over.append(float(val[4,1]))
         else:
             avg_child_r2.append(float(val[3,1]))
             if '[' in val[4,1]:
@@ -111,8 +110,8 @@ def get_ordered_scores(file_list, hp, model, dataset):
             else:
                 auc_over.append(float(val[4,1]))
 
-    if not os.path.exists(f'hp_plots/{model}/{dataset}'):
-        os.mkdir(f'hp_plots/{model}/{dataset}')
+    if not os.path.exists(f'neural_hp_plots/{model}'):
+        os.mkdir(f'neural_hp_plots/{model}')
 
     plt.plot(hp_vals, explor, label=f"RO")
     plt.plot(hp_vals, parent_r2, label="Parent R2")
@@ -124,11 +123,11 @@ def get_ordered_scores(file_list, hp, model, dataset):
     plt.ylim((-0.1, 1.1))
     plt.xlabel(f"{hp} value")
     plt.ylabel(f"Performance")
-    plt.savefig(f'hp_plots/{model}/{dataset}/{hp}_{model}.png')
-    plt.savefig(f'hp_plots/{model}/{dataset}/{hp}_{model}.svg')
+    plt.savefig(f'neural_hp_plots/{model}/{hp}_{model}.png')
+    plt.savefig(f'neural_hp_plots/{model}/{hp}_{model}.svg')
     plt.close()
     print(f"\n==============================================================================================")
-    print(f"Dataset : {dataset}\tModel : {model}")
+    print(f"Model : {model}")
     print(f"{hp} values: {hp_vals}")
     print(f"AUC: {auc_over}")
     best = np.argmax(auc_over)
@@ -139,13 +138,11 @@ def get_ordered_scores(file_list, hp, model, dataset):
 
 if __name__ == "__main__":
     # Load the data
-    datasets = ['synthetic3', 'synthetic_tests', "sub_2D", "modular_2D"]
     models = ["lossless_efficient", "laferriere_model", "vanilla"]
-    for d in datasets:
-        for m in models:
-            if m == "vanilla":
-                files = glob.glob(f"{d}/{m}/data-2025-11-18/csv/kappa_*_model_state_100_queries_init_1_train_iter_10_repetitions_*")
-                #get_ordered_scores(files, "kappa", m, d)
-            else:
-                files = glob.glob(f"{d}/{m}/data-2025-11-18/csv/*_rep_init_3_train_iter_10_eps_*_k_*_g_3,5_nu_0_5_noise_0,1.csv")
-                get_ordered_scores(files, "k", m, d)
+    for m in models:
+        if m == "vanilla":
+            files = glob.glob(f"{m}/data-2025-11-24/csv/final_scores_kappa_4_100_queries_init_1_train_iter_*_repetitions_*")
+            #get_ordered_scores(files, "init", m)
+        else:
+            files = glob.glob(f"{m}/data-2025-11-25/csv/final_scores_kappa_4_gamma_3_nu_*_100_queries_init_*_train_iter_10_repetitions_*")
+            get_ordered_scores(files, "init", m)

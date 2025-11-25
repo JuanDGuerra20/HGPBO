@@ -37,39 +37,91 @@ if __name__ == "__main__":
     test_y_hier = torch.tensor(Ymean_2D)
 
     nbr_query = 100
-    training_iter = 10
-    nbr_repetition = 30
-    nbr_rand_init = 3
-    k_vals = [4]  # Found through HP Testing
-    g_vals = [3]  # Found through HP Testing
-    nu_vals = [0.5]
-    multi = False
-    hierarchical_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
+    training_iter = [5, 10, 15, 20]  # Found through HP Testing
+    nbr_repetition = 10
+    base_k = [4]
+    base_g = [3]
+    base_train = 10
+    base_rand = 3
+    k_vals = [4, 5, 6, 7, 8, 9]
+    g_vals = [1, 2, 3, 4, 5, 6]
+    nu_vals = [0.5]  # Found through HP Testing
+    multi = True
+    h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    seed = np.array([85153, 48849, 68588, 89899, 60426, 53629, 85382, 61427, 75115,
-       64493, 56460, 55906, 78223, 47519, 41817, 48206,  4283, 57623,
-       38230, 79533, 19244,  1846,  2211, 44014, 64025, 69297, 98026,
-       28352, 35718, 94998])
+    nbr_rand_init = [1, 2, 3, 5, 10, 15, 20]
+    seed = np.array([791104038, 558883516,  75533178, 730586104,  64343038, 353199330,
+       138876529, 594536092, 713725275, 642158682, 287397414, 156569942,
+       554978049, 860858855, 899218178])
     #seed = np.random.randint(999999, size=nbr_repetition)
+    max_seen_resp_2D = 0
+    max_seen_resp_1_1D = 0
+    max_seen_resp_2_1D = 0
+    list_prior_map = []
+    list_objective_mean_map = []
 
-    gen.training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
-                             hierarchical_model, multi, seed, [], True,)
+    trainsC = Trains(clean_thresh=0.06)
+    X_1D, Y_1D, Xmean_1D, Ymean_1D = make_dataset_1d(trainsC)
+    test_x_1D = torch.tensor(Xmean_1D)
+    test_y_1D = torch.tensor(Ymean_1D)
+    ground_truth_max_1D = np.max(Ymean_1D)
 
-    """with mp.Pool(processes=3) as pool:
-        p = pool.apply_async(gen.training_procedure, (nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, hierarchical_model, multi, seed, [], True,))
-        process.append(p)
+    x_sub1 = torch.from_numpy(X_1D.copy())
+    x_sub2 = torch.from_numpy(X_1D.copy())
 
-        p = pool.apply_async(laf.training_procedure,
-                             (nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
-                              hierarchical_model, multi, seed, [], True,))
-        process.append(p)
+    y_sub1 = torch.from_numpy(Y_1D[:, 0].copy())
+    y_sub2 = torch.from_numpy(Y_1D[:, 0].copy())
 
-        p = pool.apply_async(van.training_procedure,
-                             (nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals,))
-        process.append(p)
+    X_2D, Y_2D, Xmean_2D, Ymean_2D = make_dataset_2d(trainsC)
 
-        for i, proc in enumerate(process):
-            try:
-                proc.get()
-            except:
-                print(f"process {i} failed")"""
+    ground_truth_max_2D = np.max(Ymean_2D)
+
+    x_hier = torch.from_numpy(X_2D.copy())
+
+    y_hier = torch.from_numpy(Y_2D[:, 0].copy())
+
+    # trainsC.plot_response_matrix()
+    test_x_hier = torch.tensor(Xmean_2D)
+    test_y_hier = torch.tensor(Ymean_2D)
+    with mp.Pool(processes=10) as pool:
+        for h in h_model:
+            # Kappa block
+            """for kappa in k_vals:
+                gen.training_procedure(nbr_query, nbr_repetition, base_rand, base_train, [kappa], base_g, nu_vals, h, multi, seed)
+                laf.training_procedure(nbr_query, nbr_repetition, base_rand, base_train, [kappa], base_g, nu_vals, h, multi, seed)
+                van.training_procedure(nbr_query, nbr_repetition, 1, base_train, [kappa], seed)
+
+
+            print(f"\n=====================================================")
+            print(f"Kappa Complete")
+            print(f"=====================================================\n")
+            # Gamme Block
+            for gamma in g_vals:
+                gen.training_procedure(nbr_query, nbr_repetition, base_rand, base_train, base_k, [gamma], nu_vals, h,
+                                       multi, seed)
+                laf.training_procedure(nbr_query, nbr_repetition, base_rand, base_train, base_k, [gamma], nu_vals, h,
+                                       multi, seed)
+            print(f"\n=====================================================")
+            print(f"Gamma Complete")
+            print(f"=====================================================\n")
+            """# Rand Init Block
+            for rand_init in nbr_rand_init:
+                gen.training_procedure(nbr_query, nbr_repetition, rand_init, base_train, base_k, base_g, nu_vals, h,
+                                       multi, seed)
+                laf.training_procedure(nbr_query, nbr_repetition, rand_init, base_train, base_k, base_g, nu_vals, h,
+                                       multi, seed)
+            print(f"\n=====================================================")
+            print(f"Rand Init Complete")
+            print(f"=====================================================\n")
+            # Train Iteration block
+
+            """            for train_iter in training_iter:
+                gen.training_procedure(nbr_query, nbr_repetition, base_rand, train_iter, base_k, base_g, nu_vals, h,
+                                       multi, seed)
+                laf.training_procedure(nbr_query, nbr_repetition, base_rand, train_iter, base_k, base_g, nu_vals, h,
+                                       multi, seed)
+                van.training_procedure(nbr_query, nbr_repetition, 1, train_iter, base_k, seed)
+            print(f"\n=====================================================")
+            print(f"Training Iter Complete")
+            print(f"=====================================================\n")"""
+

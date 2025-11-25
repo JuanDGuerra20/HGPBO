@@ -104,8 +104,9 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
 
 
 def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name,
-                   folder_of_the_day, final=False):
-
+                   folder_of_the_day, seed=False, final=False):
+    if type(seed) != bool:
+        np.random.seed(seed)
     warnings.filterwarnings('ignore')
     # Setting up the data
     trainsC = Trains(clean_thresh=0.06)
@@ -351,7 +352,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals,
-                       hierarchical_model, multi):
+                       hierarchical_model, multi, seed):
     model_name = "laferriere_model"
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -399,13 +400,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                         for i in range(nbr_repetition - 1):
                             p = pool.apply_async(run_repetition, (
                             kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name,
-                            folder_of_the_day,))
+                            folder_of_the_day, seed,))
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
                         master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name,
-                            folder_of_the_day, final=True)
+                            folder_of_the_day, seed, final=True)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -430,7 +431,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                         try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name,
-                                folder_of_the_day, final=True)
+                                folder_of_the_day, seed, final=True)
                             better_exploration_score.append(rep_exploration_score)
                             better_exploitation_score.append(rep_exploitation_score)
                             heatmap_data.append(heatmap_rep)
@@ -441,7 +442,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
                                     model_name,
-                                    folder_of_the_day, final=True)
+                                    folder_of_the_day, seed, final=True)
                                 better_exploration_score.append(rep_exploration_score)
                                 better_exploitation_score.append(rep_exploitation_score)
                                 heatmap_data.append(heatmap_rep)
@@ -452,7 +453,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
                                         model_name,
-                                        folder_of_the_day, final=True)
+                                        folder_of_the_day, seed, final=True)
                                     better_exploration_score.append(rep_exploration_score)
                                     better_exploitation_score.append(rep_exploitation_score)
                                     heatmap_data.append(heatmap_rep)
@@ -463,7 +464,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                                         master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                             kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
                                             hierarchical_model, model_name,
-                                            folder_of_the_day, final=True)
+                                            folder_of_the_day, seed, final=True)
                                         better_exploration_score.append(rep_exploration_score)
                                         better_exploitation_score.append(rep_exploitation_score)
                                         heatmap_data.append(heatmap_rep)
@@ -474,7 +475,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                                 kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
                                                 hierarchical_model, model_name,
-                                                folder_of_the_day, final=True)
+                                                folder_of_the_day, seed, final=True)
                                             better_exploration_score.append(rep_exploration_score)
                                             better_exploitation_score.append(rep_exploitation_score)
                                             heatmap_data.append(heatmap_rep)
@@ -544,7 +545,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 df = pd.DataFrame(re_output)
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_kappa_{k}_gamma_{g}.csv')
-                df = pd.DataFrame(y_hier)
+                """df = pd.DataFrame(y_hier)
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
                 df = pd.DataFrame([
@@ -555,19 +556,19 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                             'child2_r2']
 
                 df.to_csv(
-                    f'{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}.csv')
+                    f'{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}.csv')"""
 
                 np.save(f'{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
 
-                list_models.append(
+                """list_models.append(
                     [f"kappa_{k}_gamma_{g}_nu_{n}_init_{nbr_rand_init}", master, better_exploration_score,
-                     better_exploitation_score, r2, child_1_r2, child_2_r2])
+                     better_exploitation_score, r2, child_1_r2, child_2_r2])"""
                 df = pd.DataFrame([
                     f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-                    master, y[-1], r2[-1], avg_child[-1], auc])
-                df.index = ['name', 'master', 'exploration_score', 'parent_r2', 'avg_child_r2',
+                    y[-1], r2_avg[-1], avg_child[-1], auc])
+                df.index = ['name', 'exploration_score', 'parent_r2', 'avg_child_r2',
                             'auc']
                 df.to_csv(
                     f"{model_name.lower()}{folder_of_the_day}/csv/final_scores_kappa_{k}_gamma_{g}_nu_{n}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
@@ -579,7 +580,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
             joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
                               nbr_repetition, model_name)"""
-    return list_models
+    #return list_models
 def hp_plotting(scores, hp_name, hp_list, model_name, folder_of_the_day):
     for j in range(len(scores)):
         eval_name, evaluation = scores[j]

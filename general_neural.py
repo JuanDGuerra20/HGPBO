@@ -616,29 +616,29 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 data = np.mean(heatmap_data[:, -1, :], axis=0)
 
                 re_output = np.reshape(data, test_y_hier.shape)
-                df = pd.DataFrame(re_output)
+                """df = pd.DataFrame(re_output)
                 df.to_csv(
                     f'{model_name.lower()}{folder_of_the_day}/csv/{model_name}_Prop_HGPBO_{nbr_repetition}_repetitions_init_{nbr_rand_init}_kappa_{k}_gamma_{g}_nu_{n}.csv')
                 df = pd.DataFrame(y_hier)
                 df.to_csv(
-                    f'{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
+                    f'{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')"""
 
                 print(f'\n{model_name} Kappa {k} Gamma {g} Nu {n} complete!\n')
 
-                list_models.append([f"kappa_{k}_gamma_{g}_nu_{n}_init_{nbr_rand_init}", master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
-                df = pd.DataFrame([
+                #list_models.append([f"kappa_{k}_gamma_{g}_nu_{n}_init_{nbr_rand_init}", master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
+                """df = pd.DataFrame([
                                       f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-                                      master, better_exploration_score, better_exploitation_score, r2, child_1_r2,
+                                      master, better_exploration_score, r2, child_1_r2,
                                       child_2_r2])
                 df.index = ['name', 'master', 'exploration_score', 'parent_r2', 'avg_child_r2', 'auc']
 
                 df.to_csv(
-                    f'{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
+                    f'{model_name.lower()}{folder_of_the_day}/csv/kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')"""
                 np.save(f'{model_name.lower()}{folder_of_the_day}/csv/parent_r2', r2)
                 df = pd.DataFrame([
                     f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-                    master, y[-1], r2[-1], avg_child[-1], auc])
-                df.index = ['name', 'master', 'exploration_score', 'parent_r2', 'avg_child_r2',
+                    y[-1], r2_avg[-1], avg_child[-1], auc])
+                df.index = ['name', 'exploration_score', 'parent_r2', 'avg_child_r2',
                             'auc']
                 df.to_csv(f"{model_name.lower()}{folder_of_the_day}/csv/final_scores_kappa_{k}_gamma_{g}_nu_{n}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
 
