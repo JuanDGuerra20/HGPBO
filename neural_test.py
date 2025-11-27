@@ -86,7 +86,7 @@ if __name__ == "__main__":
     with mp.Pool(processes=10) as pool:
         for h in h_model:
             # Kappa block
-            """for kappa in k_vals:
+            for kappa in k_vals:
                 gen.training_procedure(nbr_query, nbr_repetition, base_rand, base_train, [kappa], base_g, nu_vals, h, multi, seed)
                 laf.training_procedure(nbr_query, nbr_repetition, base_rand, base_train, [kappa], base_g, nu_vals, h, multi, seed)
                 van.training_procedure(nbr_query, nbr_repetition, 1, base_train, [kappa], seed)
@@ -104,7 +104,7 @@ if __name__ == "__main__":
             print(f"\n=====================================================")
             print(f"Gamma Complete")
             print(f"=====================================================\n")
-            """# Rand Init Block
+            # Rand Init Block
             for rand_init in nbr_rand_init:
                 gen.training_procedure(nbr_query, nbr_repetition, rand_init, base_train, base_k, base_g, nu_vals, h,
                                        multi, seed)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
             print(f"=====================================================\n")
             # Train Iteration block
 
-            """            for train_iter in training_iter:
+            for train_iter in training_iter:
                 gen.training_procedure(nbr_query, nbr_repetition, base_rand, train_iter, base_k, base_g, nu_vals, h,
                                        multi, seed)
                 laf.training_procedure(nbr_query, nbr_repetition, base_rand, train_iter, base_k, base_g, nu_vals, h,
@@ -123,5 +123,5 @@ if __name__ == "__main__":
                 van.training_procedure(nbr_query, nbr_repetition, 1, train_iter, base_k, seed)
             print(f"\n=====================================================")
             print(f"Training Iter Complete")
-            print(f"=====================================================\n")"""
+            print(f"=====================================================\n")
 

@@ -12,7 +12,7 @@ if __name__ == '__main__':
     dimension = 32
     nbr_query = 100
     training_iter = [5, 10, 15, 20]  # Found through HP Testing
-    nbr_repetition = 15
+    nbr_repetition = 10
     base_k = [7.5]
     base_g = [3.5]
     base_train = 10
@@ -36,129 +36,76 @@ if __name__ == '__main__':
     #seed = np.random.randint(999999999, size=nbr_repetition)
     datasets = [3, 2, 6, 10]
     processes = []
-    with mp.Pool(processes=15) as pool:
-        for h in h_model:
-            # Kappa block
-            """for kappa in k_vals:
-                for dataset_num in datasets:
-                    data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                    p = pool.apply_async(gen.training_procedure,
-                                         (nbr_query, nbr_repetition, base_rand, dimension, base_train, [kappa],
-                                          base_g,
-                                          nu_vals, data_name, data_creation_func,
-                                          eps, h, multi, seed, [], True, 0.1, 0, True,))
-                    processes.append(p)
-                    p = pool.apply_async(laf.training_procedure,
-                                         (nbr_query, nbr_repetition, base_rand, dimension, base_train, [kappa],
-                                          base_g,
-                                          nu_vals, data_name, data_creation_func,
-                                          eps, h, multi, seed, [], True, 0.1, True,))
-                    processes.append(p)
-                    p = pool.apply_async(van.training_procedure,
-                                         (nbr_query, nbr_repetition, 1, dimension, base_train, [kappa],
-                                          data_name, data_creation_func,
-                                          eps, seed, True))
-                    processes.append(p)
-            for i, p in enumerate(processes):
-                try:
-                    p.get()
-                except:
-                    print(f"Kappa Process {i} failed")"""
-            """processes = []
-
-            print(f"\n=====================================================")
-            print(f"Kappa Complete")
-            print(f"=====================================================\n")
-            # Gamme Block
-            for gamma in g_vals:
-                for dataset_num in datasets:
-                    data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                    p = pool.apply_async(gen.training_procedure,
-                                         (nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
-                                          [gamma],
-                                          nu_vals, data_name, data_creation_func,
-                                          eps, h, multi, seed, [], True, 0.1, 0, True,))
-                    processes.append(p)
-                    p = pool.apply_async(laf.training_procedure,
-                                         (nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
-                                          [gamma],
-                                          nu_vals, data_name, data_creation_func,
-                                          eps, h, multi, seed, [], True, 0.1, True,))
-                    processes.append(p)
-            for i, p in enumerate(processes):
-                try:
-                    p.get()
-                except:
-                    print(f"Gamma Process {i} failed")
-            processes = []
-            print(f"\n=====================================================")
-            print(f"Gamma Complete")
-            print(f"=====================================================\n")"""
-            # Rand Init Block
-            """for rand_init in nbr_rand_init:
-                for dataset_num in datasets:
-                    data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                    p = pool.apply_async(gen.training_procedure,
-                                         (nbr_query, nbr_repetition, rand_init, dimension, base_train, base_k,
-                                          base_g,
-                                          nu_vals, data_name, data_creation_func,
-                                          eps, h, multi, seed, [], True, 0.1, 0, True,))
-                    processes.append(p)
-                    p = pool.apply_async(laf.training_procedure,
-                                         (nbr_query, nbr_repetition, rand_init, dimension, base_train, base_k,
-                                          base_g,
-                                          nu_vals, data_name, data_creation_func,
-                                          eps, h, multi, seed, [], True, 0.1, True,))
-                    processes.append(p)
-            for i, p in enumerate(processes):
-                try:
-                    p.get()
-                except:
-                    print(f"Rand Init Process {i} failed")
-            processes = []
-            print(f"\n=====================================================")
-            print(f"Rand Init Complete")
-            print(f"=====================================================\n")
-            # Train Iteration block"""
-
-            for train_iter in training_iter:
-                for dataset_num in datasets:
-                    data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                    gen.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
-                                           base_g,
-                                           nu_vals, data_name, data_creation_func,
-                                           eps, h, multi, seed, [], True, 0.1, 0, True)
-                    laf.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
-                                           base_g,
-                                           nu_vals, data_name, data_creation_func,
-                                           eps, h, multi, seed, [], True, 0.1, True, )
-                    van.training_procedure(nbr_query, nbr_repetition, 1, dimension, train_iter, base_k,
-                                           data_name, data_creation_func,
-                                           eps, seed, True)
-                    """p = pool.apply_async(gen.training_procedure, (nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
-                                           base_g,
-                                           nu_vals, data_name, data_creation_func,
-                                           eps, h, multi, seed, [], True, 0.1, 0, True,))
-                    processes.append(p)
-                    p = pool.apply_async(laf.training_procedure,
-                                         (nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
-                                          base_g,
-                                          nu_vals, data_name, data_creation_func,
-                                          eps, h, multi, seed, [], True, 0.1, True,))
-                    processes.append(p)
-                    p = pool.apply_async(van.training_procedure, (nbr_query, nbr_repetition, 1, dimension, train_iter, base_k,
+    for h in h_model:
+        # Kappa block
+        for kappa in k_vals:
+            for dataset_num in datasets:
+                data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+                gen.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, base_train, [kappa],
+                                       base_g,
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, [], True, 0.1, 0, True)
+                laf.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, base_train, [kappa],
+                                       base_g,
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, [], True, 0.1, True, )
+                van.training_procedure(nbr_query, nbr_repetition, 1, dimension, base_train, [kappa],
                                        data_name, data_creation_func,
-                                       eps, seed, True))
-                    processes.append(p)"""
+                                       eps, seed, True)
 
-            """for i, p in enumerate(processes):
-                try:
-                    p.get()
-                except:
-                    print(f"Training Iter Process {i} failed")
-                processes = []
-            """
-            print(f"\n=====================================================")
-            print(f"Training Iter Complete")
-            print(f"=====================================================\n")
+
+        print(f"\n=====================================================")
+        print(f"Kappa Complete")
+        print(f"=====================================================\n")
+        # Gamme Block
+        for gamma in g_vals:
+            for dataset_num in datasets:
+                data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+                gen.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
+                                       [gamma],
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, [], True, 0.1, 0, True)
+                laf.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
+                                       [gamma],
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, [], True, 0.1, True, )
+        print(f"\n=====================================================")
+        print(f"Gamma Complete")
+        print(f"=====================================================\n")
+        # Rand Init Block
+        for rand_init in nbr_rand_init:
+            for dataset_num in datasets:
+                data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+                gen.training_procedure(nbr_query, nbr_repetition, rand_init, dimension, base_train, base_k,
+                                       base_g,
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, [], True, 0.1, 0, True)
+                laf.training_procedure(nbr_query, nbr_repetition, rand_init, dimension, base_train, base_k,
+                                       base_g,
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, [], True, 0.1, True, )
+        print(f"\n=====================================================")
+        print(f"Rand Init Complete")
+        print(f"=====================================================\n")
+        # Train Iteration block
+
+        for train_iter in training_iter:
+            for dataset_num in datasets:
+                data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+                gen.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
+                                       base_g,
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, [], True, 0.1, 0, True)
+                laf.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, train_iter, base_k,
+                                       base_g,
+                                       nu_vals, data_name, data_creation_func,
+                                       eps, h, multi, seed, [], True, 0.1, True, )
+                van.training_procedure(nbr_query, nbr_repetition, 1, dimension, train_iter, base_k,
+                                       data_name, data_creation_func,
+                                       eps, seed, True)
+
+
+        print(f"\n=====================================================")
+        print(f"Training Iter Complete")
+        print(f"=====================================================\n")
 

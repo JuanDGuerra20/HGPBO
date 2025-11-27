@@ -138,11 +138,11 @@ def get_ordered_scores(file_list, hp, model):
 
 if __name__ == "__main__":
     # Load the data
-    models = ["lossless_efficient", "laferriere_model", "vanilla"]
+    models = ["lossless_efficient"]
     for m in models:
         if m == "vanilla":
             files = glob.glob(f"{m}/data-2025-11-24/csv/final_scores_kappa_4_100_queries_init_1_train_iter_*_repetitions_*")
             #get_ordered_scores(files, "init", m)
         else:
-            files = glob.glob(f"{m}/data-2025-11-25/csv/final_scores_kappa_4_gamma_3_nu_*_100_queries_init_*_train_iter_10_repetitions_*")
-            get_ordered_scores(files, "init", m)
+            files = glob.glob(f"{m}/data-2025-11-24/csv/final_scores_kappa_*_gamma_3_nu_*_100_queries_init_3_train_iter_10_repetitions_*")
+            get_ordered_scores(files, "kappa", m)
