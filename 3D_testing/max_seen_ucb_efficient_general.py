@@ -188,16 +188,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", [sub1, sub2, sub3])
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier - torch.mean(train_y_hier), x_hier, likelihood,
-                                        prior_hierarchical_kernel,
-                                        prior_map / prior_map_max, kernel_op='add_kernel',
-                                        sub_models=[sub1, sub2, sub3],
-                                        kappa=kappa, query_counter=hier_qc)
-            """master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+            """master = hierarchical_model(train_x_hier, train_y_hier - torch.mean(train_y_hier), x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2, sub3],
                                         kappa=kappa, query_counter=hier_qc)"""
+            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2, sub3],
+                                        kappa=kappa, query_counter=hier_qc)
 
             for i in range(len(train_x_hier)):
                 hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
@@ -355,8 +355,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                             response)
-        master.set_train_data(train_x_hier, (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier), strict=False)
-        #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+        #master.set_train_data(train_x_hier, (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier), strict=False)
+        master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
         """
         train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
 
@@ -366,13 +366,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master.train()
             likelihood.train()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier),
-                                                    verbose=False)
-
             """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                  (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier),
+                                                    verbose=False)"""
+
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
                                                   train_y_hier / max_seen_resp_2D,
-                                                  verbose=False)"""
+                                                  verbose=False)
 
             # Get into evaluation (predictive posterior) mode
             master.eval()
@@ -428,7 +428,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         model_name = "Efficient_3D"
 
     elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-        model_name = "Lossless_Efficient"
+        model_name = "Lossless_Efficient_Max_Seen"
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
@@ -655,9 +655,9 @@ if __name__ == '__main__':
     nbr_query = 100
     training_iter = 20
     nbr_repetition = 10
-    nbr_rand_init = 2
-    k_vals = [8] # Found through HP Testing
-    g_vals = [5]  # Found through HP Testing
+    nbr_rand_init = 3
+    k_vals = [7] # Found through HP Testing
+    g_vals = [2]  # Found through HP Testing
     nu_vals = [0.5]
 
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]

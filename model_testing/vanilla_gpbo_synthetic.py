@@ -253,18 +253,18 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 if __name__ == '__main__':
 
     dimension = 32
-    nbr_query = 2
+    nbr_query = 100
     training_iter = 10
-    nbr_repetition = 2
+    nbr_repetition = 10
     nbr_rand_init = 1
-    k_vals = [4,5,6,7,7.5,8,9,10]
+    k_vals = [9]
     seed = np.array([9049607, 2402697, 6510749,  758529, 3523986, 3224638, 9729091,
        5830471, 5343420, 2417321, 9891788, 9314146, 9488226, 2697408,
        5135059, 6813578,  430826, 6192331, 8026546, 6735254, 1112898,
        5609958, 4736968,  617977, 8500888, 4205117,  756214, 4283694,
        7449696, 9848369])
     # seed = [False] * nbr_repetition
-    for dataset_num in [3,2,6,10]:
+    for dataset_num in [2]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

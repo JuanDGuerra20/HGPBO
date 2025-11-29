@@ -93,13 +93,13 @@ def get_ordered_scores(file_list, hp, model):
         else:
             parent_r2.append(float(val[2, 1]))
         if model == "vanilla":
-            if '[' in val[4,1]:
-                auc = val[4,1]
+            if '[' in val[3,1]:
+                auc = val[3,1]
                 auc = auc.strip('[]').replace('\n',' ')
                 auc = np.fromstring(auc, dtype=float, sep=' ')
                 auc_over.append(auc.sum())
             else:
-                auc_over.append(float(val[4,1]))
+                auc_over.append(float(val[3,1]))
         else:
             avg_child_r2.append(float(val[3,1]))
             if '[' in val[4,1]:
@@ -138,11 +138,11 @@ def get_ordered_scores(file_list, hp, model):
 
 if __name__ == "__main__":
     # Load the data
-    models = ["lossless_efficient"]
+    models = ["lossless_efficient", "vanilla", "laferriere_model"]
     for m in models:
         if m == "vanilla":
-            files = glob.glob(f"{m}/data-2025-11-24/csv/final_scores_kappa_4_100_queries_init_1_train_iter_*_repetitions_*")
-            #get_ordered_scores(files, "init", m)
+            files = glob.glob(f"{m}/data-2025-11-26/csv/final_scores_kappa_*_100_queries_init_1_train_iter_10_repetitions_*")
+            get_ordered_scores(files, "kappa", m)
         else:
-            files = glob.glob(f"{m}/data-2025-11-24/csv/final_scores_kappa_*_gamma_3_nu_*_100_queries_init_3_train_iter_10_repetitions_*")
+            files = glob.glob(f"{m}/data-2025-11-26/csv/final_scores_kappa_*_gamma_3_nu_*_100_queries_init_3_train_iter_10_repetitions_*")
             get_ordered_scores(files, "kappa", m)

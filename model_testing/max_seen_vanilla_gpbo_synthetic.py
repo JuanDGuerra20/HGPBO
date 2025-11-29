@@ -2,11 +2,11 @@ import math
 import torch
 import numpy as np
 import gpytorch
-import models_3d as models
+import synthetic_models as models
 from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
-import hmodel_3d as hmodel
-from dataset_actions_3d import *
+import hmodel_synthetic as hmodel
+from dataset_actions import *
 from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 import visualization_information as vi
@@ -54,11 +54,11 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, dimensio
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
-                           eps, noise):
+                           eps, seed, disable_tqdm=False):
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"{data_name}/vanilla"
+    workspace = f"{data_name}/vanilla_max_seen"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -75,33 +75,34 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         print("CSV folder created")
         os.mkdir(workspace + folder_of_the_day + '/csv')
 
-    x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
+    x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
 
     ground_truth_max_hier = torch.max(y_hier)
     sub1_qc = torch.ones(x_sub1.shape)
     sub2_qc = torch.ones(x_sub2.shape)
-    sub3_qc = torch.ones(x_sub3.shape)
-    hier_qc = torch.ones(len(x_sub1) * len(x_sub2) * len(x_sub3))
+    hier_qc = torch.ones(len(x_sub1) * len(x_sub2))
 
     over_exploit = []
     over_explor = []
-    heatmap_data = []
+
 
     for kappa in k_vals:
         better_exploration_score = []
         better_exploitation_score = []
+        heatmap_data = []
         for repetition in range(nbr_repetition):
             max_seen_resp_2D = 0
             heatmap_rep = []
-            for q in tqdm(range(nbr_query)):
+            for q in tqdm(range(nbr_query), disable=disable_tqdm):
                 if q == 0:
-                    train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier, noise=noise)
+                    train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier, seed=seed[repetition])
                     max_seen_resp_2D = torch.max(train_y_hier)
 
 
                     likelihood = gpytorch.likelihoods.GaussianLikelihood()
-                    #master = ExactGPModel(train_x_hier, train_y_hier / max_seen_resp_2D, likelihood)
-                    master = ExactGPModel(train_x_hier, train_y_hier - train_y_hier.mean(), likelihood)
+                    master = ExactGPModel(train_x_hier, train_y_hier/ max_seen_resp_2D, likelihood)
+                    #master = ExactGPModel(train_x_hier, train_y_hier - train_y_hier.mean(), likelihood)
+
                     optimizer = torch.optim.Adam(master.parameters(), lr=1e-3)
                     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, master)
 
@@ -117,7 +118,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
                                                                                              test_x_hier,
-                                                                                             y_hier, noise=noise)
+                                                                                             y_hier)
 
                 next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
                                                                                             max_seen_resp_2D)
@@ -126,9 +127,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                                   response)
-                """master.set_train_data(train_x_hier, train_y_hier, strict=False)"""
-                #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
-                master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std(), strict=False)
+                master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+                #master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std() , strict=False)
 
                 """
                 train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
@@ -141,9 +141,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                     output = master(train_x_hier)
 
-                    #loss = -mll(output, train_y_hier / max_seen_resp_2D)
-                    loss = -mll(output, (train_y_hier - train_y_hier.mean())/train_y_hier.std())
-
+                    loss = -mll(output, train_y_hier/max_seen_resp_2D)
+                    #loss = -mll(output, (train_y_hier - train_y_hier.mean())/train_y_hier.std())
                     loss.backward()
                     optimizer.step()
                     # Get into evaluation (predictive posterior) mode
@@ -158,9 +157,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                                                                                     test_x_hier,
                                                                                                     x_hier, y_hier)"""
                 instantaneous_regret, next_query_pins_exploration_2D = models.get_instantaneous_regret(hierar_y_mu,
-                                                                                                       ground_truth_max_hier,
-                                                                                                       test_x_hier,
-                                                                                                       x_hier, y_hier)
+                                                                                                    ground_truth_max_hier,
+                                                                                                    test_x_hier,
+                                                                                                    x_hier, y_hier)
                 exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_hier)
                 """print(f'\nQuery Number: {q}')
                 print(f'Next Query Pins: {next_query_pins_exploration_2D}')
@@ -176,7 +175,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 heatmap_rep.append(master_like.mean)
 
             heatmap_data.append(heatmap_rep)
-            print(f'\nRepetition {repetition} complete!\n')
+            #print(f'\nRepetition {repetition} complete!\n')
 
 
         exploration_scores = []
@@ -190,55 +189,62 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         y = np.mean(exploration_scores, axis=0)
         over_explor.append(y)
         std = np.std(exploration_scores, axis=0) / np.sqrt(len(exploration_scores))
-        plt.plot(y, label='Exploration')
+        plt.plot(y, label='Instantaneous Regret')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
-        print(f"y {y[-1]}")
         """y = np.mean(exploitation_scores, axis=0)
-        over_exploit.append(y)
+        over_exploit.append(y)"""
 
-        std = np.std(exploitation_scores, axis=0)"""
+        std = np.std(exploitation_scores, axis=0)
         #plt.plot(y, label='Exploitation')
         #plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
         r2 = vi.heatmap_r_score(heatmap_data, y_hier)
         r2_avg = np.mean(r2, axis=0)
         r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
-        # r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
-        print(f"r2 {r2_avg[-1]}")
         plt.plot(r2_avg, label="Parent R2")
         plt.fill_between(range(len(r2_std)), r2_avg - r2_std, r2_avg + r2_std, alpha=0.4)
-        auc = np.sum(r2_avg + y)
-        print(f"AUC {auc}")
         plt.legend()
         plt.ylim(-0.1, 1.1)
         k = str(kappa).replace('.', ',')
 
-        plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
-        plt.savefig(
-            f'{data_name}/vanilla{folder_of_the_day}/differentiable_plots/vanilla_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}.svg')
+        auc = np.sum(y  + r2_avg)
+        if not disable_tqdm:
+            print(f"y {y[-1]}")
 
-        plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
+            print(f"r2 = {r2_avg[-1]}")
+
+            print(f"AUC {np.sum(auc)}")
+            print(f'\n{data_name}  complete!\n')
+
+        plt.title(f'vanilla_max_seen HGP-BO {nbr_repetition} repetitions with kappa value {k}')
         plt.savefig(
-            f'{data_name}/vanilla{folder_of_the_day}/png/vanilla_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}.png')
+            f'{data_name}/vanilla_max_seen{folder_of_the_day}/differentiable_plots/vanilla_max_seen_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}.svg')
+
+        plt.title(f'vanilla_max_seen HGP-BO {nbr_repetition} repetitions with kappa value {k}')
+        plt.savefig(
+            f'{data_name}/vanilla_max_seen{folder_of_the_day}/png/vanilla_max_seen_Prop_{data_name}_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}.png')
         plt.close()
 
-        """vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
-                         f'/Heatmap_{data_name}_vanilla_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
-                         "vanilla", folder_of_the_day, data_name)"""
+        vi.model_heatmap(heatmap_data[:, -1, :], x_hier, y_hier,
+                         f'/Heatmap_{data_name}_vanilla_max_seen_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_k_{k}',
+                         "vanilla_max_seen", folder_of_the_day, data_name)
+        vi.model_contour_3d(heatmap_data[:, -1, :], x_hier, y_hier,
+                         f'/parent_contour_{data_name}_vanilla_max_seen_HGP-BO_{nbr_repetition}_repetitions_dim_{dimension}_kappa_{k}',
+                         "vanilla_max_seen", folder_of_the_day, data_name)
 
-        df = pd.DataFrame([f'kappa_{k}_model_state_{nbr_query}_queries_eps_init_{nbr_rand_init}_train_iter_{training_iter}',
+        """df = pd.DataFrame([
+                              f'kappa_{k}_model_state_{nbr_query}_queries_eps_init_{nbr_rand_init}_train_iter_{training_iter}',
                               master, better_exploration_score, better_exploitation_score, r2])
-        df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2']
+        df.index = ['name', 'master', 'instantaneous_regret', 'exploitation_score', 'parent_r2']
 
         df.to_csv(
-            f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
-        df = pd.DataFrame([
-            f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-            master, y[-1], r2_avg[-1], auc])
-        df.index = ['name', 'master', 'exploration_score', 'parent_r2', 'auc']
+            f'{data_name}/vanilla_max_seen/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')"""
+        df = pd.DataFrame(
+            [f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
+             y[-1], r2_avg[-1], auc])
+        df.index = ['name', 'instantaneous_regret', 'parent_r2', 'auc']
         df.to_csv(
-            f"{data_name}/vanilla{folder_of_the_day}/csv/final_scores_kappa_{k}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
-
+            f'{data_name}/vanilla_max_seen/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
     # Joint Section
 
     #joint_plots(over_exploit, over_explor, k_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
@@ -246,16 +252,20 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
 if __name__ == '__main__':
 
-    dimension = 10
+    dimension = 32
     nbr_query = 100
     training_iter = 5
     nbr_repetition = 10
     nbr_rand_init = 1
-    k_vals = [6]
-    noise = 0.1
-
-    for dataset_num in [6]:
+    k_vals = [7.5]
+    seed = np.array([9049607, 2402697, 6510749,  758529, 3523986, 3224638, 9729091,
+       5830471, 5343420, 2417321, 9891788, 9314146, 9488226, 2697408,
+       5135059, 6813578,  430826, 6192331, 8026546, 6735254, 1112898,
+       5609958, 4736968,  617977, 8500888, 4205117,  756214, 4283694,
+       7449696, 9848369])
+    # seed = [False] * nbr_repetition
+    for dataset_num in [2]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
-                           eps, noise=noise)
+                           eps, seed)

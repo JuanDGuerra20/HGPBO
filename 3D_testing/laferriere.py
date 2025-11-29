@@ -177,16 +177,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", [sub1, sub2, sub3])
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
-                                        prior_hierarchical_kernel,
-                                        prior_map / prior_map_max, kernel_op='add_kernel',
-                                        sub_models=[sub1, sub2, sub3],
-                                        kappa=kappa, query_counter=hier_qc)
-            """master = hierarchical_model(train_x_hier, train_y_hier - train_y_hier.mean(), x_hier, likelihood,
+            """master = hierarchical_model(train_x_hier, train_y_hier / max_seen_resp_2D, x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2, sub3],
                                         kappa=kappa, query_counter=hier_qc)"""
+            master = hierarchical_model(train_x_hier, train_y_hier - train_y_hier.mean(), x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2, sub3],
+                                        kappa=kappa, query_counter=hier_qc)
 
             for i in range(len(train_x_hier)):
                 hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], x_hier)
@@ -241,8 +241,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                             response)
-        master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
-        #master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std(), strict=False)
+        #master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+        master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std(), strict=False)
 
         """
         train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
@@ -253,11 +253,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             master.train()
             likelihood.train()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
-                                                    verbose=False)
-            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
+                                                    verbose=False)"""
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
                                                   (train_y_hier - train_y_hier.mean()) / train_y_hier.std(),
-                                                  verbose=False)"""
+                                                  verbose=False)
 
 
             # Get into evaluation (predictive posterior) mode
@@ -488,7 +488,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                      c2_r2_data, c3_r2_data])
                 df = pd.DataFrame([
                     f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
-                    master, y[-1], r2[-1], avg_child[-1], auc])
+                    master, y[-1], r2_avg[-1], avg_child[-1], auc])
                 df.index = ['name', 'master', 'exploration_score', 'parent_r2', 'avg_child_r2',
                             'auc']
                 df.to_csv(
@@ -529,10 +529,10 @@ if __name__ == '__main__':
 
     dimension = 10
     nbr_query = 100
-    training_iter = 10
-    nbr_repetition = 30
-    nbr_rand_init = 6
-    k_vals = [9.5] # Found through HP Testing
+    training_iter = 5
+    nbr_repetition = 10
+    nbr_rand_init = 3
+    k_vals = [7] # Found through HP Testing
     g_vals = [3]  # Found through HP Testing
     nu_vals = [0.5]
 

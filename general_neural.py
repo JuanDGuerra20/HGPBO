@@ -226,16 +226,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
             max_seen_resp_2D = torch.max(train_y_hier)
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            master = hierarchical_model(train_x_hier, train_y_hier/max_seen_resp_2D, test_x_hier, likelihood,
-                                        prior_hierarchical_kernel,
-                                        prior_map / prior_map_max, kernel_op='add_kernel',
-                                        sub_models=[sub1, sub2],
-                                        kappa=kappa, query_counter=hier_qc)
-            """master = hierarchical_model(train_x_hier, train_y_hier - train_y_hier.mean(), test_x_hier, likelihood,
+            """master = hierarchical_model(train_x_hier, train_y_hier/max_seen_resp_2D, test_x_hier, likelihood,
                                         prior_hierarchical_kernel,
                                         prior_map / prior_map_max, kernel_op='add_kernel',
                                         sub_models=[sub1, sub2],
                                         kappa=kappa, query_counter=hier_qc)"""
+            master = hierarchical_model(train_x_hier, train_y_hier - train_y_hier.mean(), test_x_hier, likelihood,
+                                        prior_hierarchical_kernel,
+                                        prior_map / prior_map_max, kernel_op='add_kernel',
+                                        sub_models=[sub1, sub2],
+                                        kappa=kappa, query_counter=hier_qc)
             #for i in range(nbr_rand_init):
             for i in range(len(train_x_hier)):
                 hier_qc = master.increment_q_n(hier_qc, train_x_hier[i], test_x_hier)
@@ -347,18 +347,18 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                             response)
-        master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
-        #master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean()) / train_y_hier.std(), strict=False)
+        #master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+        master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean()) / train_y_hier.std(), strict=False)
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
             # Find optimal model hyperparameters
             master.train()
             likelihood.train()
 
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
-                                                    verbose=False)
-            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+            """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
+                                                    verbose=False)"""
+            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
                                                   (train_y_hier - train_y_hier.mean()) / train_y_hier.std(),
-                                                  verbose=False)"""
+                                                  verbose=False)
             # Get into evaluation (predictive posterior) mode
             master.eval()
             likelihood.eval()
@@ -709,11 +709,11 @@ if __name__ == '__main__':
 
 
     nbr_query = 100
-    training_iter = 10
-    nbr_repetition = 30
-    nbr_rand_init = 3
-    k_vals = [4]  # Found through HP Testing
-    g_vals = [3]  # Found through HP Testing
+    training_iter = 15
+    nbr_repetition = 10
+    nbr_rand_init = 1
+    k_vals = [8]  # Found through HP Testing
+    g_vals = [4]  # Found through HP Testing
     nu_vals = [0.5]
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
@@ -736,8 +736,7 @@ if __name__ == '__main__':
         workspace = f"{model_name.lower()}"
         folder_of_the_day = '/data-' + str(current_dateday)
 
-        name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
-        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, h, multi, seed, children=[], visualize=True)[0]
+        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, h, multi, seed, children=[], visualize=True)
 
         """if h == hmodel.Efficient_UCB_Hierarchical_GP:
             model_name = "Efficient"

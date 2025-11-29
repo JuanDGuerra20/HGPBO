@@ -37,7 +37,7 @@ current_dateday = datetime.now().strftime("%Y-%m-%d")
 
 
 kern_op = 'add_kernel'
-folder_of_the_day = (f'/vanilla/data-' + str(name_code) + str(current_dateday))
+folder_of_the_day = (f'/vanilla_max_seen/data-' + str(name_code) + str(current_dateday))
 
 
 class ExactGPModel(gpytorch.models.ExactGP):
@@ -60,9 +60,9 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, nbr_quer
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploitation Score')
-    plt.title(f'Joint vanilla Propagation HGPBO {nbr_repetition} Exploitation')
+    plt.title(f'Joint vanilla_max_seen Propagation HGPBO {nbr_repetition} Exploitation')
     plt.savefig(
-        f'vanilla{folder_of_the_day}/differentiable_plots/Joint_vanilla_Neural_Propagation_HGPBO_{nbr_repetition}_Exploitation_query_{nbr_query}')
+        f'vanilla_max_seen{folder_of_the_day}/differentiable_plots/Joint_vanilla_max_seen_Neural_Propagation_HGPBO_{nbr_repetition}_Exploitation_query_{nbr_query}')
     plt.close()
 
     for i, kappa in enumerate(k_vals):
@@ -72,9 +72,9 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, nbr_quer
     plt.xlabel(f'Nbr Queries')
     plt.ylim((0, 1.1))
     plt.ylabel(f'Exploration Score')
-    plt.title(f'Joint vanilla Propagation HGPBO {nbr_repetition} Exploration')
+    plt.title(f'Joint vanilla_max_seen Propagation HGPBO {nbr_repetition} Exploration')
     plt.savefig(
-        f'vanilla{folder_of_the_day}/differentiable_plots/Joint_vanilla_Neural_Propagation_HGPBO_{nbr_repetition}_Exploration_query_{nbr_query}')
+        f'vanilla_max_seen{folder_of_the_day}/differentiable_plots/Joint_vanilla_max_seen_Neural_Propagation_HGPBO_{nbr_repetition}_Exploration_query_{nbr_query}')
     plt.close()
 
 
@@ -83,7 +83,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         np.random.seed(seed)
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
-    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/vanilla"
+    workspace = f"C:/Users/preda/PycharmProjects/HGPBO/vanilla_max_seen"
     folder_of_the_day = '/data-' + str(current_dateday)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
@@ -147,8 +147,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                     max_seen_resp_2D = torch.max(train_y_hier)
 
                     likelihood = gpytorch.likelihoods.GaussianLikelihood()
-                    master = ExactGPModel(train_x_hier, train_y_hier - train_y_hier.mean(), likelihood)
-                    #master = ExactGPModel(train_x_hier, train_y_hier/max_seen_resp_2D, likelihood)
+                    #master = ExactGPModel(train_x_hier, train_y_hier - train_y_hier.mean(), likelihood)
+                    master = ExactGPModel(train_x_hier, train_y_hier/max_seen_resp_2D, likelihood)
                     optimizer = torch.optim.Adam(master.parameters(), lr=1e-3)
                     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, master)
 
@@ -178,8 +178,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
                                                                   response)
-                #master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
-                master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std() , strict=False)
+                master.set_train_data(train_x_hier, train_y_hier / max_seen_resp_2D, strict=False)
+                #master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std() , strict=False)
 
                 master.train()
                 likelihood.train()
@@ -189,8 +189,8 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                     output = master(train_x_hier)
 
-                    loss = -mll(output, (train_y_hier - train_y_hier.mean())/train_y_hier.std())
-                    #loss = -mll(output, train_y_hier/max_seen_resp_2D)
+                    #loss = -mll(output, (train_y_hier - train_y_hier.mean())/train_y_hier.std())
+                    loss = -mll(output, train_y_hier/max_seen_resp_2D)
                     loss.backward()
                     optimizer.step()
                     # Get into evaluation (predictive posterior) mode
@@ -258,16 +258,16 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         print(f"auc {auc}")
         plt.legend()
         plt.ylim(-0.1, 1.1)
-        plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
+        plt.title(f'vanilla_max_seen HGP-BO {nbr_repetition} repetitions with kappa value {k}')
         plt.savefig(
-            f'vanilla{folder_of_the_day}/differentiable_plots/vanilla_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}')
+            f'vanilla_max_seen{folder_of_the_day}/differentiable_plots/vanilla_max_seen_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}')
         plt.savefig(
-            f'vanilla{folder_of_the_day}/differentiable_plots/vanilla_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}.svg')
+            f'vanilla_max_seen{folder_of_the_day}/differentiable_plots/vanilla_max_seen_Neural_HGP-BO_{nbr_repetition}_repetitions_kappa_{k}_query_{nbr_query}.svg')
 
         plt.close()
         vi.model_heatmap(heatmap_data[:, -1, :], test_x_hier, test_y_hier,
                          f'/Heatmap_Neural_{nbr_repetition}_reps_k_{k}_rand_init_{nbr_rand_init}',
-                         "vanilla", folder_of_the_day, "Neural", neural=True)
+                         "vanilla_max_seen", folder_of_the_day, "Neural", neural=True)
 
         """df = pd.DataFrame([
             f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
@@ -275,13 +275,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         df.index = ['name', 'master', 'exploration_score', 'exploitation_score', 'parent_r2']
 
         df.to_csv(
-            f'vanilla{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}.csv')"""
+            f'vanilla_max_seen{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}.csv')"""
         df = pd.DataFrame([
             f'kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}',
             y[-1], r2_avg[-1], auc])
         df.index = ['name', 'exploration_score', 'parent_r2', 'auc']
         df.to_csv(
-            f"vanilla{folder_of_the_day}/csv/final_scores_kappa_{k}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
+            f"vanilla_max_seen{folder_of_the_day}/csv/final_scores_kappa_{k}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
 
         # Joint Section
 
@@ -323,8 +323,8 @@ if __name__ == '__main__':
     test_y_hier = torch.tensor(Ymean_2D)
 
     nbr_query = 100
-    training_iter = 15
+    training_iter = 5
     nbr_repetition = 10
     nbr_rand_init = 1
-    k_vals = [8]
+    k_vals = [5]
     training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals)

@@ -761,7 +761,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 df.index = ['name', 'instantaneous_regret', 'parent_r2', 'avg_child_r2', 'auc']
                 df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
 
-                #list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2])
+                list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', y, r2_avg, avg_child])
 
             # Joint Section
             """joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
@@ -770,7 +770,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
             joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,
                         nbr_repetition, data_name, model_name)"""
 
-    #return list_models
+    return list_models
 
 def hp_plotting(scores, hp_name, hp_list, model_name, folder_of_the_day):
     for j in range(len(scores)):
@@ -803,9 +803,9 @@ if __name__ == '__main__':
     dimension = 32
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 2
-    k_vals = [7.5]
-    g_vals = [3]
+    nbr_repetition = 10
+    k_vals = [9]
+    g_vals = [4]
     nu_vals = [0.5]  # Found through HP Testing
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
@@ -818,7 +818,7 @@ if __name__ == '__main__':
        7449696, 9848369])
     #seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [3,2,6, 10]:
+        for dataset_num in [2]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
@@ -833,10 +833,14 @@ if __name__ == '__main__':
             workspace = f"{data_name}/{model_name.lower()}"
             folder_of_the_day = '/data-' + str(current_dateday)
 
-            name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+                               nu_vals, data_name, data_creation_func,
+                               eps, h, multi, seed, noise=0.1, visualize=True, disable_tqdm=False)
+
+            """name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
                                    nu_vals, data_name, data_creation_func,
-                                   eps, h, multi, seed, noise=0.1, visualize=True, disable_tqdm=True)[0]
+                                   eps, h, multi, seed, noise=0.1, visualize=True, disable_tqdm=False)[0]"""
             print('done first')
             """parent_r2 = []
             child_1_r2_over = []
