@@ -332,11 +332,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         child_2_r2.append(c2_r2)
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
 
-        if len(children) == 2:
+        """if len(children) == 2:
             prior_norm = (prior_map - torch.min(prior_map)) / (torch.max(prior_map) - torch.min(prior_map))
             acquisition_map = (acquisition_map - torch.min(acquisition_map)) / (
                         torch.max(acquisition_map) - torch.min(acquisition_map))
-            acquisition_map = acquisition_map * (alpha * torch.flatten(prior_norm) + (1 - alpha))
+            acquisition_map = acquisition_map * (alpha * torch.flatten(prior_norm) + (1 - alpha))"""
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
@@ -761,7 +761,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 df.index = ['name', 'instantaneous_regret', 'parent_r2', 'avg_child_r2', 'auc']
                 df.to_csv(f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/{nbr_repetition}_rep_init_{nbr_rand_init}_train_iter_{training_iter}_eps_{e}_k_{k}_g_{g}_nu_{n}_noise_{noi}.csv')
 
-                list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', y, r2_avg, avg_child])
+                list_models.append([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, y, r2_avg, avg_child])
 
             # Joint Section
             """joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query,

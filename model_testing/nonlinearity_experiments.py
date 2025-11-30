@@ -134,11 +134,36 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals,
                                                     eps, h_model, multi, seed, noise=0.1, visualize=True,
                                                     disable_tqdm=False)
                     except:
-                        result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter,
-                                                    k_vals, g_vals,
-                                                    nu_vals, data_name, data_creation_func,
-                                                    eps, h_model, multi, seed, noise=0.1, visualize=True,
-                                                    disable_tqdm=False)
+                        try:
+                            result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension,
+                                                        training_iter,
+                                                        k_vals, g_vals,
+                                                        nu_vals, data_name, data_creation_func,
+                                                        eps, h_model, multi, seed, noise=0.1, visualize=True,
+                                                        disable_tqdm=False)
+                        except:
+                            try:
+                                result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension,
+                                                            training_iter,
+                                                            k_vals, g_vals,
+                                                            nu_vals, data_name, data_creation_func,
+                                                            eps, h_model, multi, seed, noise=0.1, visualize=True,
+                                                            disable_tqdm=False)
+                            except:
+                                try:
+                                    result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension,
+                                                                training_iter,
+                                                                k_vals, g_vals,
+                                                                nu_vals, data_name, data_creation_func,
+                                                                eps, h_model, multi, seed, noise=0.1, visualize=True,
+                                                                disable_tqdm=False)
+                                except:
+                                    result = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension,
+                                                                training_iter,
+                                                                k_vals, g_vals,
+                                                                nu_vals, data_name, data_creation_func,
+                                                                eps, h_model, multi, seed, noise=0.1, visualize=True,
+                                                                disable_tqdm=False)
         name_1, explor_1, r2_1, avg_child_1 = result[0]
 
         # Here we want to get a single value to plot as alpha increases
@@ -169,7 +194,7 @@ def exponential_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals,
 
     plt.xlabel('Alpha Value (nonlinearity)')
     plt.ylim(-0.1, 1.1)
-    plt.xscale('log', basex=2)
+    plt.xscale("log", base=2)
     plt.ylabel("Performance")
     plt.legend()
     plt.title(f'{data_name} Experiment')
@@ -320,18 +345,9 @@ def b_mult_experiment(nbr_repetition, nbr_rand_init, nbr_query, alpha_vals):
 
 if __name__ == "__main__":
     alpha_vals = [0.25, 0.5, 1, 2, 4, 8, 16, 20]
-    try:
-        mult_factor_experiment(10, 3, 100, alpha_vals)
-    except:
-        print("mult failed")
-    try:
-        exponential_experiment(10, 3, 100, alpha_vals, 7)
-    except:
-        print("exponential failed")
-    try:
-        exponential_experiment(10, 3, 100, alpha_vals, 7.5)
-    except:
-        print("exponential 2 failed")
+    exponential_experiment(10, 3, 100, alpha_vals, 7)
+    exponential_experiment(10, 3, 100, alpha_vals, 7.5)
+
     """
     
     #with mp.Pool(processes=3) as pool:
