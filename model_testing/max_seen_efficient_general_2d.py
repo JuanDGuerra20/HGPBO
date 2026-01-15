@@ -795,15 +795,15 @@ if __name__ == '__main__':
 
     dimension = 32
     nbr_query = 100
-    training_iter = 5  # Found through HP Testing
+    training_iter = 20  # Found through HP Testing
     nbr_repetition = 10
-    k_vals = [4]
-    g_vals = [2]
+    k_vals = [8]
+    g_vals = [5]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    nbr_rand_init = 5  # Found through HP Testing
+    nbr_rand_init = 1  # Found through HP Testing
     seed = np.array([9049607, 2402697, 6510749,  758529, 3523986, 3224638, 9729091,
        5830471, 5343420, 2417321, 9891788, 9314146, 9488226, 2697408,
        5135059, 6813578,  430826, 6192331, 8026546, 6735254, 1112898,
@@ -811,7 +811,7 @@ if __name__ == '__main__':
        7449696, 9848369])
     #seed = [False]*nbr_repetition
     for h in h_model:
-        for dataset_num in [2]:
+        for dataset_num in [10]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

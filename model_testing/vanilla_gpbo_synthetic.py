@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
     dimension = 32
     nbr_query = 100
-    training_iter = 10
+    training_iter = 20
     nbr_repetition = 10
     nbr_rand_init = 1
     k_vals = [9]
@@ -263,8 +263,8 @@ if __name__ == '__main__':
        5135059, 6813578,  430826, 6192331, 8026546, 6735254, 1112898,
        5609958, 4736968,  617977, 8500888, 4205117,  756214, 4283694,
        7449696, 9848369])
-    # seed = [False] * nbr_repetition
-    for dataset_num in [2]:
+    seed = [False] * nbr_repetition
+    for dataset_num in [10]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

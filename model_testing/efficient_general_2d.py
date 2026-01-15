@@ -804,13 +804,13 @@ if __name__ == '__main__':
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
     nbr_repetition = 10
-    k_vals = [9]
-    g_vals = [4]
+    k_vals = [7.5]
+    g_vals = [2]
     nu_vals = [0.5]  # Found through HP Testing
     multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
-    nbr_rand_init = 3  # Found through HP Testing
+    nbr_rand_init = 1  # Found through HP Testing
     seed = np.array([9049607, 2402697, 6510749,  758529, 3523986, 3224638, 9729091,
        5830471, 5343420, 2417321, 9891788, 9314146, 9488226, 2697408,
        5135059, 6813578,  430826, 6192331, 8026546, 6735254, 1112898,
@@ -823,6 +823,25 @@ if __name__ == '__main__':
     over_child_r2 = []
     over_auc = []
     for h in h_model:
+        dataset_num = 10
+        data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+
+        if h == hmodel.Efficient_UCB_Hierarchical_GP:
+            model_name = "Efficient"
+
+        elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+            model_name = "Lossless_Efficient"
+
+        current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+        current_dateday = datetime.now().strftime("%Y-%m-%d")
+        workspace = f"{data_name}/{model_name.lower()}"
+        folder_of_the_day = '/data-' + str(current_dateday)
+
+        name, master, explor, r2, child_r2 = \
+        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+                           nu_vals, data_name, data_creation_func,
+                           eps, h, multi, seed, noise=0.1, visualize=True, disable_tqdm=False)[0]
+    """for h in h_model:
         for noise in noises:
             for dataset_num in [2]:
 
@@ -862,4 +881,4 @@ if __name__ == '__main__':
             [noises, over_explor, over_r2, over_child_r2, over_auc])
         df.index = ['alpha', 'instantaneous_regret', 'parent_r2', 'avg_child_r2', 'auc']
         df.to_csv(
-            f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/noise_vales_scaling.csv')
+            f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/noise_vales_scaling.csv')"""

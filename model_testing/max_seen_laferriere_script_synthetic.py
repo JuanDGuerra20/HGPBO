@@ -557,12 +557,12 @@ if __name__ == '__main__':
 
     dimension = 32
     nbr_query = 100
-    training_iter = 5  # Found through HP Testing
+    training_iter = 15 # Found through HP Testing
     nbr_repetition = 10
-    k_vals = [7.5]
-    g_vals = [6]
+    k_vals = [8]
+    g_vals = [5]
     nu_vals = [0.5]  # Found through HP Testing
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 1  # Found through HP Testing
@@ -575,7 +575,7 @@ if __name__ == '__main__':
 
     model_name = "laferriere_model_max_seen"
     for h in h_model:
-        for dataset_num in [2]:
+        for dataset_num in [10]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
