@@ -13,7 +13,6 @@ import pandas as pd
 from seaborn import heatmap
 import warnings
 
-from model_testing.efficient_synthetic_script import joint_performance
 
 def joint_plots(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition,
                 data_name, model_name):
