@@ -164,16 +164,17 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
     - new_query_value_mean (float): Mean value of the corresponding pins to compute exploitation score.
     """
     # next_query_pins = next_query_pins.to(torch.int)
-    new_training_values_tampon = np.zeros(nbr_rdm_points_data)
+    #new_training_values_tampon = np.zeros(nbr_rdm_points_data)
+    new_training_values_tampon = []
     reshape_y = torch.reshape(Y, (-1, 1))
     i = 0
     for indices, pins in enumerate(X):
         # find pins of ((x, y), (x, y)) coordinates in X
         if pins[0] == next_query_pins[0] and pins[1] == next_query_pins[1]:
-            new_training_values_tampon[i] = reshape_y[indices]
+            new_training_values_tampon.append(reshape_y[indices])
             i += 1
-
-    # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
+    new_training_values = np.array(new_training_values_tampon).reshape((-1))
+    """# To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
     # (most of the time is 10 in 2D dataset because they took 10 emg responses from monkeys)
     # but it can be 11 or 9. More elegant way is to use len(ys) in make_dataset function
     # but here it works by taking fixing the lenght of new_training_values_tampon to 11
@@ -181,7 +182,7 @@ def get_next_query_value(next_query_pins, X, Y, nbr_rdm_points_data=20, noise=0)
     len_non_zero = np.count_nonzero(new_training_values_tampon)
     new_training_values = np.zeros(len_non_zero)
     for x in range(len_non_zero):
-        new_training_values[x] = new_training_values_tampon[x]
+        new_training_values[x] = new_training_values_tampon[x]"""
 
     new_query_value_mean = np.mean(new_training_values)
     new_query_value_random = np.random.choice(new_training_values)

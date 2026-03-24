@@ -630,11 +630,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 else:
 
                     for i in range(nbr_repetition):
-                        """master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
-                            kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
-                            data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                            children=children, visualize=visualize, seed=seed[i], noise=noise, disable_tqdm)"""
-                        try:
+                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                                kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
+                                hierarchical_model,
+                                data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
+                                children=children, visualize=visualize, seed=seed[i], noise=noise, disable_tqdm=disable_tqdm)
+                        """try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
@@ -655,7 +656,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                         children=children, visualize=visualize, seed=seed[i] + 2, noise=noise, disable_tqdm=disable_tqdm)
                                 except:
-                                    continue
+                                    continue"""
 
 
                         better_exploration_score.append(rep_exploration_score)
@@ -743,9 +744,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
                 auc = np.sum(y + avg_child + r2_avg)
                 if not disable_tqdm:
-                    print(f"explor {y[-1]}")
-                    print(f"r2 avg {r2_avg[-1]}")
-                    print(f"child r2 {avg_child[-1]}")
+                    print(f"explor {y[-1]} + {std[-1]}")
+                    print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
+                    print(f"child r2 {avg_child[-1]} + {std_child[-1]}")
                     print(f"AUC {np.sum(auc)}")
                     print(f'\n{data_name} {model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
                 """df = pd.DataFrame([f'kappa_{k}_gamma_{g}_nu_{n}_model_state_{nbr_query}_queries_eps_{e}_init_{nbr_rand_init}_train_iter_{training_iter}', master, better_exploration_score, better_exploitation_score, r2_avg, child_1_r2, child_2_r2])
@@ -821,25 +822,23 @@ if __name__ == '__main__':
     over_r2 = []
     over_child_r2 = []
     over_auc = []
-    for h in h_model:
-        dataset_num = 10
-        data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+    for dataset_num in [2, 11, 12]:
+        for h in h_model:
+            data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
-        if h == hmodel.Efficient_UCB_Hierarchical_GP:
-            model_name = "Efficient"
+            if h == hmodel.Efficient_UCB_Hierarchical_GP:
+                model_name = "Efficient"
 
-        elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-            model_name = "Lossless_Efficient"
+            elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+                model_name = "Lossless_Efficient"
 
-        current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
-        current_dateday = datetime.now().strftime("%Y-%m-%d")
-        workspace = f"{data_name}/{model_name.lower()}"
-        folder_of_the_day = '/data-' + str(current_dateday)
+            current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+            current_dateday = datetime.now().strftime("%Y-%m-%d")
+            workspace = f"{data_name}/{model_name.lower()}"
+            folder_of_the_day = '/data-' + str(current_dateday)
 
-        name, master, explor, r2, child_r2 = \
-        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
-                           nu_vals, data_name, data_creation_func,
-                           eps, h, multi, seed, noise=0.1, visualize=True, disable_tqdm=False)[0]
+            name, master, explor, r2, child_r2 = training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals,
+                               nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0.1, visualize=True, disable_tqdm=False)[0]
     """for h in h_model:
         for noise in noises:
             for dataset_num in [2]:

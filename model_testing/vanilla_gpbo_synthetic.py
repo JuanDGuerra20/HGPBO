@@ -245,6 +245,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         df.index = ['name', 'instantaneous_regret', 'parent_r2', 'auc']
         df.to_csv(
             f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
+        print(f"explor {y[-1]} + {std[-1]}")
+        print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
+        print(f"AUC {np.sum(auc)}")
     # Joint Section
 
     #joint_plots(over_exploit, over_explor, k_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
@@ -264,7 +267,7 @@ if __name__ == '__main__':
        5609958, 4736968,  617977, 8500888, 4205117,  756214, 4283694,
        7449696, 9848369])
     seed = [False] * nbr_repetition
-    for dataset_num in [10]:
+    for dataset_num in [2, 11, 12]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

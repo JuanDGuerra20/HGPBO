@@ -987,6 +987,44 @@ def generate_b_mult_factor_nonlinearity_dataset(dimension, eps):
     return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
 
 
+def generate_michalewicz_dataset(dimension, eps):
+    x_sub1 = torch.linspace(0, math.pi, dimension).double()
+    x_sub2 = torch.linspace(0, math.pi, dimension).double()
+    y_sub1 = -torch.sin(x_sub1) * (torch.sin(x_sub1 ** 2 / math.pi) ** 20)
+    y_sub2 = -torch.sin(x_sub2) * (torch.sin(2 * x_sub2 ** 2 / math.pi) ** 20)
+
+    x_hier = torch.zeros((dimension, dimension, 2)).double()
+    y_hier = torch.zeros((dimension, dimension)).double()
+    for i in range(dimension):
+        for j in range(dimension):
+            x_hier[i, j, 0] = x_sub1[i]
+            x_hier[i, j, 1] = x_sub2[j]
+            y_hier[i, j] = y_sub1[i] + y_sub2[j] + eps * y_sub1[i] * y_sub2[j]
+
+    test_x = make_test_sub(5, x_sub1)
+    test_x_hier = torch.reshape(x_hier, (-1, 2))
+    return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
+
+
+def generate_rastrigin_dataset(dimension, eps):
+    x_sub1 = torch.linspace(-2.0, 2.0, dimension).double()
+    x_sub2 = torch.linspace(-2.0, 2.0, dimension).double()
+    y_sub1 = x_sub1 ** 2 - 10 * torch.cos(2 * math.pi * x_sub1)
+    y_sub2 = x_sub2 ** 2 - 10 * torch.cos(2 * math.pi * x_sub2)
+
+    x_hier = torch.zeros((dimension, dimension, 2)).double()
+    y_hier = torch.zeros((dimension, dimension)).double()
+    for i in range(dimension):
+        for j in range(dimension):
+            x_hier[i, j, 0] = x_sub1[i]
+            x_hier[i, j, 1] = x_sub2[j]
+            y_hier[i, j] = y_sub1[i] + y_sub2[j] + 20.0 + eps * x_sub1[i] * x_sub2[j]
+
+    test_x = make_test_sub(5, x_sub1)
+    test_x_hier = torch.reshape(x_hier, (-1, 2))
+    return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
+
+
 def get_dataset_info(dataset_num, alpha=1):
     if dataset_num == 1:
         data_name = 'sin_cos'
@@ -1033,6 +1071,14 @@ def get_dataset_info(dataset_num, alpha=1):
         data_name = 'sub_2D'
         data_creation_func = generate_sub_dataset
         eps = alpha
+    elif dataset_num == 11:
+        data_name = 'michalewicz'
+        data_creation_func = generate_michalewicz_dataset
+        eps = 0.25
+    elif dataset_num == 12:
+        data_name = 'rastrigin'
+        data_creation_func = generate_rastrigin_dataset
+        eps = 0.1
     else:
         raise AssertionError("Dataset number invalid")
 

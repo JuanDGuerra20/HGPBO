@@ -573,6 +573,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 df.to_csv(
                     f"{model_name.lower()}{folder_of_the_day}/csv/final_scores_kappa_{k}_gamma_{g}_nu_{n}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
 
+                print(f"explor {y[-1]} + {std[-1]}")
+                print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
+                print(f"child r2 {avg_child[-1]} + {std_child[-1]}")
+                print(f"AUC {np.sum(auc)}")
             # Joint Section
 
             """joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
@@ -644,7 +648,7 @@ if __name__ == '__main__':
     k_vals = [7]
     g_vals = [4]
     nu_vals = [0.5]
-    multi = False
+    multi = True
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     seed = np.array([901112484, 798576827, 862109006, 256960071,  67686131, 960919614,

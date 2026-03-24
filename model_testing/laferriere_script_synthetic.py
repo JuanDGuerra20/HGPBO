@@ -376,12 +376,12 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                 else:
 
                     for i in range(nbr_repetition):
-                        """master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                        master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                             hierarchical_model,
                             data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
-                            children=children, visualize=visualize, seed=seed[i], noise=noise, disable_tqdm=disable_tqdm)"""
-                        try:
+                            children=children, visualize=visualize, seed=seed[i], noise=noise, disable_tqdm=disable_tqdm)
+                        """try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
@@ -402,7 +402,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                         children=children, visualize=visualize, seed=seed[i]+2, noise=noise, disable_tqdm=disable_tqdm)
                                 except:
-                                    continue
+                                    continue"""
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -489,9 +489,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
                 auc = np.sum(y + avg_child + r2_avg)
                 if not disable_tqdm:
-                    print(f"explor {y[-1]}")
-                    print(f"r2 avg {r2_avg[-1]}")
-                    print(f"child r2 {avg_child[-1]}")
+                    print(f"explor {y[-1]} + {std[-1]}")
+                    print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
+                    print(f"child r2 {avg_child[-1]} + {std_child[-1]}")
                     print(f"AUC {np.sum(auc)}")
                     print(f'\n{data_name} {model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
 
@@ -558,7 +558,7 @@ if __name__ == '__main__':
     dimension = 32
     nbr_query = 100
     training_iter = 10  # Found through HP Testing
-    nbr_repetition = 5
+    nbr_repetition = 10
     k_vals = [8]
     g_vals = [6]
     nu_vals = [0.5]  # Found through HP Testing
@@ -566,16 +566,14 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 1  # Found through HP Testing
-    seed = np.array([9049607, 2402697, 6510749,  758529, 3523986, 3224638, 9729091,
-       5830471, 5343420, 2417321, 9891788, 9314146, 9488226, 2697408,
-       5135059, 6813578,  430826, 6192331, 8026546, 6735254, 1112898,
-       5609958, 4736968,  617977, 8500888, 4205117,  756214, 4283694,
-       7449696, 9848369])
+    seed = np.array([791104038, 558883516, 75533178, 730586104, 64343038, 353199330,
+                     138876529, 594536092, 713725275, 642158682, 287397414, 156569942,
+                     554978049, 860858855, 899218178])
     #seed = [False] * nbr_repetition
 
     model_name = "laferriere_model"
     for h in h_model:
-        for dataset_num in [10]:
+        for dataset_num in [11, 12]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

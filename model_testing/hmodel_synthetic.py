@@ -895,7 +895,7 @@ def hierarchical_kernel(kernel_type, model1, model2):
     kernel2.lengthscale = model2.covar_module.base_kernel.lengthscale
 
     if kernel_type == 'add_kernel':
-        hierarchical_kernel = kernel1 + kernel2
+        hierarchical_kernel = gpytorch.kernels.ScaleKernel(kernel1) + gpytorch.kernels.ScaleKernel(kernel2)
 
     elif kernel_type == 'mult':
         hierarchical_kernel = kernel1 * kernel2
@@ -912,11 +912,11 @@ def update_kernel_parameters(model, model1, model2):
     :param model2: child model 2
     :return:
     """
-    model.covar_module.kernels[0].outputscale = model1.covar_module.outputscale
-    model.covar_module.kernels[0].lengthscale = model1.covar_module.base_kernel.lengthscale
+    model.covar_module.kernels[0].base_kernel.outputscale = model1.covar_module.outputscale
+    model.covar_module.kernels[0].base_kernel.lengthscale = model1.covar_module.base_kernel.lengthscale
 
-    model.covar_module.kernels[1].outputscale = model2.covar_module.outputscale
-    model.covar_module.kernels[1].lengthscale = model2.covar_module.base_kernel.lengthscale
+    model.covar_module.kernels[1].base_kernel.outputscale = model2.covar_module.outputscale
+    model.covar_module.kernels[1].base_kernel.lengthscale = model2.covar_module.base_kernel.lengthscale
     return model
 
 

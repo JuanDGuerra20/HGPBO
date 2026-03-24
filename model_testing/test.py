@@ -21,7 +21,7 @@ if __name__ == '__main__':
     g_vals = [1, 2, 3, 3.5, 4, 5, 6]
     nu_vals = [0.5]  # Found through HP Testing
     multi = True
-    h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
+    h_model = hmodel.Lossless_Efficient_UCB_Hierarchical_GP
     process = []
     nbr_rand_init = [1, 2, 3, 5, 10, 15, 20]  # Found through HP Testing
     """seed = np.array([901112484, 798576827, 862109006, 256960071, 67686131, 960919614,
@@ -34,10 +34,22 @@ if __name__ == '__main__':
        138876529, 594536092, 713725275, 642158682, 287397414, 156569942,
        554978049, 860858855, 899218178])
     #seed = np.random.randint(999999999, size=nbr_repetition)
-    datasets = [3, 2, 6, 10]
+    datasets = [11, 12]
     processes = []
-    for h in h_model:
-        # Kappa block
+    for dataset_num in datasets:
+        data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+        gen.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
+                               base_g,
+                               nu_vals, data_name, data_creation_func,
+                               eps, h_model, multi, seed, [], True, 0.1, 0, True)
+        laf.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, base_train, base_k,
+                               base_g,
+                               nu_vals, data_name, data_creation_func,
+                               eps, h_model, multi, seed, [], True, 0.1, True, )
+        van.training_procedure(nbr_query, nbr_repetition, 1, dimension, base_train, base_k,
+                               data_name, data_creation_func,
+                               eps, seed, True)
+        """# Kappa block
         for kappa in k_vals:
             for dataset_num in datasets:
                 data_name, data_creation_func, eps = get_dataset_info(dataset_num)
@@ -107,5 +119,5 @@ if __name__ == '__main__':
 
         print(f"\n=====================================================")
         print(f"Training Iter Complete")
-        print(f"=====================================================\n")
+        print(f"=====================================================\n")"""
 

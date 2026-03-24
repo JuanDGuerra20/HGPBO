@@ -282,7 +282,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
         df.index = ['name', 'exploration_score', 'parent_r2', 'auc']
         df.to_csv(
             f"vanilla{folder_of_the_day}/csv/final_scores_kappa_{k}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
-
+        print(f"explor {y[-1]} + {std[-1]}")
+        print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
+        print(f"AUC {np.sum(auc)}")
         # Joint Section
 
     #joint_plots(over_exploit, over_explor, k_vals, folder_of_the_day, nbr_query, nbr_repetition)
