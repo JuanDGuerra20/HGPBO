@@ -1,0 +1,204 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{hyperref}
+
+\definecolor{modcolor}{HTML}{006600}
+\newcommand{\modloc}[1]{\noindent\colorbox{yellow!30}{\parbox{\dimexpr\textwidth-2\fboxsep}{%
+\textbf{#1}}}\medskip}
+
+\title{Paper Modifications for the GAN HPO Experiment\\
+\large All text changes required to add the GAN experiment to the BIF paper}
+\author{Auto-generated from v3 experiment results}
+\date{March 28, 2026}
+
+\begin{document}
+\maketitle
+
+\noindent This document lists every paragraph that must be modified or added, in order.
+Yellow boxes indicate the exact location in the existing paper.
+New or replacement text is shown verbatim below each box.
+
+Figure~4 composite: \texttt{figures/figure4\_composite.pdf} (pre-built).
+Panel sources:
+\begin{itemize}[nosep]
+\item Panel A: \texttt{panelA.pdf} --- DCGAN architecture (standard task)
+\item Panel B: \texttt{v3\_fair\_main\_ro.png} --- Main RO
+\item Panel C: \texttt{v3\_fair\_main\_r2.png} --- Main Parent + Child $R^2$
+\item Panel D: \texttt{panelB.pdf} --- DCGAN architecture (SpectralNorm task)
+\item Panel E: \texttt{v3\_fair\_modularity\_ro.png} --- Modularity RO
+\item Panel F: \texttt{v3\_fair\_modularity\_r2.png} --- Modularity Parent + Child $R^2$
+\end{itemize}
+
+\bigskip\hrule\bigskip
+
+%% ---------------------------------------------------------------
+\section*{Modification 1: Abstract}
+\modloc{Abstract --- last sentence before ``1.\ Introduction''.\\
+Replace ``...on synthetic and real-world neurostimulation optimization tasks.''}
+
+...on synthetic, real-world neurostimulation, and realistic GAN hyperparameter
+optimization tasks.
+
+%% ---------------------------------------------------------------
+\section*{Modification 2: Section 4 ``Datasets'' --- opening sentence}
+\modloc{Section 4 Datasets, first sentence.\\
+Replace ``three benchmarks'' with ``four benchmarks''.}
+
+We evaluate BIF on four benchmarks designed to test hierarchical
+transfer and scalability. Both synthetic tasks include 10\% additive
+Gaussian Noise.
+
+%% ---------------------------------------------------------------
+\section*{Modification 3: Section 4 ``Datasets'' --- add 4th bullet}
+\modloc{Section 4 Datasets, after the Neurostimulation bullet point.\\
+Add the following as a new bullet.}
+
+\begin{itemize}
+\item \textit{GAN Hyperparameter Optimization:} A tabular surrogate built from 2,401
+DCGAN training runs on Fashion-MNIST, spanning a $7^4$ grid over four
+hyperparameters split into two functional groups: generator
+(learning rate, weight decay) and discriminator (learning rate, dropout).
+Each configuration was trained to convergence and scored by Fr\'echet Inception
+Distance (FID).
+A second surrogate replaces the standard discriminator with a
+Spectral-Norm variant, sharing the generator architecture.
+This pair of surrogates enables testing BIF's modularity:
+the generator child trained on the standard task can be transferred
+to the Spectral-Norm task without retraining, since only the
+discriminator sub-problem changes.
+\end{itemize}
+
+%% ---------------------------------------------------------------
+\section*{Modification 4: Section 4 ``Implementation Details'' --- append}
+\modloc{Section 4 Implementation Details, end of paragraph (after ``Results report the mean...'').\\
+Replace the last sentence and append GAN-specific details.}
+
+Results report the mean and standard error across 10 randomly
+initialized trials (30 for the GAN surrogate).
+For the GAN surrogate, we use $\kappa\!=\!20$, $\gamma\!=\!4$,
+$\nu\!=\!1.5$, with a log-normal lengthscale prior centered at 1.0.
+All methods share the same 20-query parent budget;
+BIF and Laferri\`ere each use 3 initialization queries
+counted in the budget.
+
+%% ---------------------------------------------------------------
+\section*{Modification 5: Section 5 --- new subsection}
+\modloc{Section 5 Results, after ``Real-World Application: Neurostimulation'' and
+before ``Modularity and Subtask Transfer''.\\
+Insert the following new subsection.}
+
+\noindent\textbf{GAN Hyperparameter Optimization.}
+We evaluate BIF on a tabular DCGAN surrogate (Section~4),
+where the generator and discriminator form natural child sub-problems
+within a joint 4D parent space.
+As summarized in Table~1 and Figure~4(a--c), BIF matches vanilla
+GPBO in Relative Optimum ($96.1 \pm 0.4$ vs.\ $96.0 \pm 0.4$) while
+achieving the highest parent $R^2$ ($11.4\%$) and child $R^2$ ($27.7\%$)
+among all methods.
+Laferri\`ere lags in both RO ($94.7 \pm 0.6$) and child $R^2$ ($23.1\%$),
+confirming that frozen children limit the hierarchy's ability to
+refine sub-task representations.
+Although parent $R^2$ remains modest across all methods due to the
+difficulty of modelling 2,401 points from only 20 queries,
+BIF's child $R^2$ rises steadily (Fig.~4c),
+driven by the response contribution system (Section~3).
+The Laferri\`ere children, by contrast, plateau immediately after
+initialization, as no downward signal reaches them.
+
+%% ---------------------------------------------------------------
+\section*{Modification 6: Section 5 ``Modularity and Subtask Transfer'' --- append}
+\modloc{Section 5 ``Modularity and Subtask Transfer'', after the existing
+two paragraphs.\\
+Append the following new paragraph.}
+
+We further validate modularity on the GAN surrogate, where the generator
+architecture is shared between the standard and Spectral-Norm
+discriminator tasks.
+As shown in Figure~4(d--f) and Table~1, BIF hot-start transfers
+the pre-trained generator child and continues to refine both children
+on the new task, reaching $95.3 \pm 0.5$ RO and $45.6\%$ child $R^2$.
+Laferri\`ere hot-start carries the same generator child but freezes it,
+achieving only $93.3 \pm 0.5$ RO and $23.2\%$ child $R^2$ ---
+nearly half of BIF's child accuracy.
+Vanilla GPBO, starting from scratch without any transferred knowledge,
+reaches $93.5 \pm 0.7$ RO.
+
+%% ---------------------------------------------------------------
+\section*{Modification 7: Section 6 ``Conclusion'' --- update sentence}
+\modloc{Section 6 Conclusion, second paragraph, first sentence.\\
+Replace ``Empirical evaluations on 2D and 3D synthetic benchmarks, as well
+as a real-world neurostimulation task...''}
+
+Empirical evaluations on synthetic benchmarks, a real-world
+neurostimulation task, and a realistic GAN hyperparameter optimization surrogate
+demonstrate that BIF significantly improves sample efficiency,
+with higher AUC across the board, and overall optimization performance.
+
+%% ---------------------------------------------------------------
+\section*{Modification 8: Table 1 --- add GAN rows}
+\modloc{Table 1. Add the following two row groups at the bottom, after
+Neural Stimulation. Also update the caption to note the GAN query/seed counts.}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+Dataset & Model & Relative Optimum & Parent $R^2$ & Child $R^2$ & AUC (RO) \\
+\midrule
+\multicolumn{6}{c}{\textit{... existing rows (Synthetic 2D, 3D, Neural Stimulation) ...}} \\
+\midrule
+GAN HPO         & Vanilla GPBO       & $96.0 \pm 0.4$ & $9.7 \pm 1.0$  & --              & $95.1 \pm 0.4$ \\
+                & Laferri\`ere       & $94.7 \pm 0.6$ & $6.8 \pm 1.1$  & $23.1 \pm 2.4$  & $92.0 \pm 0.4$ \\
+                & BIF                & $96.1 \pm 0.4$ & $11.4 \pm 1.3$ & $27.7 \pm 2.9$  & $94.9 \pm 0.4$ \\
+\midrule
+GAN HPO         & Vanilla GPBO       & $93.5 \pm 0.7$ & $43.7 \pm 1.0$ & --              & $91.9 \pm 0.8$ \\
+(Modularity)    & Laferri\`ere (hot) & $93.3 \pm 0.5$ & $48.8 \pm 1.0$ & $23.2 \pm 2.4$  & $88.5 \pm 0.7$ \\
+                & BIF (hot-start)    & $95.3 \pm 0.5$ & $48.5 \pm 1.2$ & $45.6 \pm 2.6$  & $91.0 \pm 0.5$ \\
+\bottomrule
+\end{tabular}
+\caption*{\textbf{Updated Table 1 caption:} Summary of performance metrics.
+GAN results use 20 queries and 30 seeds; other datasets use 100 queries
+and 10 seeds. Vanilla GPBO has no child $R^2$ (non-hierarchical).}
+\end{table}
+
+%% ---------------------------------------------------------------
+\section*{Modification 9: Figure 4 caption}
+\modloc{New Figure~4. Pre-built composite: \texttt{figures/figure4\_composite.pdf}.\\
+Use the following caption.}
+
+\noindent\textbf{Figure 4.} GAN hyperparameter optimization experiment.
+\textbf{(a)}~DCGAN architecture for the standard task
+(generator: learning rate $\times$ weight decay;
+discriminator: learning rate $\times$ dropout).
+\textbf{(b)}~Relative Optimum on the standard task
+(blue: Vanilla; orange: Laferri\`ere; green: BIF).
+\textbf{(c)}~Parent and child $R^2$ on the standard task.
+\textbf{(d)}~DCGAN architecture for the Spectral-Norm task
+(shared generator, modified discriminator).
+\textbf{(e)}~Relative Optimum on the modularity task
+(Vanilla from scratch; Laferri\`ere and BIF hot-start with
+transferred generator child).
+\textbf{(f)}~Parent and child $R^2$ on the modularity task.
+Shaded regions denote $\pm 1$ SEM over 30 seeds.
+
+%% ---------------------------------------------------------------
+\section*{Summary of all modifications}
+
+\begin{enumerate}
+\item \textbf{Abstract}: ``synthetic and real-world neurostimulation'' $\to$ add ``and GAN hyperparameter optimization''
+\item \textbf{Section 4 Datasets}: ``three benchmarks'' $\to$ ``four benchmarks''; add GAN bullet
+\item \textbf{Section 4 Implementation Details}: append GAN hyperparameters; update trial count
+\item \textbf{Section 5 Results}: insert ``GAN Hyperparameter Optimization'' subsection (after Neurostimulation)
+\item \textbf{Section 5 Modularity}: append GAN modularity paragraph
+\item \textbf{Section 6 Conclusion}: update empirical summary sentence
+\item \textbf{Table 1}: add 6 rows (GAN HPO + GAN HPO Modularity); update caption
+\item \textbf{Figure 4}: new 6-panel composite figure with caption
+\end{enumerate}
+
+\end{document}
