@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from scipy.io import loadmat  # this is the SciPy module that loads mat-files
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import random
@@ -990,8 +992,8 @@ def generate_b_mult_factor_nonlinearity_dataset(dimension, eps):
 def generate_michalewicz_dataset(dimension, eps):
     x_sub1 = torch.linspace(0, math.pi, dimension).double()
     x_sub2 = torch.linspace(0, math.pi, dimension).double()
-    y_sub1 = -torch.sin(x_sub1) * (torch.sin(x_sub1 ** 2 / math.pi) ** 20)
-    y_sub2 = -torch.sin(x_sub2) * (torch.sin(2 * x_sub2 ** 2 / math.pi) ** 20)
+    y_sub1 = torch.sin(x_sub1) * (torch.sin(x_sub1 ** 2 / math.pi) ** 20)
+    y_sub2 = torch.sin(x_sub2) * (torch.sin(2 * x_sub2 ** 2 / math.pi) ** 20)
 
     x_hier = torch.zeros((dimension, dimension, 2)).double()
     y_hier = torch.zeros((dimension, dimension)).double()
@@ -1005,6 +1007,21 @@ def generate_michalewicz_dataset(dimension, eps):
     test_x_hier = torch.reshape(x_hier, (-1, 2))
     return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
 
+def generate_michalewicz_10_dataset(dimension, eps, d=10):
+    x_s = []
+    y_s = []
+    x_temp = torch.linspace(0, math.pi, dimension).double()
+
+    for i in range(d):
+        x_s.append(torch.linspace(0, math.pi, dimension).double())
+        y_s.append(torch.sin(x_temp) * (torch.sin(i * x_temp ** 2 / math.pi) ** 20))
+    x_hier = torch.stack(x_s)
+    y_hier = torch.stack(y_s)
+    y_hier = y_hier.sum(axis=0) + eps
+
+    test_x = make_test_sub(5, x_s[0])
+    test_x_hier = torch.reshape(x_hier, (-1, d))
+    return x_s, y_s, x_hier, y_hier, test_x, test_x_hier
 
 def generate_rastrigin_dataset(dimension, eps):
     x_sub1 = torch.linspace(-2.0, 2.0, dimension).double()
@@ -1022,6 +1039,45 @@ def generate_rastrigin_dataset(dimension, eps):
 
     test_x = make_test_sub(5, x_sub1)
     test_x_hier = torch.reshape(x_hier, (-1, 2))
+    return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
+
+
+def generate_svm_hpo_dataset(dimension, eps):
+    import os
+    # Locate svm_hpo_data.npz: try relative to this file, then cwd
+    data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model_testing', 'svm_hpo_data.npz')
+    if not os.path.exists(data_path):
+        data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'svm_hpo_data.npz')
+    if not os.path.exists(data_path):
+        data_path = 'svm_hpo_data.npz'
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(
+            "svm_hpo_data.npz not found. Run model_testing/generate_hpo_data.py first."
+        )
+
+    data = np.load(data_path)
+    c_vals = data['c_vals'][:dimension]
+    gamma_vals = data['gamma_vals'][:dimension]
+    y_sub1_np = data['y_sub1'][:dimension]
+    y_sub2_np = data['y_sub2'][:dimension]
+    y_hier_np = data['y_hier'][:dimension, :dimension]
+
+    x_sub1 = torch.tensor(c_vals, dtype=torch.float64)
+    x_sub2 = torch.tensor(gamma_vals, dtype=torch.float64)
+    y_sub1 = torch.tensor(y_sub1_np, dtype=torch.float64)
+    y_sub2 = torch.tensor(y_sub2_np, dtype=torch.float64)
+
+    x_hier = torch.zeros((dimension, dimension, 2), dtype=torch.float64)
+    for i in range(dimension):
+        for j in range(dimension):
+            x_hier[i, j, 0] = x_sub1[i]
+            x_hier[i, j, 1] = x_sub2[j]
+
+    y_hier = torch.tensor(y_hier_np, dtype=torch.float64)
+
+    test_x = make_test_sub(5, x_sub1)
+    test_x_hier = torch.reshape(x_hier, (-1, 2))
+
     return x_sub1, y_sub1, x_sub2, y_sub2, x_hier, y_hier, test_x, test_x_hier
 
 
@@ -1079,6 +1135,14 @@ def get_dataset_info(dataset_num, alpha=1):
         data_name = 'rastrigin'
         data_creation_func = generate_rastrigin_dataset
         eps = 0.1
+    elif dataset_num == 13:
+        data_name = 'svm_hpo'
+        data_creation_func = generate_svm_hpo_dataset
+        eps = 0
+    elif dataset_num == 14:
+        data_num = 'michalewicz_expanded'
+        data_creation_func = generate_michalewicz_10_dataset
+        eps = 0.25
     else:
         raise AssertionError("Dataset number invalid")
 

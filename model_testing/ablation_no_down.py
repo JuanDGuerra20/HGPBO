@@ -346,21 +346,21 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                      test_x_hier,
                                                                                      y_hier, noise=noise)
 
-        y_mu_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_mu1, x_sub1)
+        """y_mu_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_mu1, x_sub1)
         y_mu_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_mu2, x_sub2)
 
         y_conf_point_a = hmodel.get_y_mu_point_value(next_query_pins[0], y_conf1, x_sub1)
         y_conf_point_b = hmodel.get_y_mu_point_value(next_query_pins[1], y_conf2, x_sub2)
 
         y_qc_a = hmodel.get_y_mu_point_value(next_query_pins[0], sub1_qc, x_sub1)
-        y_qc_b = hmodel.get_y_mu_point_value(next_query_pins[1], sub2_qc, x_sub2)
+        y_qc_b = hmodel.get_y_mu_point_value(next_query_pins[1], sub2_qc, x_sub2)"""
 
         next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
                                                                                             max_seen_resp_2D)
 
         response = torch.tensor(next_query_value_random)
 
-        cont1 = models.compute_acq_value(y_mu_point_a, y_conf_point_a, y_qc_a, gamma, acq_func, max_seen_resp_1_1D)
+        """cont1 = models.compute_acq_value(y_mu_point_a, y_conf_point_a, y_qc_a, gamma, acq_func, max_seen_resp_1_1D)
         norm1 = torch.max(models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D))
         cont1_scaled = torch.nan_to_num(cont1 / norm1)
 
@@ -371,14 +371,14 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
 
         contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
-        contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)
+        contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)"""
 
-        response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
-        response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
+        #response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
+        #response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
 
         # Potentially could make this more efficient by incorporating it into the next finder
-        sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[0], x_sub1)
-        sub2_qc = sub2.increment_q_n(sub2_qc, next_query_pins[1], x_sub2)
+        #sub1_qc = sub1.increment_q_n(sub1_qc, next_query_pins[0], x_sub1)
+        #sub2_qc = sub2.increment_q_n(sub2_qc, next_query_pins[1], x_sub2)
         hier_qc = master.increment_q_n(hier_qc, next_query_pins, x_hier)
 
         # next_query_pins = next_query_pins.to(torch.int)
@@ -391,7 +391,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                 if x == dimension - 1 and y == dimension - 1 and flag:
                     raise Exception("Could not find pins in X hier for indices")
 
-        sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
+        """sub1, sub1_like, train_x_sub1, train_y_sub1 = hmodel.update_model1_1D_max_seen(sub1, sub1_like, train_x_sub1,
                                                                                        train_y_sub1,
                                                                                        x_sub1[next_query_indices[0]],
                                                                                        contribution1,
@@ -403,13 +403,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
                                                                                        x_sub2[next_query_indices[1]],
                                                                                        contribution2,
                                                                                        False,
-                                                                                       training_iter=training_iter)
+                                                                                       training_iter=training_iter)"""
 
-        sub1.eval()
+        """sub1.eval()
         sub1_like.eval()
 
         sub2.eval()
-        sub2_like.eval()
+        sub2_like.eval()"""
 
         # Make a prediction, observed_pred = likelihood
         with gpytorch.settings.lazily_evaluate_kernels(state=False):
@@ -461,11 +461,11 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             master.eval()
             likelihood.eval()
-            sub1.eval()
+            """sub1.eval()
             sub1_like.eval()
 
             sub2.eval()
-            sub2_like.eval()
+            sub2_like.eval()"""
 
             # Make a prediction, observed_pred = likelihood, prediction_mean = mu
             # start = time.time()
@@ -527,16 +527,14 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals,
                        data_name, data_creation_func, eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1, alpha=0, disable_tqdm=False, acq_func='ucb'):
-    if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
-        model_name = "Efficient"
-
-    elif hierarchical_model == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-        model_name = "Lossless_Efficient"
+    model_name = "ablation_no_down"
 
     current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
     current_dateday = datetime.now().strftime("%Y-%m-%d")
     workspace = f"{data_name}/{model_name.lower()}"
     folder_of_the_day = '/data-' + str(current_dateday)
+
+    os.makedirs(workspace, exist_ok=True)
     if os.path.exists(workspace + folder_of_the_day):
         print('Data folder is ready')
     else:
@@ -825,15 +823,11 @@ if __name__ == '__main__':
     over_r2 = []
     over_child_r2 = []
     over_auc = []
-    for dataset_num in [10]:
+    for dataset_num in [13]:
         for h in h_model:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
-            if h == hmodel.Efficient_UCB_Hierarchical_GP:
-                model_name = "Efficient"
-
-            elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-                model_name = "Lossless_Efficient"
+            model_name = "ablation_no_down"
 
             current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
             current_dateday = datetime.now().strftime("%Y-%m-%d")

@@ -159,6 +159,33 @@ class PriorMean(gpytorch.means.Mean):  # PMF
         return new_prior
 
 
+class ScaledPriorMean(gpytorch.means.Mean):
+    """
+    Like PriorMean but with learnable scale (alpha) and offset (beta).
+    Children's signal acts as a prior: m(x) = alpha * lookup(x) + beta.
+    alpha and beta are optimized by MLL; map is frozen and updated externally each BO step.
+    """
+
+    def __init__(self, prior_map, test_x, device="cpu"):
+        super().__init__()
+        self.register_parameter('map', torch.nn.Parameter(prior_map.to(device), requires_grad=False))
+        self.register_parameter('alpha', torch.nn.Parameter(torch.ones(1, device=device), requires_grad=True))
+        self.register_parameter('beta', torch.nn.Parameter(torch.zeros(1, device=device), requires_grad=True))
+        self.hash_map = HashTable(np.prod(test_x.shape[:-1]))
+        self.device = device
+
+        for i in range(len(test_x)):
+            for j in range(len(test_x)):
+                self.hash_map.set_val(str(test_x[i][j]), [i, j])
+
+    def forward(self, input):
+        new_prior = torch.zeros(input.shape[0], device=self.device)
+        for i in range(input.shape[0]):
+            look_up = self.hash_map.get_val(str(input[i]))
+            new_prior[i] = self.map[look_up[0], look_up[1]]
+        return self.alpha * new_prior + self.beta
+
+
 class Hierarchical_GP(gpytorch.models.ExactGP):
 
     def __init__(self, train_x, train_y, likelihood, hierarchical_kernel, prior_map, kernel_op, sub_models, kappa):
@@ -487,6 +514,41 @@ class Lossless_Efficient_UCB_Hierarchical_GP(Efficient_UCB_Hierarchical_GP):
                     ))
             optimizer.step()
         return self, likelihood
+
+
+class Lossless_ScaledMean_GP(Lossless_Efficient_UCB_Hierarchical_GP):
+    """
+    Variant of Lossless BIF where children's signal is a prior to the mean.
+    Uses ScaledPriorMean: m(x) = alpha * children_signal(x) + beta,
+    where alpha and beta are learned by MLL each iteration.
+    When alpha=1 and beta=0 this is identical to Lossless_Efficient_UCB_Hierarchical_GP.
+    """
+
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel,
+                 prior_map, kernel_op, sub_models, kappa, query_counter=None, device="cpu"):
+        super().__init__(train_x, train_y, test_x, likelihood, hierarchical_kernel,
+                         prior_map, kernel_op, sub_models, kappa,
+                         query_counter=query_counter, device=device)
+        # Replace frozen PriorMean with learnable ScaledPriorMean
+        self.mean_module = ScaledPriorMean(prior_map, test_x, device=device).to(device)
+
+
+class Lossless_ConstantMean_UCB_Hierarchical_GP(Lossless_Efficient_UCB_Hierarchical_GP):
+    """
+    Ablation of BIF where children do not send information to the parent.
+    Uses gpytorch.means.ConstantMean (learnable constant, optimised by MLL)
+    instead of PriorMean. Top-down flow (parent -> children decomposition) is preserved.
+    The prior_map argument is accepted for interface consistency but has no effect.
+    """
+
+    def __init__(self, train_x, train_y, test_x, likelihood, hierarchical_kernel,
+                 prior_map, kernel_op, sub_models, kappa, query_counter=None, device="cpu"):
+        super().__init__(train_x, train_y, test_x, likelihood, hierarchical_kernel,
+                         prior_map, kernel_op, sub_models, kappa,
+                         query_counter=query_counter, device=device)
+        # Replace PriorMean with standard learnable ConstantMean
+        self.mean_module = gpytorch.means.ConstantMean()
+
 
 class Changing_Data_UCB_Hierarchical_GP(gpytorch.models.ExactGP):
 

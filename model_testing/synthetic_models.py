@@ -233,26 +233,52 @@ def optimize(model, likelihood, training_iter, train_x, train_y, verbose=True, h
     return model, likelihood
 
 
-def get_acquisition_map(kappa, observed_pred, query_count):
+def compute_acq_value(mu, sigma, query_count, kappa, acq_func, best_f):
     """
-    Compute the acquisition map for Bayesian optimization.
-    Here UCB function : a(x;k)=μ(x)+kσ(x)
+    Compute acquisition value for UCB, EI, or PI.
 
     Parameters:
-    - k: kappa (float): Manage the trade-off between exploration and exploitation.
+    - mu (torch.Tensor): Predictive mean.
+    - sigma (torch.Tensor): Predictive standard deviation.
+    - query_count (torch.Tensor): Query count per point (used by UCB).
+    - kappa (float): Exploration parameter (UCB trade-off; EI/PI jitter xi).
+    - acq_func (str): One of 'ucb', 'ei', 'pi'.
+    - best_f: Current best observed value (required for 'ei' and 'pi').
+
+    Returns:
+    - acq (torch.Tensor): Acquisition values.
+    """
+    if acq_func == 'ucb':
+        return mu + kappa * torch.nan_to_num(sigma / torch.sqrt(query_count))
+    normal = torch.distributions.Normal(0, 1)
+    safe_sigma = torch.clamp(sigma, min=1e-9)
+    Z = (mu - best_f - kappa) / safe_sigma
+    if acq_func == 'ei':
+        ei = safe_sigma * (Z * normal.cdf(Z) + torch.exp(normal.log_prob(Z)))
+        return torch.clamp(ei, min=0.0)
+    if acq_func == 'pi':
+        return normal.cdf(Z)
+    raise ValueError(f"Unknown acq_func '{acq_func}'. Choose 'ucb', 'ei', or 'pi'.")
+
+
+def get_acquisition_map(kappa, observed_pred, query_count, acq_func='ucb', best_f=None):
+    """
+    Compute the acquisition map for Bayesian optimization.
+
+    Parameters:
+    - kappa (float): Exploration parameter (UCB: trade-off weight; EI/PI: jitter xi).
     - observed_pred (gpytorch.distributions.MultivariateNormal): Predictive posterior distribution.
+    - query_count (torch.Tensor): Query count per candidate point.
+    - acq_func (str): Acquisition function type: 'ucb', 'ei', or 'pi'.
+    - best_f: Current best observed value (required for 'ei' and 'pi').
 
     Returns:
     - acquisition_map (torch.Tensor): Acquisition map.
     - y_mu (torch.Tensor): Mean of the predictive distribution.
     """
-    # get the mean (mu) and the variance (sigma2) of the model
     y_mu = observed_pred.mean
-    y_sigma2 = observed_pred.stddev
-
-    # compute acquisition map
-    acquisition_map = y_mu + kappa * torch.nan_to_num(y_sigma2/torch.sqrt(query_count))  # here UCB acquisition function
-    # print(f'Average UCB Ratio mean/({kappa} * std): {torch.mean(y_mu/(kappa * y_sigma2))}')
+    y_sigma = observed_pred.stddev
+    acquisition_map = compute_acq_value(y_mu, y_sigma, query_count, kappa, acq_func, best_f)
     return acquisition_map, y_mu
 
 
@@ -432,7 +458,7 @@ def get_instantaneous_regret(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_p
     i = 0
     mu = y_mu
     argmax_mu = torch.where(mu.reshape(len(mu)) == torch.max(mu.reshape(len(mu))))
-
+    new_training_values = []
     # randomly choose a query if there are multiple max values
     if len(argmax_mu[0]) > 1:  # si plusieurs fois la valeur max, choisir random parmis ces valeurs max
         indice_next_query = np.random.randint(len(
@@ -448,7 +474,7 @@ def get_instantaneous_regret(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_p
         # find pins of ((x, y), (x, y)) coordinates in X
         for indices_y, sub_pin in enumerate(pins):
             if sub_pin[0] == next_query_pins[0] and sub_pin[1] == next_query_pins[1]:
-                new_training_values_tampon[i] = Y[indices_x, indices_y]
+                new_training_values.append(Y[indices_x, indices_y])
                 i += 1
 
     # To deal with number of Y in the dataset that is variable in 2D dataset (always 20 in 1D dataset)
@@ -456,13 +482,11 @@ def get_instantaneous_regret(y_mu, ground_truth_max, coord_pins, X, Y, nbr_rdm_p
     # but it can be 11 or 9. More elegant way is to use len(ys) in make_dataset function
     # but here it works by taking fixing the length of new_training_values_tampon to 11
     # and taking the real length of non zero elements, then using a new array
-    len_non_zero = np.count_nonzero(new_training_values_tampon)
-    new_training_values = np.zeros(len_non_zero)
-    for x in range(len_non_zero):
-        new_training_values[x] = new_training_values_tampon[x]
 
     mean_value = np.mean(new_training_values)
     regret = (mean_value - Y.min()) / (ground_truth_max - Y.min())
+    if np.isnan(regret):
+        print("gotem")
     return regret, next_query_pins
 
 

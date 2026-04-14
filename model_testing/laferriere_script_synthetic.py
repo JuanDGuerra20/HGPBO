@@ -489,10 +489,11 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                     f'{data_name}/{model_name.lower()}{folder_of_the_day}/csv/True_State_Space_Values.csv')
                 auc = np.sum(y + avg_child + r2_avg)
                 if not disable_tqdm:
-                    print(f"explor {y[-1]} + {std[-1]}")
-                    print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
-                    print(f"child r2 {avg_child[-1]} + {std_child[-1]}")
-                    print(f"AUC {np.sum(auc)}")
+                    print(f"explor {y[-1] * 100} + {std[-1] * 100}")
+                    print(f"r2 avg {r2_avg[-1] * 100} + {r2_std[-1] * 100}")
+                    print(f"child r2 {avg_child[-1] *100} + {std_child[-1]*100}")
+
+                    print(f"AUC {np.sum(auc) * 100}")
                     print(f'\n{data_name} {model_name} Kappa {k} Gamma {g} Nu {n} eps_{e}_ complete!\n')
 
 
@@ -573,7 +574,7 @@ if __name__ == '__main__':
 
     model_name = "laferriere_model"
     for h in h_model:
-        for dataset_num in [11, 12]:
+        for dataset_num in [11, 12, 13]:
 
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

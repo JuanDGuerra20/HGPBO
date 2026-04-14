@@ -4,6 +4,7 @@ import gpytorch.settings
 import numpy as np
 
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import json

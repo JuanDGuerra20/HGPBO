@@ -52,7 +52,6 @@ def joint_plots(joint_exploit, joint_explor, k_vals, folder_of_the_day, dimensio
         f'{data_name}/vanilla{folder_of_the_day}/differentiable_plots/Joint_vanilla_Propagation_HGPBO_{nbr_repetition}_Exploration_eps_0,75')
     plt.close()
 
-
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,
                            eps, seed, disable_tqdm=False):
 
@@ -85,6 +84,86 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
     over_exploit = []
     over_explor = []
 
+    def run_repetition():
+        for q in tqdm(range(nbr_query), disable=disable_tqdm):
+            if q == 0:
+                train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier,
+                                                                                seed=seed[repetition])
+                max_seen_resp_2D = torch.max(train_y_hier)
+
+                likelihood = gpytorch.likelihoods.GaussianLikelihood()
+                # master = ExactGPModel(train_x_hier, train_y_hier/ max_seen_resp_2D, likelihood)
+                master = ExactGPModel(train_x_hier, train_y_hier - train_y_hier.mean(), likelihood)
+
+                optimizer = torch.optim.Adam(master.parameters(), lr=1e-3)
+                mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, master)
+
+                master.eval()
+                likelihood.eval()
+
+            with gpytorch.settings.lazily_evaluate_kernels(state=False):
+                observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
+
+            acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
+
+            next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
+
+            next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
+                                                                                         test_x_hier,
+                                                                                         y_hier)
+
+            next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
+                                                                                                max_seen_resp_2D)
+
+            response = torch.tensor(next_query_value_random)
+
+            train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
+                                                              response)
+            # master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
+            master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean()) / train_y_hier.std(), strict=False)
+
+            """
+            train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
+            master.train()
+            likelihood.train()
+            for i in range(training_iter):
+                # Find optimal model hyperparameters
+                optimizer.zero_grad()
+
+                output = master(train_x_hier)
+
+                #loss = -mll(output, train_y_hier / max_seen_resp_2D)
+
+                loss = -mll(output, (train_y_hier - train_y_hier.mean())/train_y_hier.std())
+                loss.backward()
+                optimizer.step()
+                # Get into evaluation (predictive posterior) mode
+            master.eval()
+            likelihood.eval()
+
+            # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
+
+            """exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
+                                                                                                ground_truth_max_hier,
+                                                                                                test_x_hier,
+                                                                                                x_hier, y_hier)"""
+            instantaneous_regret, next_query_pins_exploration_2D = models.get_instantaneous_regret(hierar_y_mu,
+                                                                                                   ground_truth_max_hier,
+                                                                                                   test_x_hier,
+                                                                                                   x_hier, y_hier)
+            exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_hier)
+            """print(f'\nQuery Number: {q}')
+            print(f'Next Query Pins: {next_query_pins_exploration_2D}')
+            print(f'Next Query Value: {next_query_value_mean}')
+            print(f'Exploration_Score: {torch.round(exploration_score_2D, decimals=4)}')
+            print(f'Exploitation_Score: {torch.round(exploitation_score_2D, decimals=4)}')"""
+
+            better_exploration_score.append(instantaneous_regret)
+            better_exploitation_score.append(exploitation_score_2D)
+
+            pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
+            master_like = master.likelihood(pred)
+            heatmap_rep.append(master_like.mean)
 
     for kappa in k_vals:
         better_exploration_score = []
@@ -93,87 +172,23 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         for repetition in range(nbr_repetition):
             max_seen_resp_2D = 0
             heatmap_rep = []
-            for q in tqdm(range(nbr_query), disable=disable_tqdm):
-                if q == 0:
-                    train_x_hier, train_y_hier = hierarchical_select_random_queries(nbr_rand_init, x_hier, y_hier, seed=seed[repetition])
-                    max_seen_resp_2D = torch.max(train_y_hier)
 
-
-                    likelihood = gpytorch.likelihoods.GaussianLikelihood()
-                    #master = ExactGPModel(train_x_hier, train_y_hier/ max_seen_resp_2D, likelihood)
-                    master = ExactGPModel(train_x_hier, train_y_hier - train_y_hier.mean(), likelihood)
-
-                    optimizer = torch.optim.Adam(master.parameters(), lr=1e-3)
-                    mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, master)
-
-                    master.eval()
-                    likelihood.eval()
-
-                with gpytorch.settings.lazily_evaluate_kernels(state=False):
-                    observed_pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, likelihood)
-
-                acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
-
-                next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
-
-                next_query_value_random, next_query_value_mean = models.get_next_query_value(next_query_pins,
-                                                                                             test_x_hier,
-                                                                                             y_hier)
-
-                next_query_value_random, max_seen_resp_2D = models.update_max_seen_response_no_norm(next_query_value_random,
-                                                                                            max_seen_resp_2D)
-
-                response = torch.tensor(next_query_value_random)
-
-                train_x_hier, train_y_hier = update_training_data(train_x_hier, train_y_hier, next_query_pins,
-                                                                  response)
-                #master.set_train_data(train_x_hier, train_y_hier/max_seen_resp_2D, strict=False)
-                master.set_train_data(train_x_hier, (train_y_hier - train_y_hier.mean())/train_y_hier.std() , strict=False)
-
-                """
-                train_x_sub1, train_x_sub2 = train_x_hier[:, 0], train_x_hier[:, 1]"""
-
-                master.train()
-                likelihood.train()
-                for i in range(training_iter):
-                    # Find optimal model hyperparameters
-                    optimizer.zero_grad()
-
-                    output = master(train_x_hier)
-
-                    #loss = -mll(output, train_y_hier/max_seen_resp_2D)
-                    loss = -mll(output, (train_y_hier - train_y_hier.mean())/train_y_hier.std())
-                    loss.backward()
-                    optimizer.step()
-                    # Get into evaluation (predictive posterior) mode
-                master.eval()
-                likelihood.eval()
-
-
-                # acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred)
-
-                """exploration_score_2D, next_query_pins_exploration_2D = models.get_exploration_score(hierar_y_mu,
-                                                                                                    ground_truth_max_hier,
-                                                                                                    test_x_hier,
-                                                                                                    x_hier, y_hier)"""
-                instantaneous_regret, next_query_pins_exploration_2D = models.get_instantaneous_regret(hierar_y_mu,
-                                                                                                    ground_truth_max_hier,
-                                                                                                    test_x_hier,
-                                                                                                    x_hier, y_hier)
-                exploitation_score_2D = models.get_exploitation_score(next_query_value_mean, ground_truth_max_hier)
-                """print(f'\nQuery Number: {q}')
-                print(f'Next Query Pins: {next_query_pins_exploration_2D}')
-                print(f'Next Query Value: {next_query_value_mean}')
-                print(f'Exploration_Score: {torch.round(exploration_score_2D, decimals=4)}')
-                print(f'Exploitation_Score: {torch.round(exploitation_score_2D, decimals=4)}')"""
-
-                better_exploration_score.append(instantaneous_regret)
-                better_exploitation_score.append(exploitation_score_2D)
-
-                pred = hmodel.make_Hierarchique_prediction(master, test_x_hier, master.likelihood)
-                master_like = master.likelihood(pred)
-                heatmap_rep.append(master_like.mean)
-
+            try:
+                run_repetition()
+            except:
+                try:
+                    run_repetition()
+                except:
+                    try:
+                        run_repetition()
+                    except:
+                        try:
+                            run_repetition()
+                        except:
+                            try:
+                                run_repetition()
+                            except:
+                                continue
             heatmap_data.append(heatmap_rep)
             #print(f'\nRepetition {repetition} complete!\n')
 
@@ -209,12 +224,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 
         auc = np.sum(y  + r2_avg)
         if not disable_tqdm:
-            print(f"y {y[-1]}")
-
-            print(f"r2 = {r2_avg[-1]}")
-
-            print(f"AUC {np.sum(auc)}")
-            print(f'\n{data_name}  complete!\n')
+            print(f"explor {y[-1] * 100} + {std[-1] * 100}")
+            print(f"r2 avg {r2_avg[-1] * 100} + {r2_std[-1] * 100}")
+            print(f"AUC {np.sum(auc) * 100}")
+            print(f'\n{data_name} Vanilla Kappa {k} complete!\n')
 
         plt.title(f'vanilla HGP-BO {nbr_repetition} repetitions with kappa value {k}')
         plt.savefig(
@@ -245,9 +258,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         df.index = ['name', 'instantaneous_regret', 'parent_r2', 'auc']
         df.to_csv(
             f'{data_name}/vanilla/{folder_of_the_day}/csv/kappa_{k}_model_state_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}')
-        print(f"explor {y[-1]} + {std[-1]}")
-        print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
-        print(f"AUC {np.sum(auc)}")
     # Joint Section
 
     #joint_plots(over_exploit, over_explor, k_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name)
@@ -260,14 +270,14 @@ if __name__ == '__main__':
     training_iter = 20
     nbr_repetition = 10
     nbr_rand_init = 1
-    k_vals = [9]
+    k_vals = [7.5]
     seed = np.array([9049607, 2402697, 6510749,  758529, 3523986, 3224638, 9729091,
        5830471, 5343420, 2417321, 9891788, 9314146, 9488226, 2697408,
        5135059, 6813578,  430826, 6192331, 8026546, 6735254, 1112898,
        5609958, 4736968,  617977, 8500888, 4205117,  756214, 4283694,
        7449696, 9848369])
     seed = [False] * nbr_repetition
-    for dataset_num in [2, 11, 12]:
+    for dataset_num in [11]:
         data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 
         training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, data_name, data_creation_func,

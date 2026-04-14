@@ -101,7 +101,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
         f'{model_name.lower()}{folder_of_the_day}/hp_analysis/HP_Exploration_Performance_{nbr_repetition}_repetitions_kappa_{kappa}_gamma_{gamma}')
     plt.close()
 
-def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False, children=[], visualize=True, seed=True):
+def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, final=False, children=[], visualize=True, seed=True, acq_func='ucb'):
     if type(seed) != bool:
         np.random.seed(seed)
 
@@ -133,6 +133,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     max_seen_resp_2D = 0
     max_seen_resp_1_1D = 0
     max_seen_resp_2_1D = 0
+    best_f_hier = torch.tensor(0.0)
+    best_f_1 = torch.tensor(0.0)
+    best_f_2 = torch.tensor(0.0)
     sub1_qc = torch.ones(len(test_x_1D))
     sub2_qc = torch.ones(len(test_x_1D))
     hier_qc = torch.ones(len(test_x_hier))
@@ -206,8 +209,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
             y_conf1 = observed_pred1.stddev
             y_conf2 = observed_pred2.stddev
 
-            p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-            p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
+            p1 = models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, best_f_1)
+            p2 = models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, best_f_2)
 
             for i in range(len(prior_map)):
                 for j in range(len(prior_map)):
@@ -224,6 +227,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
             train_x_hier, train_y_hier = torch.reshape(next_query_pins, (1, 4)), torch.reshape(response, (1,))
 
             max_seen_resp_2D = torch.max(train_y_hier)
+            best_f_hier = max_seen_resp_2D
             prior_hierarchical_kernel = hmodel.hierarchical_kernel("add_kernel", sub1, sub2)
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
             """master = hierarchical_model(train_x_hier, train_y_hier/max_seen_resp_2D, test_x_hier, likelihood,
@@ -249,7 +253,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         #vi.comparison(list_prior_map, list_objective_mean_map, q, Xmean_1D)
 
-        acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
+        acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc,
+                                                                   acq_func=acq_func, best_f=best_f_hier)
         list_acquisition_map.append(list_acquisition_map)
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
@@ -280,16 +285,19 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         response = torch.tensor(next_query_value_random)
 
-        cont1 = y_mu_point_a + gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
-        cont1_scaled = torch.nan_to_num(cont1/torch.max(y_mu1 + gamma * torch.nan_to_num(y_conf1/ torch.sqrt(sub1_qc))))
+        cont1 = models.compute_acq_value(y_mu_point_a, y_conf_point_a, y_qc_a, gamma, acq_func, best_f_1)
+        cont1_scaled = torch.nan_to_num(cont1 / torch.max(models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, best_f_1)))
 
-        cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
-        cont2_scaled = torch.nan_to_num(cont2/torch.max(y_mu2 + gamma * torch.nan_to_num(y_conf2/ torch.sqrt(sub2_qc))))
+        cont2 = models.compute_acq_value(y_mu_point_b, y_conf_point_b, y_qc_b, gamma, acq_func, best_f_2)
+        cont2_scaled = torch.nan_to_num(cont2 / torch.max(models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, best_f_2)))
 
         div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
 
         contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
         contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)
+
+        best_f_1 = torch.max(best_f_1, contribution1)
+        best_f_2 = torch.max(best_f_2, contribution2)
 
         response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
         response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
@@ -329,8 +337,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
         y_conf1 = observed_pred1.stddev
         y_conf2 = observed_pred2.stddev
 
-        p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-        p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
+        p1 = models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, best_f_1)
+        p2 = models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, best_f_2)
 
         for i in range(len(prior_map)):
             for j in range(len(prior_map)):
@@ -356,9 +364,13 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
             """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier, train_y_hier/max_seen_resp_2D,
                                                     verbose=False)"""
-            master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  (train_y_hier - train_y_hier.mean()) / train_y_hier.std(),
-                                                  verbose=False)
+            try:
+                master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
+                                                      (train_y_hier - train_y_hier.mean()) / train_y_hier.std(),
+                                                      verbose=False)
+            except:
+                print(next_query_pins)
+                raise Exception
             # Get into evaluation (predictive posterior) mode
             master.eval()
             likelihood.eval()
@@ -421,7 +433,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     else:
         return better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
 
-def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, hierarchical_model, multi, seed, children=[], visualize=True):
+def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, hierarchical_model, multi, seed, children=[], visualize=True, acq_func='ucb'):
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient"
 
@@ -476,22 +488,22 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                         # running the repetitions in parallel except for the last one
                         for i in range(nbr_repetition - 1):
-                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, False, children, visualize, seed[i],))
+                            p = pool.apply_async(run_repetition, (kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, False, children, visualize, seed[i],), kwds={'acq_func': acq_func})
                             processes.append(p)
 
                         # must run the final block manually to allow return of the models
                         try:
-                            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                            master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model, model_name, folder_of_the_day, True, children, visualize, seed=seed[i], acq_func=acq_func)
                         except:
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
-                                    model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                    model_name, folder_of_the_day, True, children, visualize, seed=seed[i], acq_func=acq_func)
                             except:
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
-                                        model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                        model_name, folder_of_the_day, True, children, visualize, seed=seed[i], acq_func=acq_func)
                                 except:
                                     raise Exception('Multi Processing Final did not run properly')
                         better_exploration_score.append(rep_exploration_score)
@@ -513,10 +525,18 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 else:
 
                     for i in range(nbr_repetition ):
+                        """master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
+                            kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
+                            model_name, folder_of_the_day, True, children, visualize, seed=seed[i], acq_func=acq_func)
+                        better_exploration_score.append(rep_exploration_score)
+                        better_exploitation_score.append(rep_exploitation_score)
+                        heatmap_data.append(heatmap_rep)
+                        child_1_r2_data.append(child_1_r2)
+                        child_2_r2_data.append(child_2_r2)"""
                         try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
-                                model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                model_name, folder_of_the_day, True, children, visualize, seed=seed[i], acq_func=acq_func)
                             better_exploration_score.append(rep_exploration_score)
                             better_exploitation_score.append(rep_exploitation_score)
                             heatmap_data.append(heatmap_rep)
@@ -526,7 +546,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                             try:
                                 master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
-                                    model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                    model_name, folder_of_the_day, True, children, visualize, seed=seed[i], acq_func=acq_func)
                                 better_exploration_score.append(rep_exploration_score)
                                 better_exploitation_score.append(rep_exploitation_score)
                                 heatmap_data.append(heatmap_rep)
@@ -536,7 +556,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                                 try:
                                     master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hierarchical_model,
-                                        model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                        model_name, folder_of_the_day, True, children, visualize, seed=seed[i], acq_func=acq_func)
                                     better_exploration_score.append(rep_exploration_score)
                                     better_exploitation_score.append(rep_exploitation_score)
                                     heatmap_data.append(heatmap_rep)
@@ -547,7 +567,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                                         master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                             kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
                                             hierarchical_model,
-                                            model_name, folder_of_the_day, True, children, visualize, seed=seed[i])
+                                            model_name, folder_of_the_day, True, children, visualize, seed=seed[i], acq_func=acq_func)
                                         better_exploration_score.append(rep_exploration_score)
                                         better_exploitation_score.append(rep_exploitation_score)
                                         heatmap_data.append(heatmap_rep)
@@ -583,7 +603,6 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 r2_avg = np.mean(r2, axis=0)
                 r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
                 #r2_std = np.insert(r2_std, 0, np.zeros((2 - len(children)) *nbr_rand_init))[:nbr_query]
-                print(f"r2 avg : {r2_avg[-1]}")
 
                 plt.plot(r2_avg, label="Parent R2")
                 plt.fill_between(range(len(r2_std)), r2_avg-r2_std, r2_avg + r2_std, alpha=0.4)
@@ -593,11 +612,9 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
 
                 avg_child = np.mean(all_children, axis=0)
                 std_child = np.std(all_children, axis=0) / np.sqrt(len(all_children))
-                print(f"child avg : {avg_child[-1]}")
                 plt.plot(avg_child, label='Child Avg R2')
                 plt.fill_between(range(len(avg_child)), avg_child - std_child, avg_child + std_child, alpha=0.4)
                 auc = np.sum(y + avg_child + r2_avg)
-                print(f"auc {auc}")
 
                 plt.legend()
                 plt.ylim(-0.1, 1.1)
@@ -641,10 +658,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, 
                 df.index = ['name', 'exploration_score', 'parent_r2', 'avg_child_r2',
                             'auc']
                 df.to_csv(f"{model_name.lower()}{folder_of_the_day}/csv/final_scores_kappa_{k}_gamma_{g}_nu_{n}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
-                print(f"explor {y[-1]} + {std[-1]}")
-                print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
-                print(f"child r2 {avg_child[-1]} + {std_child[-1]}")
-                print(f"AUC {np.sum(auc)}")
+                print(f"explor {y[-1]*100:.2f} + {std[-1]*100:.2f}")
+                print(f"r2 avg {r2_avg[-1]*100:.2f} + {r2_std[-1]*100:.2f}")
+                print(f"child r2 {avg_child[-1]*100:.2f} + {std_child[-1]*100:.2f}")
+                print(f"AUC {np.sum(auc)*100:.2f}")
             # Joint Section
 
             """joint_plots(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, nbr_query,
@@ -718,7 +735,8 @@ if __name__ == '__main__':
     k_vals = [8]  # Found through HP Testing
     g_vals = [4]  # Found through HP Testing
     nu_vals = [0.5]
-    multi = True
+    acq = 'ei'  # Acquisition function: 'ucb', 'ei', or 'pi'
+    multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     seed = np.array([901112484, 798576827, 862109006, 256960071,  67686131, 960919614,
@@ -739,7 +757,7 @@ if __name__ == '__main__':
         workspace = f"{model_name.lower()}"
         folder_of_the_day = '/data-' + str(current_dateday)
 
-        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, h, multi, seed, children=[], visualize=True)
+        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, h, multi, seed, children=[], visualize=True, acq_func=acq)
 
         """if h == hmodel.Efficient_UCB_Hierarchical_GP:
             model_name = "Efficient"
