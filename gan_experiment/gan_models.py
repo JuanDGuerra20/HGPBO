@@ -120,14 +120,39 @@ def make_prediction(model, test_x, likelihood):
         return likelihood(model(test_x))
 
 
-def get_acquisition_map(kappa, observed_pred, query_counter):
+def compute_acq_value(mu, sigma, query_count, kappa, acq_func, best_f):
     """
-    Compute UCB acquisition map.
+    Compute acquisition value for UCB, EI, or PI.
+
+    Parameters:
+        mu: predictive mean
+        sigma: predictive standard deviation
+        query_count: per-point query counter tensor (used by UCB)
+        kappa: exploration weight (UCB trade-off; EI/PI jitter xi)
+        acq_func: 'ucb', 'ei', or 'pi'
+        best_f: current best observed value (required for 'ei' and 'pi')
+    """
+    if acq_func == 'ucb':
+        return mu + kappa * torch.nan_to_num(sigma / torch.sqrt(query_count))
+    normal = torch.distributions.Normal(0, 1)
+    safe_sigma = torch.clamp(sigma, min=1e-9)
+    Z = (mu - best_f - kappa) / safe_sigma
+    if acq_func == 'ei':
+        ei = safe_sigma * (Z * normal.cdf(Z) + torch.exp(normal.log_prob(Z)))
+        return torch.clamp(ei, min=0.0)
+    if acq_func == 'pi':
+        return normal.cdf(Z)
+    raise ValueError(f"Unknown acq_func '{acq_func}'. Choose 'ucb', 'ei', or 'pi'.")
+
+
+def get_acquisition_map(kappa, observed_pred, query_counter, acq_func='ucb', best_f=None):
+    """
+    Compute acquisition map.
     Returns (acquisition_values, posterior_mean).
     """
     y_mu = observed_pred.mean
     y_conf = observed_pred.stddev
-    acquisition_map = y_mu + kappa * y_conf / torch.sqrt(query_counter)
+    acquisition_map = compute_acq_value(y_mu, y_conf, query_counter, kappa, acq_func, best_f)
     return acquisition_map, y_mu
 
 

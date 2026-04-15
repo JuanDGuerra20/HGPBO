@@ -2,8 +2,8 @@
 Generate landscape heatmap figures for the v2 GAN surrogates.
 
 v2 surrogates use: lr_gen + weight_decay + lr_disc + dropout (fixed z_dim=64).
-- Task A: standard BatchNorm discriminator  (gan_surrogate_v2.pt)
-- Task B: SpectralNorm discriminator        (gan_surrogate_v2_specnorm.pt)
+- Task A: standard BatchNorm discriminator  (gan_surrogate.pt)
+- Task B: SpectralNorm discriminator        (gan_surrogate_specnorm.pt)
 
 fid_table shape: (7, 7, 7, 7) indexed as [lr_gen_idx, wd_gen_idx, lr_disc_idx, dropout_idx]
 
@@ -25,8 +25,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FIG_DIR = os.path.join(BASE_DIR, 'figures')
 os.makedirs(FIG_DIR, exist_ok=True)
 
-SURR_A = os.path.join(BASE_DIR, 'gan_surrogate_v2.pt')
-SURR_B = os.path.join(BASE_DIR, 'gan_surrogate_v2_specnorm.pt')
+SURR_A = os.path.join(BASE_DIR, 'gan_surrogate.pt')
+SURR_B = os.path.join(BASE_DIR, 'gan_surrogate_specnorm.pt')
 
 # ---------------------------------------------------------------------------
 # v2 Grid definitions (must match train_dcgan_v2.py)

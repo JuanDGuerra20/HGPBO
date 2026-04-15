@@ -406,16 +406,15 @@ def update_model_2d_max_seen(model, likelihood, train_x, train_y, next_query_pin
     # Update training data
     train_x, train_y = model.update_training_data(train_x, train_y, next_query_pin, response, env)
 
-    # Adaptive rescaling (env vs bif indices)
+    # Normalize all training targets jointly to [0, 1]
     div_y = train_y.clone()
-    if torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]) == 0:
-        div_y[model.env_ind] = div_y[model.env_ind] / torch.max(div_y[model.env_ind])
-    else:
-        div_y[model.env_ind] = (div_y[model.env_ind] - torch.min(div_y[model.env_ind])) / \
-                                (torch.max(div_y[model.env_ind]) - torch.min(div_y[model.env_ind]))
-    if len(model.bif_ind) > 1:
-        div_y[model.bif_ind] = (div_y[model.bif_ind] - torch.min(div_y[model.bif_ind])) / \
-                                (torch.max(div_y[model.bif_ind]) - torch.min(div_y[model.bif_ind]))
+    y_min = torch.min(div_y)
+    y_max = torch.max(div_y)
+    y_range = y_max - y_min
+    if y_range > 0:
+        div_y = (div_y - y_min) / y_range
+    elif y_max != 0:
+        div_y = div_y / torch.abs(y_max)
 
     model.set_train_data(train_x, div_y, strict=False)
     model.train()

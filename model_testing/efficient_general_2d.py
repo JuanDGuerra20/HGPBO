@@ -1,5 +1,8 @@
 import gpytorch
 import matplotlib
+
+from model_testing.synthetic_models import compute_acq_value
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import torch
@@ -278,9 +281,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
             y_conf1 = observed_pred1.stddev
             y_conf2 = observed_pred2.stddev
-
-            p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-            p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
+            p1 = compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)
+            p2 = compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)
 
             for i in range(len(prior_map)):
                 for j in range(len(prior_map)):
@@ -422,16 +424,22 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         y_conf1 = observed_pred1.stddev
         y_conf2 = observed_pred2.stddev
 
-        p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-        p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
+        """p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
+        p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))"""
+
+        p1 = compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)
+        p2 = compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)
 
         for i in range(len(prior_map)):
             for j in range(len(prior_map)):
                 prior_map[i, j] = (p1[i] + p2[j]) / 2
 
-        prior_map_max = torch.max(prior_map)
+        prior_map_max = abs(torch.max(prior_map))
 
-        master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
+        if prior_map_max != 0:
+            master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
+        else:
+            master.mean_module.map = torch.nn.Parameter(prior_map)
 
         master = hmodel.update_kernel_parameters(master, sub1, sub2)
 
@@ -451,9 +459,10 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             """master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
                                                   train_y_hier / max_seen_resp_2D,
                                                   verbose=False)"""
+
             master, likelihood = master.Hoptimize(likelihood, training_iter, train_x_hier,
-                                                  (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier),
-                                                  verbose=False)
+                                              (train_y_hier - torch.mean(train_y_hier))/torch.std(train_y_hier),
+                                              verbose=False)
 
             """t = time.time() - start
             h_opt_time.append(t)
@@ -638,7 +647,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                 children=children, visualize=visualize, seed=seed[i], noise=noise, disable_tqdm=disable_tqdm, acq_func=acq_func)
-                        """try:
+                        try:
                             master, sub1, sub2, rep_exploration_score, rep_exploitation_score, heatmap_rep, child_1_r2, child_2_r2 = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
@@ -659,7 +668,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                         data_creation_func, eps, model_name, folder_of_the_day, data_name, final=True,
                                         children=children, visualize=visualize, seed=seed[i] + 2, noise=noise, disable_tqdm=disable_tqdm)
                                 except:
-                                    continue"""
+                                    continue
 
 
                         better_exploration_score.append(rep_exploration_score)
@@ -812,7 +821,7 @@ if __name__ == '__main__':
     g_vals = [2]
     nu_vals = [0.5]  # Found through HP Testing
     multi = True
-    acq = 'ucb'
+    acq = 'pi'
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
     nbr_rand_init = 3  # Found through HP Testing
@@ -825,7 +834,7 @@ if __name__ == '__main__':
     over_r2 = []
     over_child_r2 = []
     over_auc = []
-    for dataset_num in [10]:
+    for dataset_num in [2,10,11,12,13]:
         for h in h_model:
             data_name, data_creation_func, eps = get_dataset_info(dataset_num)
 

@@ -114,7 +114,7 @@ def compute_child_r2(sub_models, true_x, true_y):
 # Single repetition
 # ---------------------------------------------------------------------------
 
-def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
+def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, acq_func,
                    seed=True, noise=0.1, disable_tqdm=False, children=[],
                    final=False, surrogate_path=None):
     """
@@ -248,9 +248,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
             y_mu1, y_conf1 = observed_pred1.mean, observed_pred1.stddev
             y_mu2, y_conf2 = observed_pred2.mean, observed_pred2.stddev
 
-            # Build prior map (49 x 49)
-            p1 = y_mu1 + gamma * y_conf1 / torch.sqrt(sub1_qc)
-            p2 = y_mu2 + gamma * y_conf2 / torch.sqrt(sub2_qc)
+            p1 = models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)
+            p2 = models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)
 
             for i in range(n_child):
                 for j in range(n_child):
@@ -280,7 +279,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
                 test_x_hier,
                 likelihood,
                 prior_h_kernel,
-                prior_map / prior_map_max,
+                prior_map / prior_map_max if prior_map_max != 0 else prior_map,
                 kernel_op='add_kernel',
                 sub_models=[sub1, sub2],
                 kappa=kappa,
@@ -329,19 +328,16 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
             next_query_value_random, max_seen_resp_2D)
 
         response = torch.tensor(next_query_value_random).double()
+        cont1 = models.compute_acq_value(y_mu_point_a, y_conf_point_a, y_qc_a, gamma, acq_func, max_seen_resp_1_1D)
+        cont2 = models.compute_acq_value(y_mu_point_b, y_conf_point_b, y_qc_b, gamma, acq_func, max_seen_resp_2_1D)
 
-        # Softmax contribution (same formula as efficient_general_2d.py lines 361-373)
-        cont1 = y_mu_point_a + gamma * torch.nan_to_num(
-            y_conf_point_a / torch.sqrt(y_qc_a))
         cont1_scaled = torch.nan_to_num(
             cont1 / torch.max(
-                y_mu1 + gamma * torch.nan_to_num(y_conf1 / torch.sqrt(sub1_qc))))
+                models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)))
 
-        cont2 = y_mu_point_b + gamma * torch.nan_to_num(
-            y_conf_point_b / torch.sqrt(y_qc_b))
         cont2_scaled = torch.nan_to_num(
             cont2 / torch.max(
-                y_mu2 + gamma * torch.nan_to_num(y_conf2 / torch.sqrt(sub2_qc))))
+                models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)))
 
         div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
         contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
@@ -379,15 +375,18 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
         y_mu2, y_conf2 = observed_pred2.mean, observed_pred2.stddev
 
         # Rebuild prior map
-        p1 = y_mu1 + gamma * y_conf1 / torch.sqrt(sub1_qc)
-        p2 = y_mu2 + gamma * y_conf2 / torch.sqrt(sub2_qc)
+        p1 = models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)
+        p2 = models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)
 
         for i in range(n_child):
             for j in range(n_child):
                 prior_map[i, j] = (p1[i] + p2[j]) / 2
 
         prior_map_max = torch.max(prior_map)
-        master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
+        if prior_map_max == 0:
+            master.mean_module.map = torch.nn.Parameter(prior_map)
+        else:
+            master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
 
         # Update parent kernel
         master = hmodel.update_kernel_parameters(master, sub1, sub2)
@@ -439,7 +438,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter,
 # ---------------------------------------------------------------------------
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter,
-                       k_vals, g_vals, nu_vals, multi, seed, noise=0.1,
+                       k_vals, g_vals, nu_vals, multi, seed, noise=0.1, acq_func='ucb',
                        disable_tqdm=False):
     """
     Run the full BIF experiment across kappa / gamma / nu grids and seeds.
@@ -510,7 +509,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter,
                         for i in range(nbr_repetition):
                             p = pool.apply_async(run_repetition, (
                                 kappa, gamma, nu, nbr_query, nbr_rand_init,
-                                training_iter, seed[i], noise, True))
+                                training_iter, acq_func, seed[i], noise, True))
                             processes.append(p)
 
                         # Collect results
@@ -536,7 +535,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter,
                             (rep_explor, rep_exploit, h_rep,
                              c1_r2, c2_r2, fid_rep) = run_repetition(
                                 kappa, gamma, nu, nbr_query, nbr_rand_init,
-                                training_iter, seed=seed[i], noise=noise,
+                                training_iter, acq_func, seed=seed[i], noise=noise,
                                 disable_tqdm=disable_tqdm)
                         except Exception as e1:
                             print(f"  Attempt 1 failed ({e1}), retrying seed+1")
@@ -544,7 +543,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter,
                                 (rep_explor, rep_exploit, h_rep,
                                  c1_r2, c2_r2, fid_rep) = run_repetition(
                                     kappa, gamma, nu, nbr_query, nbr_rand_init,
-                                    training_iter, seed=seed[i] + 1, noise=noise,
+                                    training_iter, acq_func, seed=seed[i] + 1, noise=noise,
                                     disable_tqdm=disable_tqdm)
                             except Exception as e2:
                                 print(f"  Attempt 2 failed ({e2}), retrying seed+2")
@@ -552,7 +551,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter,
                                     (rep_explor, rep_exploit, h_rep,
                                      c1_r2, c2_r2, fid_rep) = run_repetition(
                                         kappa, gamma, nu, nbr_query, nbr_rand_init,
-                                        training_iter, seed=seed[i] + 2, noise=noise,
+                                        training_iter, acq_func,  seed=seed[i] + 2, noise=noise,
                                         disable_tqdm=disable_tqdm)
                                 except Exception as e3:
                                     print(f"  Attempt 3 failed ({e3}), skipping rep {i}")
@@ -699,14 +698,14 @@ if __name__ == '__main__':
 
     nbr_query = 100
     training_iter = 15
-    nbr_repetition = 30
+    nbr_repetition = 10
     k_vals = [8]
     g_vals = [4]
     nu_vals = [0.5]
     nbr_rand_init = 3
     noise = 0.1
     multi = False
-
+    acq_func = 'pi'
     seed = np.array([9049607, 2402697, 6510749, 758529, 3523986, 3224638, 9729091,
        5830471, 5343420, 2417321, 9891788, 9314146, 9488226, 2697408,
        5135059, 6813578, 430826, 6192331, 8026546, 6735254, 1112898,
@@ -714,4 +713,4 @@ if __name__ == '__main__':
        7449696, 9848369])
 
     training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter,
-                       k_vals, g_vals, nu_vals, multi, seed, noise=noise)
+                       k_vals, g_vals, nu_vals, multi, seed, noise=noise, acq_func=acq_func)

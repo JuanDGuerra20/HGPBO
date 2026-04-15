@@ -16,8 +16,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FIG_DIR = os.path.join(BASE_DIR, 'figures')
 os.makedirs(FIG_DIR, exist_ok=True)
 
-SURR_A = os.path.join(BASE_DIR, 'gan_surrogate_v2.pt')
-SURR_B = os.path.join(BASE_DIR, 'gan_surrogate_v2_specnorm.pt')
+SURR_A = os.path.join(BASE_DIR, 'gan_surrogate.pt')
+SURR_B = os.path.join(BASE_DIR, 'gan_surrogate_specnorm.pt')
 
 # Grid labels
 LR_GEN_LABELS  = ['1e-5', '5e-5', '1e-4', '5e-4', '1e-3', '5e-3', '1e-2']
