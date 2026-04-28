@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Bidirectional Information Flow (BIF): A Sample-Efficient Hierarchical Gaussian Process for Bayesian Optimization"
+authors:
+  - family-names: Guerra
+    given-names: "Juan David"
+  - family-names: Garbay
+    given-names: Thomas
+  - family-names: Dancause
+    given-names: Numa
+  - family-names: Lajoie
+    given-names: Guillaume
+  - family-names: Bonizzato
+    given-names: Marco
+conference: "International Conference on Machine Learning (ICML)"
+year: 2026
+license: MIT
+# Update doi and url once proceedings are published
