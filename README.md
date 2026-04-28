@@ -11,7 +11,7 @@ Hierarchical Gaussian Process (H-GP) models divide problems into different subta
 ## Installation
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/JuanDGuerra20/HGPBO.git
 cd HGPBO
 git lfs pull           # downloads the neural dataset (~262 MB)
 pip install -r requirements.txt
