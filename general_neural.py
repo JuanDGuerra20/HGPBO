@@ -134,8 +134,6 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     max_seen_resp_1_1D = 0
     max_seen_resp_2_1D = 0
     best_f_hier = torch.tensor(0.0)
-    best_f_1 = torch.tensor(0.0)
-    best_f_2 = torch.tensor(0.0)
     sub1_qc = torch.ones(len(test_x_1D))
     sub2_qc = torch.ones(len(test_x_1D))
     hier_qc = torch.ones(len(test_x_hier))
@@ -209,8 +207,8 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
             y_conf1 = observed_pred1.stddev
             y_conf2 = observed_pred2.stddev
 
-            p1 = models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, best_f_1)
-            p2 = models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, best_f_2)
+            p1 = models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)
+            p2 = models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)
 
             for i in range(len(prior_map)):
                 for j in range(len(prior_map)):
@@ -253,6 +251,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         #vi.comparison(list_prior_map, list_objective_mean_map, q, Xmean_1D)
 
+        best_f_hier = torch.max(master.train_targets)
         acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc,
                                                                    acq_func=acq_func, best_f=best_f_hier)
         list_acquisition_map.append(list_acquisition_map)
@@ -285,19 +284,18 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
 
         response = torch.tensor(next_query_value_random)
 
-        cont1 = models.compute_acq_value(y_mu_point_a, y_conf_point_a, y_qc_a, gamma, acq_func, best_f_1)
-        cont1_scaled = torch.nan_to_num(cont1 / torch.max(models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, best_f_1)))
+        cont1 = models.compute_acq_value(y_mu_point_a, y_conf_point_a, y_qc_a, gamma, acq_func, max_seen_resp_1_1D)
+        norm1 = torch.max(models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D))
+        cont1_scaled = torch.nan_to_num(cont1 / norm1)
 
-        cont2 = models.compute_acq_value(y_mu_point_b, y_conf_point_b, y_qc_b, gamma, acq_func, best_f_2)
-        cont2_scaled = torch.nan_to_num(cont2 / torch.max(models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, best_f_2)))
+        cont2 = models.compute_acq_value(y_mu_point_b, y_conf_point_b, y_qc_b, gamma, acq_func, max_seen_resp_2_1D)
+        norm2 = torch.max(models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D))
+        cont2_scaled = torch.nan_to_num(cont2 / norm2)
 
         div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled)
 
         contribution1 = torch.nan_to_num(response * torch.exp(cont1_scaled) / div)
         contribution2 = torch.nan_to_num(response * torch.exp(cont2_scaled) / div)
-
-        best_f_1 = torch.max(best_f_1, contribution1)
-        best_f_2 = torch.max(best_f_2, contribution2)
 
         response_1 = sub1.update_max_seen_response_no_norm(contribution1, max_seen_resp_1_1D)
         response_2 = sub2.update_max_seen_response_no_norm(contribution2, max_seen_resp_2_1D)
@@ -337,19 +335,22 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
         y_conf1 = observed_pred1.stddev
         y_conf2 = observed_pred2.stddev
 
-        p1 = models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, best_f_1)
-        p2 = models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, best_f_2)
+        p1 = models.compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)
+        p2 = models.compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)
 
         for i in range(len(prior_map)):
             for j in range(len(prior_map)):
                 prior_map[i, j] = (p1[i] + p2[j]) / 2
 
-        prior_map_max = torch.max(prior_map)
+        prior_map_max = abs(torch.max(prior_map))
 
-        list_prior_map.append(np.array(prior_map / prior_map_max))
+        list_prior_map.append(np.array(prior_map / prior_map_max if prior_map_max != 0 else prior_map))
         list_objective_mean_map.append(np.array(np.reshape(observed_pred.mean, (10, 10))))
 
-        master.mean_module.map = torch.nn.Parameter(prior_map/prior_map_max)
+        if prior_map_max != 0:
+            master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
+        else:
+            master.mean_module.map = torch.nn.Parameter(prior_map)
 
         master = hmodel.update_kernel_parameters(master, sub1, sub2)
 
@@ -735,7 +736,8 @@ if __name__ == '__main__':
     k_vals = [8]  # Found through HP Testing
     g_vals = [4]  # Found through HP Testing
     nu_vals = [0.5]
-    acq = 'ei'  # Acquisition function: 'ucb', 'ei', or 'pi'
+    #acq = 'ei'  # Acquisition function: 'ucb', 'ei', or 'pi'
+    acq_funcs = ['ei','pi']
     multi = False
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
@@ -746,18 +748,19 @@ if __name__ == '__main__':
        833438344, 355138099, 382604277,  40529313, 441069895, 797772191])
     #seed = [False]*nbr_repetition
     for h in h_model:
-        if h == hmodel.Efficient_UCB_Hierarchical_GP:
-            model_name = "Efficient"
+        for acq in acq_funcs:
+            if h == hmodel.Efficient_UCB_Hierarchical_GP:
+                model_name = "Efficient"
 
-        elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
-            model_name = "Lossless_Efficient"
+            elif h == hmodel.Lossless_Efficient_UCB_Hierarchical_GP:
+                model_name = "Lossless_Efficient"
 
-        current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
-        current_dateday = datetime.now().strftime("%Y-%m-%d")
-        workspace = f"{model_name.lower()}"
-        folder_of_the_day = '/data-' + str(current_dateday)
+            current_datetime = datetime.now().strftime("%Y-%m-%d_%Hh-%Mmin-%Ss")
+            current_dateday = datetime.now().strftime("%Y-%m-%d")
+            workspace = f"{model_name.lower()}"
+            folder_of_the_day = '/data-' + str(current_dateday)
 
-        training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, h, multi, seed, children=[], visualize=True, acq_func=acq)
+            training_procedure(nbr_query, nbr_repetition, nbr_rand_init, training_iter, k_vals, g_vals, nu_vals, h, multi, seed, children=[], visualize=True, acq_func=acq)
 
         """if h == hmodel.Efficient_UCB_Hierarchical_GP:
             model_name = "Efficient"
