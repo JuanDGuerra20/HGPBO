@@ -1,6 +1,5 @@
 # Bidirectional Information Flow (BIF)
 ### A Sample-Efficient Hierarchical Gaussian Process for Bayesian Optimization
-*ICML 2026*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -43,24 +42,3 @@ HGPBO/
 ├── synthetic_3d/          # BIF on 3D synthetic benchmark functions
 └── gan/                   # BIF for GAN hyperparameter optimization
 ```
-
-Each tier contains parallel implementations of three methods:
-- **BIF** (proposed) — bidirectional information flow between parent and child GPs
-- **Laferrière** — H-GP baseline with one-way (bottom-up) information sharing
-- **Vanilla GPBO** — standard single-level Gaussian Process Bayesian Optimization
-
-## Citation
-
-```bibtex
-@inproceedings{guerra2026bif,
-  title     = {Bidirectional Information Flow: A Sample-Efficient Hierarchical Gaussian Process for Bayesian Optimization},
-  author    = {Guerra, Juan David and Garbay, Thomas and Dancause, Numa and Lajoie, Guillaume and Bonizzato, Marco},
-  booktitle = {Proceedings of the 43rd International Conference on Machine Learning},
-  year      = {2026},
-  note      = {To appear}
-}
-```
-
-## Contact
-
-Please refer to the paper for author contact information.
