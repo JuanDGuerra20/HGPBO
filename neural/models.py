@@ -1,9 +1,6 @@
 """
 This file will have the task of defining the models we will use in this project and the functions to modify/use them
 """
-import torch
-import sys
-import os
 
 from dataset_actions import *
 import gpytorch

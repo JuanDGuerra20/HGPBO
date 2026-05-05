@@ -1,13 +1,7 @@
-import math
-import torch
-import numpy as np
 import gpytorch
 import models
-from matplotlib import pyplot as plt
-from torch.utils.data import Dataset
 import update_hmodel as hmodel
 from dataset_actions import *
-from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm

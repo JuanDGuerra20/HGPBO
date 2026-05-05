@@ -2,6 +2,7 @@ import gpytorch
 import numpy as np
 
 import models_3d as models
+from models_3d import compute_acq_value
 import hmodel_3d as hmodel
 from dataset_actions_3d import *
 from datetime import datetime
@@ -74,7 +75,7 @@ def joint_performance(joint_exploit, joint_explor, kappa, gamma, nu_vals, folder
     plt.close()
 
 
-def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], seed=True, noise=0.1):
+def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model, data_creation_func, eps, model_name, folder_of_the_day, data_name, final=False, children=[], seed=True, noise=0.1, acq_func='ucb'):
     warnings.filterwarnings('ignore')
 
     x_sub1, y_sub1, x_sub2, y_sub2, x_sub3, y_sub3, x_hier, y_hier, test_x, test_x_hier = data_creation_func(dimension, eps)
@@ -162,9 +163,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             y_conf2 = observed_pred2.stddev
             y_conf3 = observed_pred3.stddev
 
-            p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-            p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
-            p3 = y_mu3 + gamma * y_conf3 / (torch.sqrt(sub3_qc))
+            p1 = compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)
+            p2 = compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)
+            p3 = compute_acq_value(y_mu3, y_conf3, sub3_qc, gamma, acq_func, max_seen_resp_3_1D)
 
 
             for i in range(len(prior_map)):
@@ -212,8 +213,9 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
             child_r2 = vi.child_contour_r2(master.sub_models, [x_sub1, x_sub2, x_sub3],[y_sub1, y_sub2, y_sub3])
 
         children_r2.append(child_r2)
-       
-        acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc)
+
+        best_f_hier = torch.max(master.train_targets)
+        acquisition_map, hierar_y_mu = models.get_acquisition_map(kappa, observed_pred, hier_qc, acq_func=acq_func, best_f=best_f_hier)
 
         next_query_pins = models.get_next_query_pins(acquisition_map, test_x_hier)
 
@@ -238,18 +240,17 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
         response = torch.tensor(next_query_value_random)
 
-        cont1 = y_mu_point_a + gamma * torch.nan_to_num(y_conf_point_a / torch.sqrt(y_qc_a))
+        cont1 = compute_acq_value(y_mu_point_a, y_conf_point_a, y_qc_a, gamma, acq_func, max_seen_resp_1_1D)
+        norm1 = torch.max(compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D))
+        cont1_scaled = torch.nan_to_num(cont1 / norm1)
 
-        cont1_scaled = torch.nan_to_num(
-            cont1 / torch.max(y_mu1 + gamma * torch.nan_to_num(y_conf1 / torch.sqrt(sub1_qc))))
+        cont2 = compute_acq_value(y_mu_point_b, y_conf_point_b, y_qc_b, gamma, acq_func, max_seen_resp_2_1D)
+        norm2 = torch.max(compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D))
+        cont2_scaled = torch.nan_to_num(cont2 / norm2)
 
-        cont2 = y_mu_point_b + gamma * torch.nan_to_num(y_conf_point_b / torch.sqrt(y_qc_b))
-        cont2_scaled = torch.nan_to_num(
-            cont2 / torch.max(y_mu2 + gamma * torch.nan_to_num(y_conf2 / torch.sqrt(sub2_qc))))
-
-        cont3 = y_mu_point_c + gamma * torch.nan_to_num(y_conf_point_c / torch.sqrt(y_qc_c))
-        cont3_scaled = torch.nan_to_num(
-            cont3 / torch.max(y_mu3 + gamma * torch.nan_to_num(y_conf3 / torch.sqrt(sub3_qc))))
+        cont3 = compute_acq_value(y_mu_point_c, y_conf_point_c, y_qc_c, gamma, acq_func, max_seen_resp_3_1D)
+        norm3 = torch.max(compute_acq_value(y_mu3, y_conf3, sub3_qc, gamma, acq_func, max_seen_resp_3_1D))
+        cont3_scaled = torch.nan_to_num(cont3 / norm3)
 
         div = torch.exp(cont1_scaled) + torch.exp(cont2_scaled) + torch.exp(cont3_scaled)
 
@@ -338,18 +339,21 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
         y_conf2 = observed_pred2.stddev
         y_conf3 = observed_pred3.stddev
 
-        p1 = y_mu1 + gamma * y_conf1 / (torch.sqrt(sub1_qc))
-        p2 = y_mu2 + gamma * y_conf2 / (torch.sqrt(sub2_qc))
-        p3 = y_mu3 + gamma * y_conf3 / (torch.sqrt(sub3_qc))
+        p1 = compute_acq_value(y_mu1, y_conf1, sub1_qc, gamma, acq_func, max_seen_resp_1_1D)
+        p2 = compute_acq_value(y_mu2, y_conf2, sub2_qc, gamma, acq_func, max_seen_resp_2_1D)
+        p3 = compute_acq_value(y_mu3, y_conf3, sub3_qc, gamma, acq_func, max_seen_resp_3_1D)
 
         for i in range(len(prior_map)):
             for j in range(len(prior_map)):
                 for k in range(len(prior_map)):
                     prior_map[i, j, k] = (p1[i] + p2[j] + p3[k]) / 3
 
-        prior_map_max = torch.max(prior_map)
+        prior_map_max = abs(torch.max(prior_map))
 
-        master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
+        if prior_map_max != 0:
+            master.mean_module.map = torch.nn.Parameter(prior_map / prior_map_max)
+        else:
+            master.mean_module.map = torch.nn.Parameter(prior_map)
 
         master = hmodel.update_kernel_parameters(master, [sub1, sub2, sub3])
 
@@ -422,7 +426,7 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, traini
 
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals, g_vals, nu_vals, data_name, data_creation_func,
-                           eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1):
+                           eps, hierarchical_model, multi, seed, children=[], visualize=True, noise=0.1, acq_func='ucb'):
     
     if hierarchical_model == hmodel.Efficient_UCB_Hierarchical_GP:
         model_name = "Efficient_3D"
@@ -481,13 +485,13 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                                 kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter,
                                 hierarchical_model,
                                 data_creation_func, eps, model_name, folder_of_the_day, data_name, False, children,
-                                seed[i], noise))
+                                seed[i], noise), kwds={'acq_func': acq_func})
                             processes.append(p)
 
                         master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                             data_creation_func, eps, model_name, folder_of_the_day, data_name, True, children, seed[-1],
-                            noise)
+                            noise, acq_func=acq_func)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -516,7 +520,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                         master, sub1, sub2, sub3, rep_exploration_score, rep_exploitation_score, heatmap_rep, children_r2 = run_repetition(
                             kappa, gamma, nu, nbr_query, nbr_rand_init, dimension, training_iter, hierarchical_model,
                             data_creation_func, eps, model_name, folder_of_the_day, data_name, True, children, seed[i],
-                            noise)
+                            noise, acq_func=acq_func)
 
                         better_exploration_score.append(rep_exploration_score)
                         better_exploitation_score.append(rep_exploitation_score)
@@ -618,10 +622,10 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
                             'auc']
                 df.to_csv(
                     f"{data_name}/{model_name.lower()}{folder_of_the_day}/csv/final_scores_kappa_{k}_gamma_{g}_nu_{n}_{nbr_query}_queries_init_{nbr_rand_init}_train_iter_{training_iter}_repetitions_{nbr_repetition}")
-                print(f"explor {y[-1]} + {std[-1]}")
-                print(f"r2 avg {r2_avg[-1]} + {r2_std[-1]}")
-                print(f"child r2 {avg_child[-1]} + {std_child[-1]}")
-                print(f"AUC {np.sum(auc)}")
+                print(f"explor {y[-1]*100:.2f} + {std[-1]*100:.2f}")
+                print(f"r2 avg {r2_avg[-1]*100:.2f} + {r2_std[-1]*100:.2f}")
+                print(f"child r2 {avg_child[-1]*100:.2f} + {std_child[-1]*100:.2f}")
+                print(f"AUC {np.sum(auc)*100:.2f}")
             # Joint Section
             '''joint_performance(over_exploit, over_explor, kappa, gamma, nu_vals, folder_of_the_day, dimension, nbr_query, nbr_repetition, data_name, model_name)
 
@@ -656,9 +660,9 @@ if __name__ == '__main__':
 
 
     dimension = 10
-    nbr_query = 100
+    nbr_query = 50
     training_iter = 20
-    nbr_repetition = 10
+    nbr_repetition = 2
     nbr_rand_init = 2
     k_vals = [8] # Found through HP Testing
     g_vals = [5]  # Found through HP Testing
@@ -667,7 +671,8 @@ if __name__ == '__main__':
     h_model = [hmodel.Lossless_Efficient_UCB_Hierarchical_GP]
     process = []
 
-    multi = True
+    multi = False
+    acq = 'ucb'
     seed = np.array([901112484, 798576827, 862109006, 256960071,  67686131, 960919614,
        542146925, 225453837, 328655096, 167690914, 578139702, 126081086,
        445226178, 339718381, 278636500, 570547118, 459828174, 673392709,
@@ -682,4 +687,5 @@ if __name__ == '__main__':
 
             name, master, better_exploration_score, better_exploitation_score, r2, child_1_r2, child_2_r2, child_3_r2 = \
                 training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter, k_vals,
-                                   g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0.1)[0]
+                                   g_vals, nu_vals, data_name, data_creation_func, eps, h, multi, seed, noise=0.1,
+                                   acq_func=acq)[0]

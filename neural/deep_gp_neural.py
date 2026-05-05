@@ -1,13 +1,9 @@
-import torch
-import numpy as np
 import gpytorch
-import os
 from gpytorch.models.deep_gps import DeepGPLayer, DeepGP
 from gpytorch.variational import CholeskyVariationalDistribution, VariationalStrategy
 from gpytorch.mlls import DeepApproximateMLL, VariationalELBO
 import matplotlib
 matplotlib.use('Agg')
-from matplotlib import pyplot as plt
 import models
 from dataset_actions import *
 from datetime import datetime

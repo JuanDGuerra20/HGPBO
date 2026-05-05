@@ -1,6 +1,8 @@
 import ucb_efficient_general as gen
 import laferriere as laf
 import vanilla_3D_general as van
+import deep_gp_3d as deep_gp
+import add_gp_ucb_3d as add_ucb
 import hmodel_3d as hmodel
 from dataset_actions_3d import *
 
@@ -35,17 +37,26 @@ if __name__ == '__main__':
     processes = []
     for h in h_model:
         # Kappa block
-        for kappa in k_vals:
-            for dataset_num in datasets:
-                data_name, data_creation_func, eps = get_dataset_info(dataset_num)
-                gen.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, base_train, [kappa], base_g, nu_vals, data_name, data_creation_func,
-                       eps, h, multi, seed, children=[], visualize=True, noise=0.1)
-                laf.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, base_train, [kappa], base_g, nu_vals, data_name, data_creation_func,
-                       eps, h, multi, seed, children=[], visualize=True, noise=0.1)
-                van.training_procedure(nbr_query, nbr_repetition, 1, dimension, base_train, [kappa], data_name, data_creation_func,
-                       eps, 0.1)
+        #for kappa in k_vals:
+        for dataset_num in datasets:
+            data_name, data_creation_func, eps = get_dataset_info(dataset_num)
+            """gen.training_procedure(nbr_query, nbr_repetition, 2, dimension, 20, [8], [5], nu_vals, data_name, data_creation_func,
+                   eps, h, multi, seed, children=[], visualize=True, noise=0.1, acq_func="ucb")
+            gen.training_procedure(nbr_query, nbr_repetition, 2, dimension, 20, [8], [5], nu_vals, data_name,
+                                   data_creation_func,
+                                   eps, h, multi, seed, children=[], visualize=True, noise=0.1, acq_func="ei")
+            gen.training_procedure(nbr_query, nbr_repetition, 2, dimension, 20, [8], [5], nu_vals, data_name, data_creation_func,
+                   eps, h, multi, seed, children=[], visualize=True, noise=0.1, acq_func="pi")
+            laf.training_procedure(nbr_query, nbr_repetition, 3, dimension, 5, [7], [3], nu_vals, data_name, data_creation_func,
+                   eps, h, multi, seed, children=[], visualize=True, noise=0.1)
+            van.training_procedure(nbr_query, nbr_repetition, 1, dimension, 10, [6], data_name, data_creation_func,
+                   eps, 0.1)
+            deep_gp.training_procedure(nbr_query, nbr_repetition, 1, dimension, 100,
+                   [6], data_name, data_creation_func, eps, seed=seed, multi=multi)"""
+            add_ucb.training_procedure(nbr_query, nbr_repetition, 1, dimension, 10,
+                   [6], nu_vals, data_name, data_creation_func, eps, multi, seed)
 
-        print(f"\n=====================================================")
+        """print(f"\n=====================================================")
         print(f"Kappa Complete")
         print(f"=====================================================\n")
         # Gamme Block
@@ -71,6 +82,10 @@ if __name__ == '__main__':
                 laf.training_procedure(nbr_query, nbr_repetition, rand_init, dimension, base_train, base_k, base_g,
                                        nu_vals, data_name, data_creation_func,
                                        eps, h, multi, seed, children=[], visualize=True, noise=0.1)
+                deep_gp.training_procedure(nbr_query, nbr_repetition, rand_init, dimension, base_train,
+                                           base_k, data_name, data_creation_func, eps, seed=seed, multi=multi)
+                add_ucb.training_procedure(nbr_query, nbr_repetition, rand_init, dimension, base_train,
+                                           base_k, nu_vals, data_name, data_creation_func, eps, multi, seed)
         print(f"\n=====================================================")
         print(f"Rand Init Complete")
         print(f"=====================================================\n")
@@ -88,7 +103,11 @@ if __name__ == '__main__':
                 van.training_procedure(nbr_query, nbr_repetition, 1, dimension, train_iter, base_k, data_name,
                                        data_creation_func,
                                        eps, 0.1)
+                deep_gp.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, train_iter,
+                                           base_k, data_name, data_creation_func, eps, seed=seed, multi=multi)
+                add_ucb.training_procedure(nbr_query, nbr_repetition, base_rand, dimension, train_iter,
+                                           base_k, nu_vals, data_name, data_creation_func, eps, multi, seed)
 
         print(f"\n=====================================================")
         print(f"Training Iter Complete")
-        print(f"=====================================================\n")
+        print(f"=====================================================\n")"""

@@ -1,9 +1,6 @@
 import gpytorch
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import torch
-import numpy as np
 
 import models
 import update_hmodel as hmodel
@@ -143,7 +140,12 @@ def run_repetition(kappa, nu, nbr_query, nbr_rand_init, training_iter,
             c1_r2, c2_r2 = vi.child_contour_r2([sub1, sub2], [x_sub1, x_sub2], [y_sub1, y_sub2])
         child_1_r2.append(c1_r2)
         child_2_r2.append(c2_r2)
-
+    vi.contour_plot_1D(
+        [sub1, sub2], [test_x_1D, test_x_1D], [test_y_1D, test_y_1D],
+        [train_y_sub1, train_y_sub2],
+        f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}',
+        model_name.lower(), folder_of_the_day, "", parent=None, query=q,
+        visualize=False, neural=True)
     if final:
         return sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
     else:

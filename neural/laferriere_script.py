@@ -1,13 +1,7 @@
-import math
-import torch
-import numpy as np
 import gpytorch
 import models
-from matplotlib import pyplot as plt
-from torch.utils.data import Dataset
 import update_hmodel as hmodel
 from dataset_actions import *
-from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 import visualization_information as vi
 from tqdm import tqdm
@@ -341,10 +335,12 @@ def run_repetition(kappa, gamma, nu, nbr_query, nbr_rand_init, training_iter, hi
     k = str(kappa).replace('.', ',')
     g = str(gamma).replace('.', ',')
     n = str(nu).replace('.', ',')
-    """vi.contour_plot_1D(master.sub_models, test_x_1D,
-                       [test_y_1D / torch.max(test_y_1D), test_y_1D / torch.max(test_y_1D)],
-                       f'/contour/Contour_Neural_{model_name}_HGP-BO_nbr_query_{nbr_query}_kappa_{k}_gamma_{g}_nu_{n}_nbr_rand_{nbr_rand_init}_pid_{os.getpid()}',
-                       model_name.lower(), folder_of_the_day, "Neural", neural=True)"""
+    vi.contour_plot_1D(
+        master.sub_models, [test_x_1D, test_x_1D], [test_y_1D, test_y_1D],
+        [train_y_sub1, train_y_sub2],
+        f'/contour/Contour_init_{nbr_rand_init}_train_iter_{training_iter}_k_{k}_g_{g}_nu_{n}',
+        model_name.lower(), folder_of_the_day, "", parent=master, query=q,
+        visualize=False, neural=True)
     if final:
         return master, sub1, sub2, better_exploration_score, better_exploitation_score, heatmap_rep, child_1_r2, child_2_r2
     else:

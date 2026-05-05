@@ -177,7 +177,7 @@ def run_repetition(kappa, nbr_query, nbr_rand_init, dimension, training_iter,
 
 def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, training_iter,
                        k_vals, data_name, data_creation_func, eps, seed=None,
-                       depth=3, num_inducing=32, multi=False, disable_tqdm=False, hidden_dims=3):
+                       depth=4, num_inducing=32, multi=False, disable_tqdm=False, hidden_dims=3):
 
     if seed is None:
         seed = [False] * nbr_repetition
@@ -256,14 +256,14 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
         heatmap_data = np.array(heatmap_data)
 
         y = np.mean(better_exploration_score, axis=0)
-        y = np.insert(y, 0, np.zeros(3 * nbr_rand_init))[:nbr_query]
+        y = np.insert(y, 0, np.zeros(nbr_rand_init))[:nbr_query]
         std = np.std(better_exploration_score, axis=0) / np.sqrt(len(better_exploration_score))
-        std = np.insert(std, 0, np.zeros(3 * nbr_rand_init))[:nbr_query]
+        std = np.insert(std, 0, np.zeros(nbr_rand_init))[:nbr_query]
         plt.plot(y, label='Instantaneous Regret')
         plt.fill_between(range(len(y)), y - std, y + std, alpha=0.4)
 
         r2 = vi.heatmap_r_score(heatmap_data, y_hier)
-        r2 = np.insert(r2, 0, np.zeros((3 * nbr_rand_init, 1)), axis=1)[:, :nbr_query]
+        r2 = np.insert(r2, 0, np.zeros((nbr_rand_init, 1)), axis=1)[:, :nbr_query]
         r2_avg = np.mean(r2, axis=0)
         r2_std = np.std(r2, axis=0) / np.sqrt(len(r2))
         plt.plot(r2_avg, label="Parent R2")
@@ -306,7 +306,7 @@ def training_procedure(nbr_query, nbr_repetition, nbr_rand_init, dimension, trai
 if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
-    depth = 3
+    depth = 4
     dimension = 10
     nbr_query = 100
     training_iter = 100

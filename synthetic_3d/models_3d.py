@@ -2,7 +2,7 @@
 This file will have the task of defining the models we will use in this project and the functions to modify/use them
 """
 
-from dataset_actions import *
+from dataset_actions_3d import *
 import gpytorch
 import time
 import math
@@ -228,26 +228,52 @@ def optimize(model, likelihood, training_iter, train_x, train_y, verbose=True, h
     return model, likelihood
 
 
-def get_acquisition_map(kappa, observed_pred, query_count):
+def compute_acq_value(mu, sigma, query_count, kappa, acq_func, best_f):
     """
-    Compute the acquisition map for Bayesian optimization.
-    Here UCB function : a(x;k)=μ(x)+kσ(x)
+    Compute acquisition value for UCB, EI, or PI.
 
     Parameters:
-    - k: kappa (float): Manage the trade-off between exploration and exploitation.
+    - mu (torch.Tensor): Predictive mean.
+    - sigma (torch.Tensor): Predictive standard deviation.
+    - query_count (torch.Tensor): Query count per point (used by UCB).
+    - kappa (float): Exploration parameter (UCB trade-off; EI/PI jitter xi).
+    - acq_func (str): One of 'ucb', 'ei', 'pi'.
+    - best_f: Current best observed value (required for 'ei' and 'pi').
+
+    Returns:
+    - acq (torch.Tensor): Acquisition values.
+    """
+    if acq_func == 'ucb':
+        return mu + kappa * torch.nan_to_num(sigma / torch.sqrt(query_count))
+    normal = torch.distributions.Normal(0, 1)
+    safe_sigma = torch.clamp(sigma, min=1e-9)
+    Z = (mu - best_f - kappa) / safe_sigma
+    if acq_func == 'ei':
+        ei = safe_sigma * (Z * normal.cdf(Z) + torch.exp(normal.log_prob(Z)))
+        return torch.clamp(ei, min=0.0)
+    if acq_func == 'pi':
+        return normal.cdf(Z)
+    raise ValueError(f"Unknown acq_func '{acq_func}'. Choose 'ucb', 'ei', or 'pi'.")
+
+
+def get_acquisition_map(kappa, observed_pred, query_count, acq_func='ucb', best_f=None):
+    """
+    Compute the acquisition map for Bayesian optimization.
+
+    Parameters:
+    - kappa (float): Exploration parameter (UCB: trade-off weight; EI/PI: jitter xi).
     - observed_pred (gpytorch.distributions.MultivariateNormal): Predictive posterior distribution.
+    - query_count (torch.Tensor): Query count per candidate point.
+    - acq_func (str): Acquisition function type: 'ucb', 'ei', or 'pi'.
+    - best_f: Current best observed value (required for 'ei' and 'pi').
 
     Returns:
     - acquisition_map (torch.Tensor): Acquisition map.
     - y_mu (torch.Tensor): Mean of the predictive distribution.
     """
-    # get the mean (mu) and the variance (sigma2) of the model
     y_mu = observed_pred.mean
-    y_sigma2 = observed_pred.stddev
-
-    # compute acquisition map
-    acquisition_map = y_mu + kappa * torch.nan_to_num(y_sigma2/torch.sqrt(query_count))  # here UCB acquisition function
-    # print(f'Average UCB Ratio mean/({kappa} * std): {torch.mean(y_mu/(kappa * y_sigma2))}')
+    y_sigma = observed_pred.stddev
+    acquisition_map = compute_acq_value(y_mu, y_sigma, query_count, kappa, acq_func, best_f)
     return acquisition_map, y_mu
 
 

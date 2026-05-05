@@ -68,7 +68,7 @@ class Trains:
         if path_to_data:
             filtmat = loadmat(os.path.join(path_to_data, 'FilteredPairedTrains.mat'))
         else:
-            _default_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'FilteredPairedTrains.mat')
+            _default_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'FilteredPairedTrains.mat')
             filtmat = loadmat(_default_data_path)
         filtdata = filtmat['gfilt_resp']
 
